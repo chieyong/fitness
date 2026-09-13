@@ -95,9 +95,13 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
   const open = openSessions(sessions);
   if (open.length === 0) return [];
 
-  const hasBacklog = open[0].planned_date < today;
+  // Staat de eerstvolgende sessie op vandaag of eerder, dan is vandaag de
+  // eerste beschikbare dag -- ook als vandaag geen reguliere trainingsdag is.
+  // Een sessie die expliciet op vandaag gepland staat hoort niet weggeschoven
+  // te worden omdat de weekdag niet in het patroon past.
+  const startsToday = open[0].planned_date <= today;
 
-  let slot = hasBacklog
+  let slot = startsToday
     ? today
     : nextTrainingDay(today, { inclusive: true, trainingDays });
 

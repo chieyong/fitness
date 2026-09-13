@@ -62,6 +62,16 @@ test('gemiste sessie is vandaag in te halen, ook op een rustdag', () => {
   assert.equal(td, false);                          // woensdag blijft een rustdag
 });
 
+test('een sessie die vandaag gepland staat blijft vandaag staan', () => {
+  // Zondag is geen trainingsdag, maar deze sessie staat er expliciet op --
+  // bijvoorbeeld na het heropenen van een afgeronde training.
+  const sessions = [session('s1', 'a', ZO), session('s2', 'b', DI2)];
+  const view = resolveToday(sessions, ZO);
+  assert.equal(view.current.session.id, 's1');
+  assert.equal(view.current.shifted, false);
+  assert.equal(view.isRestDay, false);
+});
+
 test('alles schuift op: volgorde A -> B -> C blijft intact', () => {
   const sessions = [
     session('s1', 'a', DI),
