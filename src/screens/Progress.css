@@ -44,36 +44,63 @@
   scroll-margin-top: var(--space-5);
 }
 
+.muscle {
+  margin-top: var(--space-4);
+  scroll-margin-top: var(--space-4);
+}
+
 .muscle__head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--space-4);
   width: 100%;
-  padding-bottom: var(--space-2);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--hairline);
 }
 
+.muscle__head .miniline { margin-left: auto; }
+
 .muscle__name {
-  font-size: var(--text-title);
+  font-size: var(--text-body);
   font-weight: 500;
   letter-spacing: -0.01em;
+  text-align: left;
 }
 
-.muscle--selected .muscle__name { color: var(--accent); }
+.muscle--open .muscle__name { color: var(--accent); }
 
 .muscle__value {
   font-size: var(--text-small);
-  color: var(--ink-tertiary);
+  color: var(--ink-secondary);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  min-width: 4.5em;
+  text-align: right;
 }
 
 .muscle__list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0 var(--space-4) var(--space-4);
+  animation: unfold 160ms ease;
 }
+
+/* Snel terug naar het totaaloverzicht, zodra het silhouet uit beeld is. */
+.tobody {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 10;
+  background: var(--ink);
+  color: #fff;
+  font-size: var(--text-small);
+  padding: var(--space-3) var(--space-5);
+  border-radius: 980px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.16);
+  animation: unfold 160ms ease;
+}
+
+.tobody:hover { opacity: 0.9; }
 
 /* Oefeningregel: naam, staafjes per training, waar je nu staat. */
 .line {

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  muscleTotals, findMuscle, intensities, sortByMetric, busiestBy,
+  muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, muscleSeries,
 } from '../lib/muscles.js';
 import { seriesFor, trend, chartPoints, preferredMetric } from '../lib/progress.js';
 import { muscleLabel, KNOWN_MUSCLES } from '../lib/muscleLabels.js';
@@ -8,7 +8,7 @@ import { addDays, todayISO, formatDateShort } from '../lib/schedule.js';
 import { formatNumber } from '../lib/input.js';
 import { fetchAllExercises, fetchAllLogs, fetchSessions } from '../lib/queries.js';
 import BodyMap, { RampLegend } from '../components/BodyMap.jsx';
-import MiniBars from '../components/MiniBars.jsx';
+import MiniLine from '../components/MiniLine.jsx';
 import './Progress.css';
 import './Exercise.css';
 
@@ -35,6 +35,36 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBac
   const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState('laden');
   const [error, setError] = useState(null);
+  const bodyRef = useRef(null);
+  const [bodyVisible, setBodyVisible] = useState(true);
+
+  // Bewust een scroll-listener en geen IntersectionObserver: die laatste levert
+  // zijn callback pas bij een volgende frame, waardoor de knop soms uitbleef.
+  useEffect(() => {
+    if (status !== 'klaar') return undefined;
+
+    const check = () => {
+      const el = bodyRef.current;
+      if (!el) return;
+      const bottom = el.offsetTop + el.offsetHeight;
+      setBodyVisible(window.scrollY < bottom - 40);
+    };
+
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, [status]);
+
+  const scrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -71,23 +101,18 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBac
     return `${formatNumber(n)}${unit ? ` ${unit}` : ' sets'}`;
   };
 
-  // Klikken op een spiergroep brengt je naar de oefeningen die eraan bijdroegen.
+  // Een spiergroep kiezen klapt hem open en brengt je erheen. Nog een keer
+  // tikken klapt hem weer dicht.
   const select = (m) => {
     const next = m === selected ? null : m;
     onSelectMuscle(next);
-    if (!next) return;
-    requestAnimationFrame(() => {
-      const el = document.getElementById(`spier-${next}`);
-      if (!el) return;
-      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
-    });
+    if (next) requestAnimationFrame(() => scrollTo(`spier-${next}`));
   };
 
+  // Binnenkomen via een gedeelde link opent de juiste groep meteen.
   useEffect(() => {
     if (status !== 'klaar' || !selected) return;
-    const el = document.getElementById(`spier-${selected}`);
-    el?.scrollIntoView({ block: 'start' });
+    document.getElementById(`spier-${selected}`)?.scrollIntoView({ block: 'start' });
   }, [status]);
 
   if (status === 'laden') return <main className="page" />;
@@ -126,24 +151,35 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBac
         </p>
       ) : (
         <>
-          <BodyMap intensity={intensity} selected={selected}
-            onSelect={select} valueLabel={valueOf} />
-          <RampLegend
-            maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle)})` : ''} />
-          <p className="body__hint">Tik een spiergroep aan om naar de oefeningen te springen.</p>
+          <div id="lichaam" ref={bodyRef}>
+            <BodyMap intensity={intensity} selected={selected}
+              onSelect={select} valueLabel={valueOf} />
+            <RampLegend
+              maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle)})` : ''} />
+            <p className="body__hint">
+              Tik een spiergroep aan om de oefeningen te openen.
+            </p>
+          </div>
 
           {ranked.map((t) => (
             <MuscleSection
               key={t.muscle}
               total={t}
               metric={metric}
-              selected={t.muscle === selected}
-              onSelect={() => select(t.muscle)}
+              open={t.muscle === selected}
+              onToggle={() => select(t.muscle)}
+              series={muscleSeries(logs, sessions, exercises, t.muscle, from ? { from } : {})}
               logs={logs}
               sessions={sessions}
               onOpenExercise={onOpenExercise}
             />
           ))}
+
+          {!bodyVisible && (
+            <button type="button" className="tobody" onClick={() => scrollTo('lichaam')}>
+              Lichaam
+            </button>
+          )}
 
           {offBody.length > 0 && (
             <p className="body__hint">
@@ -156,26 +192,34 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBac
   );
 }
 
-function MuscleSection({ total, metric, selected, onSelect, logs, sessions, onOpenExercise }) {
+function MuscleSection({
+  total, metric, open, onToggle, series, logs, sessions, onOpenExercise,
+}) {
   const value = metric === 'sets'
     ? `${total.sets} sets`
     : `${formatNumber(Math.round(total.volume))} kg`;
 
+  const points = series.map((p) => ({ date: p.date, value: p[metric] }));
+  const suffix = metric === 'sets' ? 'sets' : 'kg';
+
   return (
     <section id={`spier-${total.muscle}`}
-      className={`muscle${selected ? ' muscle--selected' : ''}`}>
-      <button type="button" className="muscle__head" onClick={onSelect}
-        aria-pressed={selected}>
+      className={`muscle${open ? ' muscle--open' : ''}`}>
+      <button type="button" className="muscle__head" onClick={onToggle}
+        aria-expanded={open}>
         <span className="muscle__name">{muscleLabel(total.muscle)}</span>
+        <MiniLine points={points} formatValue={(v) => `${formatNumber(v)} ${suffix}`} />
         <span className="muscle__value">{value}</span>
       </button>
 
-      <ul className="muscle__list">
-        {total.byExercise.map((e) => (
-          <ExerciseLine key={e.exerciseId} entry={e}
-            logs={logs} sessions={sessions} onOpen={() => onOpenExercise(e.exerciseId)} />
-        ))}
-      </ul>
+      {open && (
+        <ul className="muscle__list">
+          {total.byExercise.map((e) => (
+            <ExerciseLine key={e.exerciseId} entry={e}
+              logs={logs} sessions={sessions} onOpen={() => onOpenExercise(e.exerciseId)} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -200,7 +244,7 @@ function ExerciseLine({ entry, logs, sessions, onOpen }) {
           </span>
         </span>
 
-        <MiniBars points={points} formatValue={(v) => `${formatNumber(v)} ${unit ?? ''}`} />
+        <MiniLine points={points} formatValue={(v) => `${formatNumber(v)} ${unit ?? ''}`} />
 
         <span className="line__now">
           {latest && <span className="line__value">{formatNumber(latest.value)} {unit}</span>}

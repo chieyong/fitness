@@ -108,3 +108,39 @@ export function intensities(totals, metric = 'sets') {
   }
   return out;
 }
+
+/**
+ * Sets en volume per training voor één spiergroep, oplopend in de tijd.
+ * Dit voedt het lijntje naast een ingeklapte spiergroep: ook zonder de
+ * oefeningen uit te klappen zie je of het oploopt.
+ */
+export function muscleSeries(logs, sessions, exercises, muscle, range = {}) {
+  const dateOf = new Map(sessions.map((s) => [s.id, sessionDate(s)]));
+  const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+  const perSession = new Map();
+
+  const grouped = new Map();
+  for (const l of logs) {
+    if (l.skipped) continue;
+    const date = dateOf.get(l.session_id);
+    if (!date) continue;
+    if (range.from && date < range.from) continue;
+    if (range.to && date > range.to) continue;
+
+    const exercise = exerciseById.get(l.exercise_id);
+    if (!exercise?.muscle_groups?.includes(muscle)) continue;
+
+    const key = `${l.session_id}|${l.exercise_id}`;
+    if (!grouped.has(key)) grouped.set(key, { date, rows: [] });
+    grouped.get(key).rows.push(l);
+  }
+
+  for (const { date, rows } of grouped.values()) {
+    const entry = perSession.get(date) ?? { date, sets: 0, volume: 0 };
+    entry.sets += rows.length;
+    entry.volume += setsVolume(rows);
+    perSession.set(date, entry);
+  }
+
+  return [...perSession.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+}

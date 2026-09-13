@@ -87,14 +87,21 @@ naar de volgende training.
 
 ## Voortgang
 
-"Voortgang" opent met het lichaamssilhouet. Tik een spiergroep aan en de pagina springt
-naar de oefeningen die eraan bijdroegen; elke oefening toont staafjes per training, waar
-je nu staat en het verschil sinds de eerste keer. Tik de oefening aan voor de volledige
-grafieken: zwaarste set en volume over tijd, plus een tabel met alle sets.
-Tijdgebaseerde oefeningen tonen de langste set in plaats van gewicht.
+"Voortgang" opent met het lichaamssilhouet. Daaronder staat elke spiergroep als een
+ingeklapte regel met een sparkline en het totaal — je ziet het verloop dus zonder iets
+open te klappen. Tik een spiergroep aan (op het silhouet of op de regel zelf) en de
+pagina springt erheen en klapt de oefeningen uit; er staat er één tegelijk open.
 
-De staafjes beginnen bij nul, want bij staven liegt de hoogte anders. Het verschil tussen
-59 en 79 kg leest daardoor subtiel; het exacte verschil staat als getal ernaast.
+Per oefening: een sparkline, waar je nu staat en het verschil sinds de eerste keer. Tik
+de oefening aan voor de volledige grafieken en een tabel met alle sets. Tijdgebaseerde
+oefeningen tonen de langste set in plaats van gewicht.
+
+Zodra het silhouet uit beeld is, verschijnt rechtsonder een knop terug naar het
+totaaloverzicht.
+
+De sparklines zijn lijnen en geen staven: bij een lijn mag de as afgekapt worden, dus een
+stap van 12 naar 14 kg is zichtbaar. Bij staven zou dat de hoogte laten liegen. De precieze
+waarde staat als getal ernaast.
 
 De grafieken tonen één reeks in één kleur, zonder legenda — de titel zegt al wat er
 staat. De y-as begint bewust niet bij nul: bij een lijngrafiek is het verschil tussen
