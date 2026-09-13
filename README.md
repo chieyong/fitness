@@ -21,6 +21,7 @@ Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.
 | `npm run build` | productiebuild naar `dist/` |
 | `npm test` | tests van de datumlogica |
 | `npm run check` | controleert Supabase-verbinding, schema en seed |
+| `npm run smoke` | draait de datalaag tegen Supabase en print het schema |
 
 ## De planningsregel
 
@@ -54,3 +55,6 @@ niet-triviale stuk in fase 1, en dit maakt ze los testbaar.
 - Fase 2: sets/reps/gewicht loggen, met "vorige keer" als referentie
 - Fase 3–5: progressiegrafieken, spiergroep-visualisatie, AI-foto-feedback
 - Netlify-deploy (env-vars als build-secrets)
+
+Met `?date=2026-09-15` open je het scherm op een andere dag — handig om de
+doorschuiflogica te bekijken zonder te wachten.

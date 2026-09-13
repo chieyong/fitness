@@ -8,15 +8,29 @@ import ExerciseList from '../components/ExerciseList.jsx';
 import DateStepper from '../components/DateStepper.jsx';
 import './Today.css';
 
+/** ?date=2026-09-15 overschrijft de begindatum; ongeldige waarden negeren we. */
+function dateFromUrl() {
+  const value = new URLSearchParams(window.location.search).get('date');
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
 export default function Today() {
   const today = useMemo(() => todayISO(), []);
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(() => dateFromUrl() ?? today);
 
   const [templates, setTemplates] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [status, setStatus] = useState('laden');
   const [error, setError] = useState(null);
+
+  // De getoonde dag in de URL houden: deelbaar, en na een refresh blijf je staan.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (date === today) url.searchParams.delete('date');
+    else url.searchParams.set('date', date);
+    window.history.replaceState(null, '', url);
+  }, [date, today]);
 
   // Eenmalig: schema's en sessies ophalen, en het schema vooruit aanvullen.
   useEffect(() => {
