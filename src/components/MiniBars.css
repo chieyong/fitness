@@ -1,0 +1,11 @@
+.minibars { display: block; overflow: visible; }
+
+.minibars__bar { fill: #B3D1F5; }
+
+/* De laatste training is waar je nu staat; die krijgt de volle toon. */
+.minibars__bar--last { fill: var(--accent); }
+
+.minibars--empty {
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+}

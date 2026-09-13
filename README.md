@@ -70,6 +70,11 @@ verbonden", dan zijn ze niet meegekomen in de build.
 
 ## Loggen
 
+Oefeningen staan ingeklapt: een statusrondje, de naam en wat je vorige keer deed. Het
+rondje kent vier staten — open, bezig, klaar, overgeslagen — zodat "drie van de vier sets"
+zichtbaar anders is dan "nog niets". Tik een oefening aan om te loggen; er staat er één
+tegelijk open.
+
 Een sessie met status `gepland` is invulbaar: per set reps en gewicht (of seconden),
 met de vorige keer als referentie erboven. Een set wordt opgeslagen zodra het veld de
 focus verliest; leegmaken wist hem. Komma en punt zijn allebei een decimaalteken.
@@ -82,9 +87,14 @@ naar de volgende training.
 
 ## Voortgang
 
-Tik op een oefeningnaam in een sessie, of op "Voortgang" rechtsboven, voor de
-geschiedenis van die oefening: zwaarste set en volume per training, plus een tabel
-met alle sets. Tijdgebaseerde oefeningen tonen de langste set in plaats van gewicht.
+"Voortgang" opent met het lichaamssilhouet. Tik een spiergroep aan en de pagina springt
+naar de oefeningen die eraan bijdroegen; elke oefening toont staafjes per training, waar
+je nu staat en het verschil sinds de eerste keer. Tik de oefening aan voor de volledige
+grafieken: zwaarste set en volume over tijd, plus een tabel met alle sets.
+Tijdgebaseerde oefeningen tonen de langste set in plaats van gewicht.
+
+De staafjes beginnen bij nul, want bij staven liegt de hoogte anders. Het verschil tussen
+59 en 79 kg leest daardoor subtiel; het exacte verschil staat als getal ernaast.
 
 De grafieken tonen één reeks in één kleur, zonder legenda — de titel zegt al wat er
 staat. De y-as begint bewust niet bij nul: bij een lijngrafiek is het verschil tussen
@@ -94,10 +104,9 @@ zodat niets alleen achter een hover zit.
 
 ## Spiergroepen
 
-Via Voortgang → "Per spiergroep": een silhouet van voor- en achterkant waarin elke
-spiergroep gekleurd is naar hoe zwaar hij belast is. Klik een groep aan voor de
-oefeningen die eraan bijdroegen. Een gekozen groep staat in de URL (`?spieren=triceps`),
-dus een selectie is deelbaar.
+Het silhouet toont voor- en achterkant, waarin elke spiergroep gekleurd is naar hoe zwaar
+hij belast is. Een gekozen groep staat in de URL (`?voortgang=triceps`), dus een selectie
+is deelbaar en opent meteen op de juiste plek.
 
 **Sets is de standaardmaat, niet kilo's.** Volume in kg is binnen één oefening een
 prima maat voor vooruitgang, maar tussen spiergroepen misleidend: in de huidige data

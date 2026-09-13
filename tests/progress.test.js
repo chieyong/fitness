@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   lastPerformance, formatSets, bestSet, volume, setsFor, sessionDate,
-  seriesFor, trend, exerciseStatus,
+  seriesFor, trend, exerciseStatus, preferredMetric, chartPoints,
 } from '../src/lib/progress.js';
 
 const sessions = [
@@ -108,4 +108,29 @@ test('exerciseStatus onderscheidt open, bezig, klaar en overgeslagen', () => {
   assert.equal(exerciseStatus({ logged: set(3), targetSets: 3, skipped: false }), 'klaar');
   assert.equal(exerciseStatus({ logged: set(4), targetSets: 3, skipped: false }), 'klaar');
   assert.equal(exerciseStatus({ logged: set(3), targetSets: 3, skipped: true }), 'overgeslagen');
+});
+
+test('preferredMetric kiest gewicht, anders duur', () => {
+  assert.equal(preferredMetric([{ bestWeight: 20, bestSeconds: null }]), 'bestWeight');
+  assert.equal(preferredMetric([{ bestWeight: null, bestSeconds: 45 }]), 'bestSeconds');
+  assert.equal(preferredMetric([{ bestWeight: null, bestSeconds: null }]), null);
+  assert.equal(preferredMetric([]), null);
+});
+
+test('chartPoints levert punten met de juiste eenheid', () => {
+  const g = chartPoints([
+    { date: '2026-09-05', bestWeight: 14, bestSeconds: null },
+    { date: '2026-09-11', bestWeight: 16, bestSeconds: null },
+  ]);
+  assert.equal(g.unit, 'kg');
+  assert.deepEqual(g.points, [
+    { date: '2026-09-05', value: 14 },
+    { date: '2026-09-11', value: 16 },
+  ]);
+
+  const t = chartPoints([{ date: '2026-09-05', bestWeight: null, bestSeconds: 45 }]);
+  assert.equal(t.unit, 'sec');
+  assert.equal(t.points[0].value, 45);
+
+  assert.deepEqual(chartPoints([]), { points: [], unit: null });
 });

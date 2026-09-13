@@ -126,3 +126,23 @@ export function exerciseStatus({ logged, targetSets, skipped }) {
   if (done === 0) return 'open';
   return done >= targetSets ? 'klaar' : 'bezig';
 }
+
+/**
+ * Welke maat een oefening draagt: gewicht als dat gelogd is, anders duur.
+ * Een plank heeft geen kilo's, een bankdruk geen seconden.
+ */
+export function preferredMetric(series) {
+  if (series.some((p) => p.bestWeight != null)) return 'bestWeight';
+  if (series.some((p) => p.bestSeconds != null)) return 'bestSeconds';
+  return null;
+}
+
+/** De reeks als punten voor een grafiek, met de maat die erbij hoort. */
+export function chartPoints(series) {
+  const metric = preferredMetric(series);
+  if (!metric) return { points: [], unit: null };
+  return {
+    points: series.filter((p) => p[metric] != null).map((p) => ({ date: p.date, value: p[metric] })),
+    unit: metric === 'bestWeight' ? 'kg' : 'sec',
+  };
+}

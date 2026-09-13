@@ -1,12 +1,38 @@
-import { useEffect, useState } from 'react';
-import { fetchTemplates, fetchAllTemplateExercises } from '../lib/queries.js';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  muscleTotals, findMuscle, intensities, sortByMetric, busiestBy,
+} from '../lib/muscles.js';
+import { seriesFor, trend, chartPoints, preferredMetric } from '../lib/progress.js';
+import { muscleLabel, KNOWN_MUSCLES } from '../lib/muscleLabels.js';
+import { addDays, todayISO, formatDateShort } from '../lib/schedule.js';
+import { formatNumber } from '../lib/input.js';
+import { fetchAllExercises, fetchAllLogs, fetchSessions } from '../lib/queries.js';
+import BodyMap, { RampLegend } from '../components/BodyMap.jsx';
+import MiniBars from '../components/MiniBars.jsx';
 import './Progress.css';
 import './Exercise.css';
 
-/** Alle oefeningen per schema, als ingang naar hun voortgang. */
-export default function Progress({ onOpenExercise, onOpenBody, onBack }) {
-  const [templates, setTemplates] = useState([]);
-  const [items, setItems] = useState([]);
+const RANGES = [
+  { id: '30', label: '30 dagen', days: 30 },
+  { id: '90', label: '90 dagen', days: 90 },
+  { id: 'alles', label: 'Alles', days: null },
+];
+
+const METRICS = [
+  { id: 'sets', label: 'Sets', unit: '' },
+  { id: 'volume', label: 'Volume', unit: 'kg' },
+];
+
+export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBack }) {
+  const today = useMemo(() => todayISO(), []);
+  const [range, setRange] = useState('30');
+  const [metric, setMetric] = useState('sets');
+
+  const selected = muscle && muscle !== '1' ? muscle : null;
+
+  const [exercises, setExercises] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState('laden');
   const [error, setError] = useState(null);
 
@@ -14,9 +40,11 @@ export default function Progress({ onOpenExercise, onOpenBody, onBack }) {
     let cancelled = false;
     (async () => {
       try {
-        const [t, i] = await Promise.all([fetchTemplates(), fetchAllTemplateExercises()]);
+        const [ex, ses, lg] = await Promise.all([
+          fetchAllExercises(), fetchSessions(), fetchAllLogs(),
+        ]);
         if (cancelled) return;
-        setTemplates(t); setItems(i); setStatus('klaar');
+        setExercises(ex); setSessions(ses); setLogs(lg); setStatus('klaar');
       } catch (e) {
         if (!cancelled) { setError(e.message); setStatus('fout'); }
       }
@@ -24,7 +52,47 @@ export default function Progress({ onOpenExercise, onOpenBody, onBack }) {
     return () => { cancelled = true; };
   }, []);
 
+  const days = RANGES.find((r) => r.id === range)?.days ?? null;
+  const from = days ? addDays(today, -days) : null;
+
+  const totals = useMemo(
+    () => muscleTotals(logs, sessions, exercises, from ? { from } : {}),
+    [logs, sessions, exercises, from],
+  );
+
+  const intensity = useMemo(() => intensities(totals, metric), [totals, metric]);
+  const ranked = useMemo(() => sortByMetric(totals, metric), [totals, metric]);
+  const busiest = busiestBy(totals, metric);
+  const unit = METRICS.find((m) => m.id === metric)?.unit ?? '';
+
+  const valueOf = (m) => {
+    const t = findMuscle(totals, m);
+    const n = t ? (metric === 'sets' ? t.sets : Math.round(t.volume)) : 0;
+    return `${formatNumber(n)}${unit ? ` ${unit}` : ' sets'}`;
+  };
+
+  // Klikken op een spiergroep brengt je naar de oefeningen die eraan bijdroegen.
+  const select = (m) => {
+    const next = m === selected ? null : m;
+    onSelectMuscle(next);
+    if (!next) return;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`spier-${next}`);
+      if (!el) return;
+      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    });
+  };
+
+  useEffect(() => {
+    if (status !== 'klaar' || !selected) return;
+    const el = document.getElementById(`spier-${selected}`);
+    el?.scrollIntoView({ block: 'start' });
+  }, [status]);
+
   if (status === 'laden') return <main className="page" />;
+
+  const offBody = totals.filter((t) => !KNOWN_MUSCLES.includes(t.muscle));
 
   return (
     <main className="page">
@@ -37,30 +105,127 @@ export default function Progress({ onOpenExercise, onOpenBody, onBack }) {
       </button>
 
       <h1 className="exercise__title">Voortgang</h1>
-      <button type="button" className="progress__link" onClick={onOpenBody}>
-        Per spiergroep
-      </button>
       {error && <p className="exercise__meta">{error}</p>}
 
-      {templates.map((t) => (
-        <section key={t.id} className="group">
-          <h2 className="group__heading">{t.label}</h2>
-          <ul className="group__list">
-            {items
-              .filter((i) => i.template_id === t.id)
-              .sort((a, b) => a.position - b.position)
-              .map((i) => (
-                <li key={i.exercise_id}>
-                  <button type="button" className="group__item"
-                    onClick={() => onOpenExercise(i.exercise_id)}>
-                    <span>{i.exercise.name}</span>
-                    <span className="group__muscles">{i.exercise.muscle_groups.join(', ')}</span>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </section>
-      ))}
+      <div className="filters">
+        <Segmented options={RANGES} value={range} onChange={setRange} label="Periode" />
+        <Segmented options={METRICS} value={metric} onChange={setMetric} label="Maat" />
+      </div>
+
+      {metric === 'volume' && (
+        <p className="body__caveat">
+          Volume in kilo's is goed te vergelijken binnen één oefening, maar niet
+          tussen spiergroepen: een beenpers verplaatst meer gewicht dan een curl
+          door anatomie, niet door inspanning. Sets geven een eerlijker beeld.
+        </p>
+      )}
+
+      {totals.length === 0 ? (
+        <p className="exercise__empty">
+          Nog niets gelogd in deze periode{from && <> (sinds {formatDateShort(from)})</>}.
+        </p>
+      ) : (
+        <>
+          <BodyMap intensity={intensity} selected={selected}
+            onSelect={select} valueLabel={valueOf} />
+          <RampLegend
+            maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle)})` : ''} />
+          <p className="body__hint">Tik een spiergroep aan om naar de oefeningen te springen.</p>
+
+          {ranked.map((t) => (
+            <MuscleSection
+              key={t.muscle}
+              total={t}
+              metric={metric}
+              selected={t.muscle === selected}
+              onSelect={() => select(t.muscle)}
+              logs={logs}
+              sessions={sessions}
+              onOpenExercise={onOpenExercise}
+            />
+          ))}
+
+          {offBody.length > 0 && (
+            <p className="body__hint">
+              Niet op het silhouet: {offBody.map((t) => muscleLabel(t.muscle)).join(', ')}.
+            </p>
+          )}
+        </>
+      )}
     </main>
+  );
+}
+
+function MuscleSection({ total, metric, selected, onSelect, logs, sessions, onOpenExercise }) {
+  const value = metric === 'sets'
+    ? `${total.sets} sets`
+    : `${formatNumber(Math.round(total.volume))} kg`;
+
+  return (
+    <section id={`spier-${total.muscle}`}
+      className={`muscle${selected ? ' muscle--selected' : ''}`}>
+      <button type="button" className="muscle__head" onClick={onSelect}
+        aria-pressed={selected}>
+        <span className="muscle__name">{muscleLabel(total.muscle)}</span>
+        <span className="muscle__value">{value}</span>
+      </button>
+
+      <ul className="muscle__list">
+        {total.byExercise.map((e) => (
+          <ExerciseLine key={e.exerciseId} entry={e}
+            logs={logs} sessions={sessions} onOpen={() => onOpenExercise(e.exerciseId)} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ExerciseLine({ entry, logs, sessions, onOpen }) {
+  const series = useMemo(
+    () => seriesFor(logs, sessions, entry.exerciseId),
+    [logs, sessions, entry.exerciseId],
+  );
+  const { points, unit } = chartPoints(series);
+  const metric = preferredMetric(series);
+  const delta = metric ? trend(series.filter((p) => p[metric] != null), metric) : null;
+  const latest = points[points.length - 1] ?? null;
+
+  return (
+    <li>
+      <button type="button" className="line" onClick={onOpen}>
+        <span className="line__main">
+          <span className="line__name">{entry.name}</span>
+          <span className="line__meta">
+            {entry.sets} sets · {formatNumber(Math.round(entry.volume))} kg
+          </span>
+        </span>
+
+        <MiniBars points={points} formatValue={(v) => `${formatNumber(v)} ${unit ?? ''}`} />
+
+        <span className="line__now">
+          {latest && <span className="line__value">{formatNumber(latest.value)} {unit}</span>}
+          {delta != null && delta !== 0 && (
+            <span className={`line__delta${delta > 0 ? ' line__delta--up' : ''}`}>
+              {delta > 0 ? '+' : ''}{formatNumber(delta)}
+            </span>
+          )}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function Segmented({ options, value, onChange, label }) {
+  return (
+    <div className="segmented" role="group" aria-label={label}>
+      {options.map((o) => (
+        <button key={o.id} type="button"
+          className={`segmented__item${value === o.id ? ' segmented__item--on' : ''}`}
+          aria-pressed={value === o.id}
+          onClick={() => onChange(o.id)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }

@@ -1,40 +1,130 @@
-.group { margin-top: var(--space-6); }
-
-.group__heading {
-  font-size: var(--text-small);
-  font-weight: 400;
-  color: var(--ink-tertiary);
-  margin-bottom: var(--space-2);
+/* Filters in één rij boven alles wat ze beïnvloeden. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: var(--space-5) 0 var(--space-4);
 }
 
-.group__list {
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--hairline);
+  border-radius: 980px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.segmented__item {
+  font-size: var(--text-small);
+  color: var(--ink-secondary);
+  padding: var(--space-2) var(--space-4);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.segmented__item + .segmented__item { border-left: 1px solid var(--hairline); }
+.segmented__item--on { background: var(--accent); color: #fff; }
+
+.body__caveat {
+  font-size: var(--text-small);
+  color: var(--ink-secondary);
+  max-width: 34em;
+  margin-bottom: var(--space-3);
+}
+
+.body__hint {
+  margin-top: var(--space-3);
+  font-size: var(--text-small);
+  color: var(--ink-tertiary);
+  max-width: 34em;
+}
+
+/* Eén blok per spiergroep; het anker waar het silhouet naartoe scrollt. */
+.muscle {
+  margin-top: var(--space-6);
+  scroll-margin-top: var(--space-5);
+}
+
+.muscle__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.muscle__name {
+  font-size: var(--text-title);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.muscle--selected .muscle__name { color: var(--accent); }
+
+.muscle__value {
+  font-size: var(--text-small);
+  color: var(--ink-tertiary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.muscle__list {
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid var(--hairline);
 }
 
-.group__item {
+/* Oefeningregel: naam, staafjes per training, waar je nu staat. */
+.line {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: center;
+  gap: var(--space-4);
   width: 100%;
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--hairline);
+  text-align: left;
   transition: color 120ms ease;
 }
 
-.group__item:hover { color: var(--accent); }
+.line:hover .line__name { color: var(--accent); }
 
-.group__muscles {
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
+.line__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+
+.line__name {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: color 120ms ease;
 }
 
-.progress__link {
-  display: inline-block;
-  margin-top: var(--space-3);
-  color: var(--accent);
-  font-size: var(--text-small);
+.line__meta {
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.line__now {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 4.5em;
+}
+
+.line__value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.line__delta {
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.line__delta--up { color: var(--accent); }
+
+@media (max-width: 480px) {
+  .line { gap: var(--space-3); }
+  .line__now { min-width: 3.8em; }
 }
