@@ -8,7 +8,7 @@
 --   - Triceps pushdown 5/9: komma als decimaalteken, dus 22,5 = 22.5 kg en 20,3 = 20.3 kg (ook "20.3" komt voor).
 --   - Hanging leg raises heeft geen target in de bron; voorlopig 3x15 aangehouden.
 --   - Plank en Hanging leg raises zijn op 13/9 niet genoemd: geen regel aangemaakt (niet als overgeslagen geteld).
---   - Schouderpers komt in Workout A en C voor en is één oefening: de logs van beide dagen lopen door in dezelfde reeks.
+--   - Schouderpers (A en C), Beenpers of squats (A en B) en Gebogen rij (A en C) zijn telkens één oefening die in meerdere schema's terugkomt; de logs vormen per oefening één doorlopende reeks. Targets mogen per schema verschillen.
 --   - Oefeningen met "X of Y" zijn als één oefening bewaard, zodat de loggeschiedenis aaneengesloten blijft.
 --   - Video-URLs voor Gebogen rij staan niet in de bron en zijn leeggelaten.
 
@@ -23,14 +23,13 @@ delete from workout_templates;
 
 insert into exercises (name, muscle_groups, notes) values
   ('Bankdrukken', array['borst', 'triceps'], 'Barbell of dumbbell'),
-  ('Gebogen rij', array['rug', 'biceps'], 'Barbell of dumbbell; twee uitvoeringen (version 1 / version 2)'),
+  ('Gebogen rij', array['rug', 'biceps'], 'Barbell, dumbbell of cable; twee uitvoeringen (version 1 / version 2). Komt terug in Workout C'),
   ('Schouderpers', array['schouders', 'triceps'], 'Barbell of dumbbell; komt terug in Workout C'),
-  ('Beenpers of squats', array['benen', 'bilspieren'], null),
+  ('Beenpers of squats', array['benen', 'bilspieren'], 'Komt terug in Workout B'),
   ('Bicepscurls', array['biceps'], null),
   ('Triceps pushdown of dips', array['triceps'], null),
   ('Plank', array['core'], null),
   ('Hanging leg raises of buikspier crunch', array['core'], null),
-  ('Squats of legpress', array['benen', 'bilspieren'], null),
   ('Lat pulldown of pull-ups', array['rug', 'biceps'], null),
   ('Incline dumbbell press', array['borst', 'schouders', 'triceps'], null),
   ('Romanian deadlift', array['hamstrings', 'rug'], null),
@@ -39,7 +38,6 @@ insert into exercises (name, muscle_groups, notes) values
   ('Russian twists', array['core'], null),
   ('Cable woodchoppers of side plank', array['core'], null),
   ('Deadlifts', array['rug', 'hamstrings', 'bilspieren'], null),
-  ('Rij (cable of dumbbell)', array['rug', 'biceps'], null),
   ('Uitvalspassen', array['benen', 'bilspieren'], null),
   ('Concentration curls', array['biceps'], null),
   ('Close-grip bankdrukken', array['triceps', 'borst'], 'Ook met dumbbells'),
@@ -71,7 +69,7 @@ join workout_templates t on t.label = 'Workout A';
 insert into template_exercises (template_id, exercise_id, position, target_sets, target_reps_min, target_reps_max, target_seconds, target_seconds_max, target_note)
 select t.id, e.id, v.position, v.sets, v.reps_min, v.reps_max, v.seconds, v.seconds_max, v.target_note
 from (values
-  ('Squats of legpress', 1, 4, 8::int, 10::int, null::int, null::int, null::text),
+  ('Beenpers of squats', 1, 4, 8::int, 10::int, null::int, null::int, null::text),
   ('Lat pulldown of pull-ups', 2, 4, 8::int, 10::int, null::int, null::int, null::text),
   ('Incline dumbbell press', 3, 3, 10::int, null::int, null::int, null::int, null::text),
   ('Romanian deadlift', 4, 3, 10::int, null::int, null::int, null::int, null::text),
@@ -89,7 +87,7 @@ select t.id, e.id, v.position, v.sets, v.reps_min, v.reps_max, v.seconds, v.seco
 from (values
   ('Deadlifts', 1, 4, 6::int, 8::int, null::int, null::int, null::text),
   ('Schouderpers', 2, 3, 10::int, null::int, null::int, null::int, null::text),
-  ('Rij (cable of dumbbell)', 3, 3, 10::int, null::int, null::int, null::int, null::text),
+  ('Gebogen rij', 3, 3, 10::int, null::int, null::int, null::int, null::text),
   ('Uitvalspassen', 4, 3, 12::int, null::int, null::int, null::int, 'per been'::text),
   ('Concentration curls', 5, 3, 12::int, null::int, null::int, null::int, null::text),
   ('Close-grip bankdrukken', 6, 3, 10::int, null::int, null::int, null::int, null::text),
@@ -112,9 +110,9 @@ from (values
   ('Schouderpers', 2, 7::int, 14::numeric, false, null::text),
   ('Schouderpers', 3, 7::int, 12::numeric, false, null::text),
   ('Schouderpers', 4, 8::int, 12::numeric, false, null::text),
-  ('Rij (cable of dumbbell)', 1, 10::int, 10::numeric, false, null::text),
-  ('Rij (cable of dumbbell)', 2, 10::int, 12::numeric, false, null::text),
-  ('Rij (cable of dumbbell)', 3, 10::int, 14::numeric, false, null::text),
+  ('Gebogen rij', 1, 10::int, 10::numeric, false, null::text),
+  ('Gebogen rij', 2, 10::int, 12::numeric, false, null::text),
+  ('Gebogen rij', 3, 10::int, 14::numeric, false, null::text),
   ('Uitvalspassen', 1, null::int, null::numeric, true, null::text),
   ('Concentration curls', 1, 10::int, 12::numeric, false, null::text),
   ('Concentration curls', 2, 8::int, 12::numeric, false, null::text),
@@ -170,9 +168,9 @@ select id, '2026-09-08', '2026-09-08', 'voltooid' from workout_templates where l
 insert into exercise_logs (session_id, exercise_id, set_number, reps, weight_kg, skipped, note)
 select s.id, e.id, v.set_number, v.reps, v.weight_kg, v.skipped, v.note
 from (values
-  ('Squats of legpress', 1, 10::int, 73::numeric, false, null::text),
-  ('Squats of legpress', 2, 10::int, 73::numeric, false, null::text),
-  ('Squats of legpress', 3, 10::int, 73::numeric, false, null::text),
+  ('Beenpers of squats', 1, 10::int, 73::numeric, false, null::text),
+  ('Beenpers of squats', 2, 10::int, 73::numeric, false, null::text),
+  ('Beenpers of squats', 3, 10::int, 73::numeric, false, null::text),
   ('Lat pulldown of pull-ups', 1, 6::int, 59::numeric, false, null::text),
   ('Lat pulldown of pull-ups', 2, 8::int, 52::numeric, false, null::text),
   ('Lat pulldown of pull-ups', 3, 8::int, 52::numeric, false, null::text),
@@ -205,9 +203,9 @@ from (values
   ('Deadlifts', 1, null::int, null::numeric, true, null::text),
   ('Schouderpers', 1, 10::int, 14::numeric, false, null::text),
   ('Schouderpers', 2, 10::int, 14::numeric, false, null::text),
-  ('Rij (cable of dumbbell)', 1, 10::int, 14::numeric, false, null::text),
-  ('Rij (cable of dumbbell)', 2, 10::int, 16::numeric, false, null::text),
-  ('Rij (cable of dumbbell)', 3, 10::int, 18::numeric, false, null::text),
+  ('Gebogen rij', 1, 10::int, 14::numeric, false, null::text),
+  ('Gebogen rij', 2, 10::int, 16::numeric, false, null::text),
+  ('Gebogen rij', 3, 10::int, 18::numeric, false, null::text),
   ('Uitvalspassen', 1, null::int, null::numeric, true, null::text),
   ('Concentration curls', 1, 10::int, 12::numeric, false, null::text),
   ('Concentration curls', 2, 10::int, 12::numeric, false, null::text),

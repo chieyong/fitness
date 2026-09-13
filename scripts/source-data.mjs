@@ -16,10 +16,11 @@ export const templates = [
       { name: 'Bankdrukken', muscles: ['borst', 'triceps'], sets: 4, reps: 10,
         notes: 'Barbell of dumbbell' },
       { name: 'Gebogen rij', muscles: ['rug', 'biceps'], sets: 4, reps: 8,
-        notes: 'Barbell of dumbbell; twee uitvoeringen (version 1 / version 2)' },
+        notes: 'Barbell, dumbbell of cable; twee uitvoeringen (version 1 / version 2). Komt terug in Workout C' },
       { name: 'Schouderpers', muscles: ['schouders', 'triceps'], sets: 3, reps: 10,
         notes: 'Barbell of dumbbell; komt terug in Workout C' },
-      { name: 'Beenpers of squats', muscles: ['benen', 'bilspieren'], sets: 3, reps: 10 },
+      { name: 'Beenpers of squats', muscles: ['benen', 'bilspieren'], sets: 3, reps: 10,
+        notes: 'Komt terug in Workout B' },
       { name: 'Bicepscurls', muscles: ['biceps'], sets: 3, reps: 12 },
       { name: 'Triceps pushdown of dips', muscles: ['triceps'], sets: 3, reps: 12 },
       { name: 'Plank', muscles: ['core'], sets: 3, seconds: 30, secondsMax: 45 },
@@ -30,7 +31,7 @@ export const templates = [
     label: 'Workout B',
     position: 1,
     exercises: [
-      { name: 'Squats of legpress', muscles: ['benen', 'bilspieren'], sets: 4, reps: 8, repsMax: 10 },
+      { name: 'Beenpers of squats', muscles: ['benen', 'bilspieren'], sets: 4, reps: 8, repsMax: 10 },
       { name: 'Lat pulldown of pull-ups', muscles: ['rug', 'biceps'], sets: 4, reps: 8, repsMax: 10 },
       { name: 'Incline dumbbell press', muscles: ['borst', 'schouders', 'triceps'], sets: 3, reps: 10 },
       { name: 'Romanian deadlift', muscles: ['hamstrings', 'rug'], sets: 3, reps: 10 },
@@ -47,7 +48,7 @@ export const templates = [
     exercises: [
       { name: 'Deadlifts', muscles: ['rug', 'hamstrings', 'bilspieren'], sets: 4, reps: 6, repsMax: 8 },
       { name: 'Schouderpers', muscles: ['schouders', 'triceps'], sets: 3, reps: 10 },
-      { name: 'Rij (cable of dumbbell)', muscles: ['rug', 'biceps'], sets: 3, reps: 10 },
+      { name: 'Gebogen rij', muscles: ['rug', 'biceps'], sets: 3, reps: 10 },
       { name: 'Uitvalspassen', muscles: ['benen', 'bilspieren'], sets: 3, reps: 12,
         targetNote: 'per been' },
       { name: 'Concentration curls', muscles: ['biceps'], sets: 3, reps: 12 },
@@ -68,7 +69,7 @@ export const history = [
     logs: {
       'Deadlifts': SKIP,
       'Schouderpers': [[10, 12], [7, 14], [7, 12], [8, 12]],
-      'Rij (cable of dumbbell)': [[10, 10], [10, 12], [10, 14]],
+      'Gebogen rij': [[10, 10], [10, 12], [10, 14]],
       'Uitvalspassen': SKIP,
       'Concentration curls': [[10, 12], [8, 12], [10, 10]],
       'Close-grip bankdrukken': [[10, 10], [10, 12], [10, 12]],
@@ -92,7 +93,7 @@ export const history = [
   {
     date: '2026-09-08', template: 'Workout B',
     logs: {
-      'Squats of legpress': [[10, 73], [10, 73], [10, 73]],
+      'Beenpers of squats': [[10, 73], [10, 73], [10, 73]],
       'Lat pulldown of pull-ups': [[6, 59], [8, 52], [8, 52], [8, 52]],
       'Incline dumbbell press': [[10, 12], [10, 14], [10, 14], [8, 14]],
       'Romanian deadlift': SKIP,
@@ -107,7 +108,7 @@ export const history = [
     logs: {
       'Deadlifts': SKIP,
       'Schouderpers': [[10, 14], [10, 14]],
-      'Rij (cable of dumbbell)': [[10, 14], [10, 16], [10, 18]],
+      'Gebogen rij': [[10, 14], [10, 16], [10, 18]],
       'Uitvalspassen': SKIP,
       'Concentration curls': [[10, 12], [10, 12]],
       'Close-grip bankdrukken': [[10, 14], [10, 14], [10, 14]],
@@ -138,7 +139,7 @@ export const ASSUMPTIONS = [
   'Triceps pushdown 5/9: komma als decimaalteken, dus 22,5 = 22.5 kg en 20,3 = 20.3 kg (ook "20.3" komt voor).',
   'Hanging leg raises heeft geen target in de bron; voorlopig 3x15 aangehouden.',
   'Plank en Hanging leg raises zijn op 13/9 niet genoemd: geen regel aangemaakt (niet als overgeslagen geteld).',
-  'Schouderpers komt in Workout A en C voor en is één oefening: de logs van beide dagen lopen door in dezelfde reeks.',
+  'Schouderpers (A en C), Beenpers of squats (A en B) en Gebogen rij (A en C) zijn telkens één oefening die in meerdere schema\'s terugkomt; de logs vormen per oefening één doorlopende reeks. Targets mogen per schema verschillen.',
   'Oefeningen met "X of Y" zijn als één oefening bewaard, zodat de loggeschiedenis aaneengesloten blijft.',
   'Video-URLs voor Gebogen rij staan niet in de bron en zijn leeggelaten.',
 ];
