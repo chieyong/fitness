@@ -7,7 +7,7 @@ import { formatDateShort } from '../src/lib/schedule.js';
 
 const { data: sessions, error } = await supabase
   .from('sessions')
-  .select('id, planned_date, actual_date, status, notes, template:workout_templates(label)')
+  .select('id, template_id, planned_date, actual_date, status, notes, template:workout_templates(label)')
   .order('planned_date');
 
 if (error) { console.error(error.message); process.exit(1); }
@@ -16,6 +16,14 @@ const { data: logs } = await supabase
   .from('exercise_logs')
   .select('session_id, set_number, reps, weight_kg, seconds, skipped, note, exercise:exercises(name)')
   .order('set_number');
+
+// De volgorde binnen een schema staat in template_exercises, niet in de logs.
+const { data: order } = await supabase
+  .from('template_exercises')
+  .select('position, template_id, exercise:exercises(name)');
+
+const positionIn = (templateId, name) =>
+  order.find((o) => o.template_id === templateId && o.exercise?.name === name)?.position ?? 99;
 
 let setCount = 0;
 let skipCount = 0;
@@ -34,7 +42,11 @@ for (const s of sessions) {
     byExercise.get(name).push(l);
   }
 
-  for (const [name, rows] of byExercise) {
+  const inOrder = [...byExercise.entries()].sort(
+    (a, b) => positionIn(s.template_id, a[0]) - positionIn(s.template_id, b[0]),
+  );
+
+  for (const [name, rows] of inOrder) {
     if (rows[0].skipped) {
       console.log(`  ${name.padEnd(46)} \x1b[2mniet gedaan\x1b[0m`);
       skipCount += 1;
