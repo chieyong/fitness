@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { seriesFor, trend, formatSets } from '../lib/progress.js';
 import { formatDateShort, formatTarget } from '../lib/schedule.js';
 import { formatNumber } from '../lib/input.js';
+import { muscleLabel } from '../lib/muscleLabels.js';
 import {
   fetchExercise, fetchExerciseTemplates, fetchSessions, fetchLogsForExercises,
 } from '../lib/queries.js';
@@ -78,7 +79,7 @@ export default function Exercise({ exerciseId, onBack }) {
 
       <h1 className="exercise__title">{exercise.name}</h1>
       <p className="exercise__meta">
-        {exercise.muscle_groups.join(', ')}
+        {exercise.muscle_groups.map(muscleLabel).join(', ')}
         {inTemplates.length > 0 && ` · ${inTemplates.map((t) => t.template.label).join(', ')}`}
       </p>
       {exercise.notes && <p className="exercise__notes">{exercise.notes}</p>}

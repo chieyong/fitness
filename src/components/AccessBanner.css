@@ -1,0 +1,32 @@
+.banner {
+  background: #EBEBF0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.banner__inner {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--text-micro);
+  color: var(--ink-secondary);
+}
+
+.banner__account {
+  display: block;
+  color: var(--ink-tertiary);
+}
+
+.banner__action {
+  color: var(--accent);
+  font-size: var(--text-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .banner__inner { padding: var(--space-2) var(--space-4); }
+}

@@ -1,0 +1,55 @@
+.login { padding-top: 18vh; }
+
+.login__title {
+  font-size: 2.5rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.login__lead {
+  margin-top: var(--space-3);
+  color: var(--ink-secondary);
+  max-width: 26em;
+}
+
+/* Google schrijft een witte knop met grijze rand voor; die past hier ook. */
+.login__google {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 980px;
+  font-weight: 500;
+  transition: border-color 120ms ease;
+}
+
+.login__google:hover { border-color: var(--ink-tertiary); }
+
+.login__error {
+  margin-top: var(--space-3);
+  font-size: var(--text-small);
+  color: #B3261E;
+  max-width: 30em;
+}
+
+.login__demo {
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hairline);
+  max-width: 30em;
+}
+
+.login__demo-button {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.login__demo-note {
+  margin-top: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--ink-tertiary);
+}

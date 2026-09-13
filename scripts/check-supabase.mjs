@@ -28,19 +28,24 @@ try {
 }
 
 const url = env.VITE_SUPABASE_URL;
-const key = env.VITE_SUPABASE_ANON_KEY;
+const anonKey = env.VITE_SUPABASE_ANON_KEY;
+// Na migratie 003 ziet de anon-sleutel niets meer; beheer gaat via service-role.
+const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+const key = serviceKey || anonKey;
 
 console.log('\nEnv');
 if (!url || url.includes('jouwproject')) {
   bad('VITE_SUPABASE_URL ontbreekt of is nog de voorbeeldwaarde');
   process.exit(1);
 }
-if (!key || key === 'eyJ...') {
+if (!anonKey || anonKey === 'eyJ...') {
   bad('VITE_SUPABASE_ANON_KEY ontbreekt of is nog de voorbeeldwaarde');
   process.exit(1);
 }
 ok(`URL ${url}`);
-ok(`anon key ${key.slice(0, 8)}…${key.slice(-4)}`);
+ok(`anon key ${anonKey.slice(0, 8)}…${anonKey.slice(-4)}`);
+if (serviceKey) ok('service-role-sleutel gevonden: controle loopt langs de toegangsregels heen');
+else console.log('  - geen SUPABASE_SERVICE_ROLE_KEY: na migratie 003 ziet deze controle geen rijen');
 
 const supabase = createClient(url, key);
 
@@ -69,7 +74,9 @@ const { data: templates } = await supabase
   .order('position');
 
 if (!templates?.length) {
-  bad('Geen workout-templates', 'Draai supabase/seed.sql in de SQL-editor.');
+  bad('Geen workout-templates', serviceKey
+    ? 'Draai supabase/seed.sql in de SQL-editor.'
+    : 'Leeg met de anon-sleutel kan ook betekenen dat de toegangsregels werken. Zet SUPABASE_SERVICE_ROLE_KEY in .env om echt te controleren.');
   process.exit(1);
 }
 for (const t of templates) {

@@ -15,6 +15,8 @@ spiergroep-aggregatie op een lichaamssilhouet. Nog geen foto-feedback.
 4. `npm install` en dan `npm run check` — dat controleert env, tabellen en seed in één keer.
 5. `npm run dev`
 
+Zonder `.env` draait de app ook: dan alleen met demo-gegevens.
+
 ## Commando's
 
 | | |
@@ -52,6 +54,55 @@ tests/                tests op schedule.js
 
 `schedule.js` is bewust vrij van React en Supabase: de doorschuifregels zijn het enige
 niet-triviale stuk in fase 1, en dit maakt ze los testbaar.
+
+## Inloggen en demo
+
+Wie de app opent zonder in te loggen, krijgt een inlogscherm met twee keuzes: inloggen
+met Google of de demo bekijken. De demo is een half jaar aan voorbeeldtrainingen volgens
+het echte programma, gemaakt in de browser zelf (`src/lib/demo/generate.js`, met vaste
+seed). Loggen werkt in de demo gewoon, maar niets gaat naar de database; na herladen
+staat alles weer op de voorbeeldgegevens.
+
+Na inloggen beslist de **database** wie de echte gegevens ziet, niet de app: de functie
+`is_owner()` kijkt of het Google-adres in de tabel `app_owners` staat, en de policies op
+alle tabellen laten alleen die gebruiker door. Anoniem krijgt niets. Een ander
+Google-account kan inloggen, maar ziet de demo met een melding dat het geen toegang heeft.
+Bij twijfel — de controle mislukt — toont de app ook de demo: liever te weinig dan te veel.
+
+Het eigenaarsadres staat bewust niet in de repository. Je voegt het één keer toe in de
+SQL-editor.
+
+Schermen weten niet met welke bron ze praten: `src/lib/queries.js` stuurt elke aanroep
+door naar `sources/supabase.js` of `sources/demo.js`, en een test bewaakt dat die twee
+precies dezelfde functies hebben.
+
+### Google-login instellen
+
+1. **Google Cloud Console** → APIs & Services → OAuth consent screen: stel het scherm in.
+   Daarna Credentials → Create credentials → OAuth client ID → *Web application*.
+   - Authorized JavaScript origins: je Netlify-adres en `http://localhost:5173`
+   - Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+2. **Supabase** → Authentication → Sign In / Providers → Google: aanzetten, Client ID en
+   Client Secret uit stap 1 invullen.
+3. **Supabase** → Authentication → URL Configuration: Site URL is je Netlify-adres; zet
+   bij Redirect URLs zowel dat adres als `http://localhost:5173`.
+
+### Volgorde bij het live zetten
+
+1. Google en Supabase instellen zoals hierboven — de huidige app merkt daar niets van.
+2. Deze code deployen. Tot stap 3 ziet ook de eigenaar na inloggen nog de demo, want
+   `is_owner()` bestaat dan nog niet en de app valt veilig terug.
+3. `supabase/migrations/003_owner_access.sql` draaien, en direct daarna:
+   `insert into public.app_owners (email) values ('jouw-adres@gmail.com');`
+4. Inloggen.
+
+### Beheerscripts
+
+`npm run check`, `smoke` en `history` gebruikten de anon-sleutel, en die ziet na migratie
+003 niets meer. Zet daarom `SUPABASE_SERVICE_ROLE_KEY` in je lokale `.env` (Supabase →
+Project Settings → API). Die sleutel omzeilt alle toegangsregels: nooit met `VITE_` ervoor,
+nooit in Netlify, nooit committen. De app zelf gebruikt hem niet; Vite geeft alleen
+`VITE_`-variabelen door aan de browser.
 
 ## Deploy (Netlify)
 
@@ -142,10 +193,6 @@ gebruiken, anders kleurt het silhouet niets.
 
 ## Nog te doen
 
-- **Beveiliging.** De RLS-policies staan op `using (true)` voor `anon`, en de anon-sleutel
-  zit in de client-bundel. Op een publieke Netlify-URL betekent dat: iedereen die het adres
-  kent kan de trainingsdata lezen en wijzigen. Bewust uitgesteld, niet vergeten. De oplossing
-  is Supabase Auth (single user) plus policies op `auth.uid()`.
 - Fase 5: AI-feedback op voortgangsfoto's
 - Target voor "Hanging leg raises of buikspier crunch" staat op 3x15; die kwam niet uit
   de bron en is een plaatshouder.

@@ -70,13 +70,37 @@ create index if not exists exercise_logs_exercise_idx on exercise_logs (exercise
 create unique index if not exists exercise_logs_unique_set
   on exercise_logs (session_id, exercise_id, set_number);
 
--- Single-user app: RLS aan, anon mag alles. Bij meerdere gebruikers vervang je dit
--- door policies op auth.uid(); daar is het datamodel nu nog niet op ingericht.
+-- Toegang: RLS aan op alles, en alleen de eigenaar (zie app_owners) mag erbij.
+-- Anoniem krijgt niets; de app toont dan demo-data uit de browser.
 alter table exercises enable row level security;
 alter table workout_templates enable row level security;
 alter table template_exercises enable row level security;
 alter table sessions enable row level security;
 alter table exercise_logs enable row level security;
+
+create table if not exists public.app_owners (
+  email text primary key
+);
+
+-- Niemand leest deze tabel rechtstreeks; alleen is_owner() hieronder.
+alter table public.app_owners enable row level security;
+
+-- security definer: de functie mag app_owners lezen, de aanroeper niet.
+create or replace function public.is_owner()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.app_owners
+    where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+$$;
+
+revoke all on function public.is_owner() from public;
+grant execute on function public.is_owner() to anon, authenticated;
 
 do $$
 declare t text;
@@ -84,6 +108,13 @@ begin
   foreach t in array array['exercises','workout_templates','template_exercises','sessions','exercise_logs']
   loop
     execute format('drop policy if exists %I on %I', t || '_anon_all', t);
-    execute format('create policy %I on %I for all using (true) with check (true)', t || '_anon_all', t);
+    execute format('drop policy if exists %I on %I', t || '_owner_all', t);
+    execute format(
+      'create policy %I on %I for all to authenticated using (public.is_owner()) with check (public.is_owner())',
+      t || '_owner_all', t
+    );
   end loop;
 end $$;
+
+-- Daarna, met je eigen Google-adres (niet committen):
+--   insert into public.app_owners (email) values ('jouw-adres@gmail.com');

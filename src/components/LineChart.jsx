@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { niceDomain, ticksFor, project } from '../lib/chart.js';
 import { formatDateShort } from '../lib/schedule.js';
 import './LineChart.css';
@@ -6,12 +6,17 @@ import './LineChart.css';
 const PAD = { top: 16, right: 16, bottom: 26, left: 40 };
 const HEIGHT = 170;
 
-/** Breedte van de container volgen, zodat de tekst niet meeschaalt met de SVG. */
+/**
+ * Breedte van de container volgen, zodat de tekst niet meeschaalt met de SVG.
+ * Eerst direct meten, vóór het tekenen: wachten op de ResizeObserver liet de
+ * grafiek even leeg staan, en in sommige omgevingen bleef dat event uit.
+ */
 function useWidth(ref) {
   const [width, setWidth] = useState(0);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return undefined;
+    setWidth(el.getBoundingClientRect().width);
     const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
     ro.observe(el);
     return () => ro.disconnect();
