@@ -86,7 +86,8 @@ naar de volgende training.
   kent kan de trainingsdata lezen en wijzigen. Bewust uitgesteld, niet vergeten. De oplossing
   is Supabase Auth (single user) plus policies op `auth.uid()`.
 - Fase 3–5: progressiegrafieken, spiergroep-visualisatie, AI-foto-feedback
-- Netlify-deploy (env-vars als build-secrets)
+- Target voor "Hanging leg raises of buikspier crunch" staat op 3x15; die kwam niet uit
+  de bron en is een plaatshouder.
 
 Met `?date=2026-09-15` open je het scherm op een andere dag — handig om de
 doorschuiflogica te bekijken zonder te wachten.
