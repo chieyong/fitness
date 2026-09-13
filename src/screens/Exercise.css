@@ -1,0 +1,111 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--accent);
+  font-size: var(--text-small);
+  margin-bottom: var(--space-6);
+}
+
+.exercise__title {
+  font-size: var(--text-display);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.exercise__meta {
+  margin-top: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--ink-secondary);
+}
+
+.exercise__notes {
+  margin-top: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--ink-tertiary);
+  max-width: 34em;
+}
+
+/* Eén groot getal per scherm: waar sta je nu. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 var(--space-7);
+}
+
+.hero__value {
+  font-size: 56px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  /* Bewust géén tabular-nums: op deze grootte staan de cijfers dan los. */
+}
+
+.hero__unit {
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--ink-tertiary);
+  margin-left: 6px;
+  letter-spacing: 0;
+}
+
+.hero__label {
+  font-size: var(--text-small);
+  color: var(--ink-secondary);
+}
+
+.hero__delta {
+  display: block;
+  color: var(--ink-tertiary);
+  margin-top: 2px;
+}
+
+.hero__delta--up { color: var(--accent); }
+
+.log { margin-top: var(--space-6); }
+
+.log__heading {
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--ink-tertiary);
+  margin-bottom: var(--space-3);
+}
+
+.log__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+
+.log__table th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink-tertiary);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.log__table td {
+  padding: var(--space-3) var(--space-3) var(--space-3) 0;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink-secondary);
+  vertical-align: top;
+}
+
+.log__table td:first-child { color: var(--ink); white-space: nowrap; }
+.log__table td:last-child { text-align: right; white-space: nowrap; padding-right: 0; }
+.log__table th:last-child { text-align: right; }
+
+.exercise__targets {
+  margin-top: var(--space-5);
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+}
+
+.exercise__empty {
+  margin-top: var(--space-6);
+  color: var(--ink-secondary);
+  max-width: 34em;
+}

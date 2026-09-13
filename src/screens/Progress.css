@@ -1,0 +1,33 @@
+.group { margin-top: var(--space-6); }
+
+.group__heading {
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--ink-tertiary);
+  margin-bottom: var(--space-2);
+}
+
+.group__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.group__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--hairline);
+  transition: color 120ms ease;
+}
+
+.group__item:hover { color: var(--accent); }
+
+.group__muscles {
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+}

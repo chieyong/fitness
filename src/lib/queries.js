@@ -116,3 +116,31 @@ export async function saveSessionNote(sessionId, notes) {
   );
   return data[0];
 }
+
+/** Eén oefening uit de bibliotheek. */
+export async function fetchExercise(id) {
+  const data = await unwrap(
+    supabase.from('exercises').select('id, name, muscle_groups, notes').eq('id', id).limit(1),
+  );
+  return data[0] ?? null;
+}
+
+/** In welke schema's een oefening voorkomt, met het target per schema. */
+export function fetchExerciseTemplates(exerciseId) {
+  return unwrap(
+    supabase
+      .from('template_exercises')
+      .select('*, template:workout_templates(id, label, position)')
+      .eq('exercise_id', exerciseId),
+  );
+}
+
+/** Alle oefeningen die in een schema voorkomen, voor het voortgangsoverzicht. */
+export function fetchAllTemplateExercises() {
+  return unwrap(
+    supabase
+      .from('template_exercises')
+      .select('exercise_id, position, template_id, exercise:exercises(id, name, muscle_groups)')
+      .order('position'),
+  );
+}

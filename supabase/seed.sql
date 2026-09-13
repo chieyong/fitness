@@ -23,9 +23,9 @@ delete from workout_templates;
 
 insert into exercises (name, muscle_groups, notes) values
   ('Bankdrukken', array['borst', 'triceps'], 'Barbell of dumbbell'),
-  ('Gebogen rij', array['rug', 'biceps'], 'Barbell, dumbbell of cable; twee uitvoeringen (version 1 / version 2). Komt terug in Workout C'),
-  ('Schouderpers', array['schouders', 'triceps'], 'Barbell of dumbbell; komt terug in Workout C'),
-  ('Beenpers of squats', array['benen', 'bilspieren'], 'Komt terug in Workout B'),
+  ('Gebogen rij', array['rug', 'biceps'], 'Barbell, dumbbell of cable; twee uitvoeringen (version 1 / version 2)'),
+  ('Schouderpers', array['schouders', 'triceps'], 'Barbell of dumbbell'),
+  ('Beenpers of squats', array['benen', 'bilspieren'], null),
   ('Bicepscurls', array['biceps'], null),
   ('Triceps pushdown of dips', array['triceps'], null),
   ('Plank', array['core'], null),

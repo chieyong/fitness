@@ -2,7 +2,8 @@
 
 Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.md](FITNESS-APP-SPEC.md).
 
-**Status: fase 2** — schema-model, datumlogica en handmatige logging. Nog geen grafieken of foto-feedback.
+**Status: fase 3** — schema-model, datumlogica, logging en progressiegrafieken per oefening.
+Nog geen spiergroep-visualisatie of foto-feedback.
 
 ## Opzetten
 
@@ -79,13 +80,25 @@ A als B, dan zie je gewoon de laatste keer dat je hem deed.
 Een sessie afronden (of overslaan) zet de status vast; pas daarna schuift het schema op
 naar de volgende training.
 
+## Voortgang
+
+Tik op een oefeningnaam in een sessie, of op "Voortgang" rechtsboven, voor de
+geschiedenis van die oefening: zwaarste set en volume per training, plus een tabel
+met alle sets. Tijdgebaseerde oefeningen tonen de langste set in plaats van gewicht.
+
+De grafieken tonen één reeks in één kleur, zonder legenda — de titel zegt al wat er
+staat. De y-as begint bewust niet bij nul: bij een lijngrafiek is het verschil tussen
+59 en 79 kg de informatie, en die verdwijnt als de as bij nul begint. Elk punt is
+bereikbaar met muis én toetsenbord, en dezelfde cijfers staan in de tabel eronder,
+zodat niets alleen achter een hover zit.
+
 ## Nog te doen
 
 - **Beveiliging.** De RLS-policies staan op `using (true)` voor `anon`, en de anon-sleutel
   zit in de client-bundel. Op een publieke Netlify-URL betekent dat: iedereen die het adres
   kent kan de trainingsdata lezen en wijzigen. Bewust uitgesteld, niet vergeten. De oplossing
   is Supabase Auth (single user) plus policies op `auth.uid()`.
-- Fase 3–5: progressiegrafieken, spiergroep-visualisatie, AI-foto-feedback
+- Fase 4–5: spiergroep-aggregatie met lichaamsvisualisatie, AI-foto-feedback
 - Target voor "Hanging leg raises of buikspier crunch" staat op 3x15; die kwam niet uit
   de bron en is een plaatshouder.
 

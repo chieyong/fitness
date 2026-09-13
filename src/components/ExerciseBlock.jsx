@@ -20,7 +20,7 @@ function buildRows(item, logged) {
 }
 
 export default function ExerciseBlock({
-  item, logged, previous, readOnly, skipped, onSaveSet, onDeleteSet, onToggleSkip,
+  item, logged, previous, readOnly, skipped, onSaveSet, onDeleteSet, onToggleSkip, onOpen,
 }) {
   const exercise = item.exercise;
   const isTimed = item.target_seconds != null;
@@ -67,7 +67,9 @@ export default function ExerciseBlock({
     <li className={`block${skipped ? ' block--skipped' : ''}`}>
       <div className="block__head">
         <div>
-          <span className="block__name">{exercise.name}</span>
+          <button type="button" className="block__name" onClick={onOpen}>
+            {exercise.name}
+          </button>
           <span className="block__muscles">{exercise.muscle_groups.join(', ')}</span>
         </div>
         <span className="block__target">{formatTarget(item)}</span>

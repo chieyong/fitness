@@ -73,3 +73,44 @@ export function volume(sets) {
     0,
   );
 }
+
+/**
+ * Eén punt per training waarin deze oefening daadwerkelijk is gedaan, oplopend
+ * in de tijd. Overgeslagen keren leveren geen punt op: een gat in de lijn is
+ * eerlijker dan een nul die op een prestatie lijkt.
+ */
+export function seriesFor(logs, sessions, exerciseId) {
+  const dateOf = new Map(sessions.map((s) => [s.id, sessionDate(s)]));
+  const bySession = new Map();
+
+  for (const l of logs) {
+    if (l.exercise_id !== exerciseId || l.skipped) continue;
+    if (!dateOf.has(l.session_id)) continue;
+    if (!bySession.has(l.session_id)) bySession.set(l.session_id, []);
+    bySession.get(l.session_id).push(l);
+  }
+
+  return [...bySession.entries()]
+    .map(([sessionId, rows]) => {
+      const sets = rows.sort((a, b) => a.set_number - b.set_number);
+      const best = bestSet(sets);
+      const seconds = sets.map((s) => s.seconds).filter((s) => s != null);
+      return {
+        sessionId,
+        date: dateOf.get(sessionId),
+        sets,
+        bestWeight: best ? Number(best.weight_kg) : null,
+        bestReps: best ? best.reps : null,
+        bestSeconds: seconds.length ? Math.max(...seconds) : null,
+        volume: volume(sets),
+      };
+    })
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+/** Verschil tussen de eerste en de laatste meting; null bij één punt. */
+export function trend(series, key) {
+  const values = series.map((p) => p[key]).filter((v) => v != null);
+  if (values.length < 2) return null;
+  return values[values.length - 1] - values[0];
+}

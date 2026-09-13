@@ -1,7 +1,14 @@
 .today__bar {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
   margin-bottom: var(--space-6);
+}
+
+.today__link {
+  color: var(--accent);
+  font-size: var(--text-small);
 }
 
 .today__message {

@@ -13,6 +13,7 @@ import DateStepper from '../components/DateStepper.jsx';
 import '../components/ExerciseBlock.css';
 import '../components/SessionActions.css';
 import './Today.css';
+import './Exercise.css';
 
 /** ?date=2026-09-15 overschrijft de begindatum; ongeldige waarden negeren we. */
 function dateFromUrl() {
@@ -20,7 +21,7 @@ function dateFromUrl() {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
-export default function Today() {
+export default function Today({ onOpenExercise, onOpenProgress }) {
   const today = useMemo(() => todayISO(), []);
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
 
@@ -155,6 +156,9 @@ export default function Today() {
     <main className="page">
       <div className="today__bar">
         <DateStepper date={date} today={today} onChange={setDate} />
+        <button type="button" className="today__link" onClick={onOpenProgress}>
+          Voortgang
+        </button>
       </div>
 
       <SessionHeader
@@ -183,6 +187,7 @@ export default function Today() {
                   onSaveSet={handleSaveSet}
                   onDeleteSet={handleDeleteSet}
                   onToggleSkip={(skip) => handleToggleSkip(item.exercise_id, skip)}
+                  onOpen={() => onOpenExercise(item.exercise_id)}
                 />
               );
             })}

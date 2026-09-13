@@ -1,5 +1,17 @@
+import { useEffect, useState } from 'react';
 import { isConfigured } from './lib/supabase.js';
 import Today from './screens/Today.jsx';
+import Exercise from './screens/Exercise.jsx';
+import ProgressIndex from './screens/Progress.jsx';
+
+/** Welk scherm staat er in de URL? Leeg = het scherm van vandaag. */
+function routeFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const exercise = params.get('oefening');
+  if (exercise) return { screen: 'oefening', exercise };
+  if (params.has('voortgang')) return { screen: 'voortgang' };
+  return { screen: 'vandaag' };
+}
 
 export default function App() {
   if (!isConfigured) {
@@ -19,5 +31,43 @@ export default function App() {
     );
   }
 
-  return <Today />;
+  return <Router />;
+}
+
+function Router() {
+  const [route, setRoute] = useState(routeFromUrl);
+
+  // De browserknoppen horen gewoon te werken.
+  useEffect(() => {
+    const onPop = () => setRoute(routeFromUrl());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const go = (params) => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('oefening');
+    url.searchParams.delete('voortgang');
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    window.history.pushState(null, '', url);
+    setRoute(routeFromUrl());
+    window.scrollTo(0, 0);
+  };
+
+  const openExercise = (id) => go({ oefening: id });
+  const openProgress = () => go({ voortgang: '1' });
+  // Kom je hier via een gedeelde link, dan is er geen geschiedenis om naar
+  // terug te gaan; val dan terug op het scherm van vandaag.
+  const back = () => {
+    if (window.history.length > 1) window.history.back();
+    else go({});
+  };
+
+  if (route.screen === 'oefening') {
+    return <Exercise exerciseId={route.exercise} onBack={back} />;
+  }
+  if (route.screen === 'voortgang') {
+    return <ProgressIndex onOpenExercise={openExercise} onBack={back} />;
+  }
+  return <Today onOpenExercise={openExercise} onOpenProgress={openProgress} />;
 }

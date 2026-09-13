@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   lastPerformance, formatSets, bestSet, volume, setsFor, sessionDate,
+  seriesFor, trend,
 } from '../src/lib/progress.js';
 
 const sessions = [
@@ -75,4 +76,27 @@ test('setsFor filtert op sessie en oefening, op setnummer', () => {
   const r = setsFor(logs, 's1', 'bank');
   assert.equal(r.length, 2);
   assert.equal(r[0].set_number, 1);
+});
+
+test('seriesFor geeft één punt per training, chronologisch', () => {
+  const r = seriesFor(logs, sessions, 'bank');
+  assert.deepEqual(r.map((p) => p.date), ['2026-09-05', '2026-09-11']);
+  assert.equal(r[0].bestWeight, 14);
+  assert.equal(r[1].bestWeight, 16);
+  assert.equal(r[0].volume, 10 * 14 + 10 * 12);
+});
+
+test('seriesFor slaat overgeslagen keren over in plaats van nul te tonen', () => {
+  assert.deepEqual(seriesFor(logs, sessions, 'plank'), []);
+});
+
+test('seriesFor negeert logs van een onbekende sessie', () => {
+  const vreemd = [...logs, log('weg', 'bank', 1, 10, 20)];
+  assert.equal(seriesFor(vreemd, sessions, 'bank').length, 2);
+});
+
+test('trend vergelijkt eerste en laatste meting', () => {
+  const r = seriesFor(logs, sessions, 'bank');
+  assert.equal(trend(r, 'bestWeight'), 2);
+  assert.equal(trend([r[0]], 'bestWeight'), null);
 });

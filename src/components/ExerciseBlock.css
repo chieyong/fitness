@@ -134,3 +134,11 @@
 @media (max-width: 480px) {
   .set__field input { width: 5em; }
 }
+
+/* De naam is de ingang naar de voortgang van die oefening. */
+button.block__name {
+  text-align: left;
+  transition: color 120ms ease;
+}
+
+button.block__name:hover { color: var(--accent); }
