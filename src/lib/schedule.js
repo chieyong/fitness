@@ -126,6 +126,12 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
 export function resolveToday(sessions, today, options = {}) {
   const schedule = projectSchedule(sessions, today, options);
   const current = schedule.find((entry) => entry.date === today) ?? null;
+
+  // Een sessie die op deze dag al is afgerond of bewust overgeslagen. Zonder dit
+  // zou een trainingsdag in het verleden als rustdag worden getoond.
+  const done = sessions.find(
+    (s) => s.status !== OPEN_STATUS && (s.actual_date ?? s.planned_date) === today,
+  ) ?? null;
   const upcoming = schedule.filter((entry) => entry.date > today);
   const backlog = schedule.filter(
     (entry) => entry.original_date < today && entry !== current,
@@ -133,9 +139,10 @@ export function resolveToday(sessions, today, options = {}) {
 
   return {
     current,
+    done,
     upcoming,
     backlog,
-    isRestDay: current === null,
+    isRestDay: current === null && done === null,
     isTrainingDay: isTrainingDay(today, options.trainingDays ?? TRAINING_DAYS),
   };
 }
@@ -201,11 +208,16 @@ export function formatDateShort(iso) {
   return `${WEEKDAY_NAMES[d.getUTCDay()].slice(0, 2)} ${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()].slice(0, 3)}`;
 }
 
-/** '3 × 10-12' of '3 × 60 sec' */
-export function formatTarget({ target_sets, target_reps_min, target_reps_max, target_seconds }) {
-  if (target_seconds) return `${target_sets} × ${target_seconds} sec`;
-  const reps = target_reps_max && target_reps_max !== target_reps_min
-    ? `${target_reps_min}-${target_reps_max}`
-    : `${target_reps_min}`;
-  return `${target_sets} × ${reps}`;
+/** '3 × 10-12', '3 × 30-45 sec', '3 × 12 per been' */
+export function formatTarget({
+  target_sets, target_reps_min, target_reps_max,
+  target_seconds, target_seconds_max, target_note,
+}) {
+  const range = (min, max) => (max && max !== min ? `${min}-${max}` : `${min}`);
+
+  const core = target_seconds
+    ? `${target_sets} × ${range(target_seconds, target_seconds_max)} sec`
+    : `${target_sets} × ${range(target_reps_min, target_reps_max)}`;
+
+  return target_note ? `${core} ${target_note}` : core;
 }

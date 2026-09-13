@@ -38,3 +38,9 @@
 }
 
 .upcoming__label { color: var(--ink-secondary); }
+
+.today__note {
+  margin-bottom: var(--space-5);
+  color: var(--ink-secondary);
+  max-width: 34em;
+}

@@ -28,9 +28,11 @@ create table if not exists template_exercises (
   exercise_id uuid references exercises(id) on delete restrict,
   position int not null,
   target_sets int not null,
-  target_reps_min int not null,
+  target_reps_min int,                     -- null bij tijdgebaseerde oefeningen
   target_reps_max int,                     -- voor "3x10-12"; null bij vast getal
-  target_seconds int                       -- voor Plank / side plank i.p.v. reps
+  target_seconds int,                      -- voor Plank / side plank i.p.v. reps
+  target_seconds_max int,                  -- voor "3x30-45 sec"
+  target_note text                         -- "per been", "per kant"
 );
 
 -- Geplande/uitgevoerde sessies op een datum
@@ -39,6 +41,7 @@ create table if not exists sessions (
   template_id uuid references workout_templates(id) on delete cascade,
   planned_date date not null,
   actual_date date,
+  notes text,                              -- opmerking bij de hele sessie
   status text not null default 'gepland',  -- 'gepland' | 'voltooid' | 'overgeslagen' | 'verzet'
   constraint sessions_status_check
     check (status in ('gepland', 'voltooid', 'overgeslagen', 'verzet'))
@@ -54,6 +57,7 @@ create table if not exists exercise_logs (
   weight_kg numeric,
   seconds int,
   skipped boolean default false,
+  note text,                               -- opmerking bij deze oefening
   logged_at timestamptz default now()
 );
 

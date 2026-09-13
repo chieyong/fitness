@@ -60,8 +60,11 @@ export default function Today() {
     [sessions, date],
   );
 
-  const currentTemplate = view?.current
-    ? templates.find((t) => t.id === view.current.session.template_id)
+  // De sessie die het scherm toont: wat er te doen staat, of -- als die dag al
+  // achter de rug is -- wat er gedaan is.
+  const shownSession = view?.current?.session ?? view?.done ?? null;
+  const currentTemplate = shownSession
+    ? templates.find((t) => t.id === shownSession.template_id)
     : null;
 
   // Oefeningen van de getoonde sessie.
@@ -98,10 +101,14 @@ export default function Today() {
         today={today}
         template={currentTemplate}
         entry={view?.current}
+        done={!view?.current && view?.done ? view.done : null}
       />
 
-      {view?.current ? (
-        <ExerciseList items={exercises} />
+      {shownSession ? (
+        <>
+          {shownSession.notes && <p className="today__note">{shownSession.notes}</p>}
+          <ExerciseList items={exercises} />
+        </>
       ) : (
         <p className="today__message">
           Geen training gepland. De eerstvolgende sessie staat op{' '}

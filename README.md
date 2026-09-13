@@ -22,6 +22,8 @@ Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.
 | `npm test` | tests van de datumlogica |
 | `npm run check` | controleert Supabase-verbinding, schema en seed |
 | `npm run smoke` | draait de datalaag tegen Supabase en print het schema |
+| `npm run history` | print de geimporteerde trainingsgeschiedenis |
+| `npm run generate-seed` | genereert `supabase/seed.sql` uit `scripts/source-data.mjs` |
 
 ## De planningsregel
 

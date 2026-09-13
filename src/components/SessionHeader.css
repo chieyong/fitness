@@ -19,3 +19,9 @@
   font-size: var(--text-small);
   color: var(--accent);
 }
+
+.session-header__done {
+  margin-top: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--ink-tertiary);
+}

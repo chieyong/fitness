@@ -101,6 +101,27 @@ test('afgeronde en overgeslagen sessies tellen niet meer mee', () => {
   assert.equal(current.shifted, false);
 });
 
+test('een afgeronde sessie is zichtbaar op zijn eigen dag', () => {
+  const sessions = [
+    { id: 's1', template_id: 'a', planned_date: DI, actual_date: DI, status: 'voltooid' },
+    session('s2', 'b', DO),
+  ];
+  const view = resolveToday(sessions, DI);
+  assert.equal(view.current, null);          // niets meer te doen
+  assert.equal(view.done.id, 's1');
+  assert.equal(view.isRestDay, false);       // maar het was geen rustdag
+});
+
+test('een afgeronde sessie blokkeert de planning van vandaag niet', () => {
+  const sessions = [
+    { id: 's1', template_id: 'a', planned_date: DI, actual_date: DI, status: 'voltooid' },
+    session('s2', 'b', DI),
+  ];
+  const view = resolveToday(sessions, DI);
+  assert.equal(view.current.session.id, 's2');
+  assert.equal(view.done.id, 's1');
+});
+
 test('toekomstige sessies worden niet naar voren getrokken', () => {
   const sessions = [session('s1', 'a', DI2)];
   const schedule = projectSchedule(sessions, DI);
@@ -133,7 +154,10 @@ test('planNextSessions doet niets als er genoeg openstaat', () => {
 test('formatters', () => {
   assert.equal(formatTarget({ target_sets: 3, target_reps_min: 10, target_reps_max: 12 }), '3 × 10-12');
   assert.equal(formatTarget({ target_sets: 3, target_reps_min: 12, target_reps_max: 12 }), '3 × 12');
-  assert.equal(formatTarget({ target_sets: 3, target_reps_min: 1, target_seconds: 60 }), '3 × 60 sec');
+  assert.equal(formatTarget({ target_sets: 3, target_seconds: 60 }), '3 × 60 sec');
+  assert.equal(formatTarget({ target_sets: 3, target_seconds: 30, target_seconds_max: 45 }), '3 × 30-45 sec');
+  assert.equal(formatTarget({ target_sets: 3, target_reps_min: 12, target_note: 'per been' }), '3 × 12 per been');
+  assert.equal(formatTarget({ target_sets: 3, target_seconds: 30, target_note: 'per kant' }), '3 × 30 sec per kant');
   assert.equal(formatDateLong(DI, DI), 'Vandaag');
   assert.equal(formatDateLong(WO, DI), 'Morgen');
   assert.equal(formatDateLong(ZA, DI), 'Zaterdag 19 september');
