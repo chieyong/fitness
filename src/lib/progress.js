@@ -114,3 +114,15 @@ export function trend(series, key) {
   if (values.length < 2) return null;
   return values[values.length - 1] - values[0];
 }
+
+/**
+ * De staat van één oefening binnen een sessie, voor het rondje in de lijst.
+ * 'bezig' is een eigen staat: drie van de vier sets gedaan is iets anders dan
+ * niets gedaan, en dat moet je in de gym in één oogopslag zien.
+ */
+export function exerciseStatus({ logged, targetSets, skipped }) {
+  if (skipped) return 'overgeslagen';
+  const done = logged.filter((l) => !l.skipped).length;
+  if (done === 0) return 'open';
+  return done >= targetSets ? 'klaar' : 'bezig';
+}

@@ -1,37 +1,64 @@
-.block {
-  padding: var(--space-5) 0;
-  border-bottom: 1px solid var(--hairline);
-}
+.block { border-bottom: 1px solid var(--hairline); }
 
-.block--skipped .block__head { opacity: 0.55; }
-
-.block__head {
+/* Ingeklapte regel: status, naam, wat er staat of gelogd is. */
+.row {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-5);
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) 0;
+  text-align: left;
 }
 
-.block__name {
-  display: block;
+.row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.row__name {
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
-.block__muscles {
-  display: block;
+.row__summary {
   font-size: var(--text-micro);
   color: var(--ink-tertiary);
-  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
-.block__target {
-  color: var(--ink-secondary);
+.row__target {
+  color: var(--ink-tertiary);
+  font-size: var(--text-small);
   white-space: nowrap;
 }
 
+/* Bij een gedane oefening draagt de samenvatting de cijfers, niet het target. */
+.block--klaar .row__target { opacity: 0.5; }
+.block--klaar .row__summary { color: var(--ink-secondary); }
+.block--overgeslagen .row__name { color: var(--ink-secondary); }
+
+.status { display: flex; flex: 0 0 auto; }
+.status--open { color: var(--ink-tertiary); }
+.status--bezig { color: var(--accent); }
+.status--klaar { color: var(--accent); }
+.status--overgeslagen { color: var(--ink-tertiary); }
+
+/* Uitgeklapt */
+.block__body {
+  padding: 0 0 var(--space-5) calc(20px + var(--space-3));
+  animation: unfold 160ms ease;
+}
+
+@keyframes unfold {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: none; }
+}
+
 .block__previous {
-  margin-top: var(--space-2);
+  margin-bottom: var(--space-3);
   font-size: var(--text-small);
   color: var(--ink-secondary);
 }
@@ -43,7 +70,6 @@
 }
 
 .block__skipped-label {
-  margin-top: var(--space-3);
   font-size: var(--text-small);
   color: var(--ink-tertiary);
 }
@@ -62,9 +88,14 @@
 
 .block__actions .block__link { margin-left: 0; }
 
+.block__progress {
+  display: block;
+  margin: var(--space-4) 0 0;
+  margin-left: 0;
+}
+
 /* Sets */
 .sets {
-  margin-top: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -100,12 +131,7 @@
   transition: border-color 120ms ease;
 }
 
-.set__field input::placeholder { color: var(--ink-tertiary); }
-
-.set__field input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+.set__field input:focus { outline: none; border-color: var(--accent); }
 
 .set__field input:read-only {
   background: transparent;
@@ -121,7 +147,6 @@
   pointer-events: none;
 }
 
-/* Het vinkje bij een opgeslagen set. */
 .check {
   color: var(--accent);
   opacity: 0;
@@ -133,12 +158,5 @@
 
 @media (max-width: 480px) {
   .set__field input { width: 5em; }
+  .block__body { padding-left: 0; }
 }
-
-/* De naam is de ingang naar de voortgang van die oefening. */
-button.block__name {
-  text-align: left;
-  transition: color 120ms ease;
-}
-
-button.block__name:hover { color: var(--accent); }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { formatTarget } from '../lib/schedule.js';
-import { formatSets } from '../lib/progress.js';
+import { formatSets, exerciseStatus } from '../lib/progress.js';
 import { parseDecimal, parseWhole, formatNumber } from '../lib/input.js';
 import { formatDateShort } from '../lib/schedule.js';
 
@@ -20,7 +20,8 @@ function buildRows(item, logged) {
 }
 
 export default function ExerciseBlock({
-  item, logged, previous, readOnly, skipped, onSaveSet, onDeleteSet, onToggleSkip, onOpen,
+  item, logged, previous, readOnly, skipped,
+  open, onToggleOpen, onSaveSet, onDeleteSet, onToggleSkip, onOpen,
 }) {
   const exercise = item.exercise;
   const isTimed = item.target_seconds != null;
@@ -63,18 +64,29 @@ export default function ExerciseBlock({
     }]);
   };
 
-  return (
-    <li className={`block${skipped ? ' block--skipped' : ''}`}>
-      <div className="block__head">
-        <div>
-          <button type="button" className="block__name" onClick={onOpen}>
-            {exercise.name}
-          </button>
-          <span className="block__muscles">{exercise.muscle_groups.join(', ')}</span>
-        </div>
-        <span className="block__target">{formatTarget(item)}</span>
-      </div>
+  const status = exerciseStatus({ logged, targetSets: item.target_sets, skipped });
+  // Rechts staat het target al; hier hoort wat je nog niet weet. Zolang er
+  // niets gelogd is, is dat wat je vorige keer deed.
+  const summary = skipped ? 'Overgeslagen'
+    : logged.length > 0 ? formatSets(logged)
+    : previous && !previous.skipped ? `Vorige keer ${formatSets(previous.sets)}`
+    : null;
 
+  return (
+    <li className={`block block--${status}${open ? ' block--open' : ''}`}>
+      <button type="button" className="row" onClick={onToggleOpen}
+        aria-expanded={open}>
+        <Status status={status} />
+        <span className="row__main">
+          <span className="row__name">{exercise.name}</span>
+          {/* Uitgeklapt staat dezelfde informatie eronder, mét datum. */}
+          {summary && !open && <span className="row__summary">{summary}</span>}
+        </span>
+        <span className="row__target">{formatTarget(item)}</span>
+      </button>
+
+      {!open ? null : (
+      <div className="block__body">
       {previous && (
         <p className="block__previous">
           {previous.skipped
@@ -86,7 +98,7 @@ export default function ExerciseBlock({
 
       {skipped ? (
         <p className="block__skipped-label">
-          Niet gedaan
+          Overgeslagen
           {!readOnly && (
             <button type="button" className="block__link" onClick={() => onToggleSkip(false)}>
               Toch loggen
@@ -151,7 +163,48 @@ export default function ExerciseBlock({
           )}
         </>
       )}
+
+      <button type="button" className="block__link block__progress" onClick={onOpen}>
+        Voortgang van deze oefening
+      </button>
+      </div>
+      )}
     </li>
+  );
+}
+
+/** Open rondje, half gevuld of een vinkje -- de staat in één oogopslag. */
+function Status({ status }) {
+  if (status === 'klaar') {
+    return (
+      <span className="status status--klaar" aria-label="gedaan">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <circle cx="10" cy="10" r="9" fill="currentColor" />
+          <path d="M5.5 10.5 8.5 13.5 14.5 6.5" stroke="#fff" strokeWidth="2"
+            fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (status === 'overgeslagen') {
+    return (
+      <span className="status status--overgeslagen" aria-label="overgeslagen">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M6 10h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </span>
+    );
+  }
+
+  return (
+    <span className={`status status--${status}`} aria-label={status === 'bezig' ? 'bezig' : 'nog te doen'}>
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+        <circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        {status === 'bezig' && <circle cx="10" cy="10" r="4.5" fill="currentColor" />}
+      </svg>
+    </span>
   );
 }
 

@@ -29,6 +29,8 @@ export default function Today({ onOpenExercise, onOpenProgress }) {
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [logs, setLogs] = useState([]);
+  // Eén oefening tegelijk open houdt het scherm compact in de gym.
+  const [openId, setOpenId] = useState(null);
   const [status, setStatus] = useState('laden');
   const [error, setError] = useState(null);
 
@@ -186,6 +188,8 @@ export default function Today({ onOpenExercise, onOpenProgress }) {
                   readOnly={readOnly}
                   onSaveSet={handleSaveSet}
                   onDeleteSet={handleDeleteSet}
+                  open={openId === item.id}
+                  onToggleOpen={() => setOpenId(openId === item.id ? null : item.id)}
                   onToggleSkip={(skip) => handleToggleSkip(item.exercise_id, skip)}
                   onOpen={() => onOpenExercise(item.exercise_id)}
                 />

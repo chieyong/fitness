@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   lastPerformance, formatSets, bestSet, volume, setsFor, sessionDate,
-  seriesFor, trend,
+  seriesFor, trend, exerciseStatus,
 } from '../src/lib/progress.js';
 
 const sessions = [
@@ -99,4 +99,13 @@ test('trend vergelijkt eerste en laatste meting', () => {
   const r = seriesFor(logs, sessions, 'bank');
   assert.equal(trend(r, 'bestWeight'), 2);
   assert.equal(trend([r[0]], 'bestWeight'), null);
+});
+
+test('exerciseStatus onderscheidt open, bezig, klaar en overgeslagen', () => {
+  const set = (n) => Array.from({ length: n }, (_, i) => ({ set_number: i + 1, skipped: false }));
+  assert.equal(exerciseStatus({ logged: [], targetSets: 3, skipped: false }), 'open');
+  assert.equal(exerciseStatus({ logged: set(1), targetSets: 3, skipped: false }), 'bezig');
+  assert.equal(exerciseStatus({ logged: set(3), targetSets: 3, skipped: false }), 'klaar');
+  assert.equal(exerciseStatus({ logged: set(4), targetSets: 3, skipped: false }), 'klaar');
+  assert.equal(exerciseStatus({ logged: set(3), targetSets: 3, skipped: true }), 'overgeslagen');
 });
