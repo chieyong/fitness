@@ -8,7 +8,7 @@
 --   - Triceps pushdown 5/9: komma als decimaalteken, dus 22,5 = 22.5 kg en 20,3 = 20.3 kg (ook "20.3" komt voor).
 --   - Hanging leg raises heeft geen target in de bron; voorlopig 3x15 aangehouden.
 --   - Plank en Hanging leg raises zijn op 13/9 niet genoemd: geen regel aangemaakt (niet als overgeslagen geteld).
---   - Schouderpers (Workout A) en Schouderpers (dumbbell) (Workout C) als twee losse oefeningen bewaard, zoals in de bron. Samenvoegen kan later als het dezelfde beweging is.
+--   - Schouderpers komt in Workout A en C voor en is één oefening: de logs van beide dagen lopen door in dezelfde reeks.
 --   - Oefeningen met "X of Y" zijn als één oefening bewaard, zodat de loggeschiedenis aaneengesloten blijft.
 --   - Video-URLs voor Gebogen rij staan niet in de bron en zijn leeggelaten.
 
@@ -24,7 +24,7 @@ delete from workout_templates;
 insert into exercises (name, muscle_groups, notes) values
   ('Bankdrukken', array['borst', 'triceps'], 'Barbell of dumbbell'),
   ('Gebogen rij', array['rug', 'biceps'], 'Barbell of dumbbell; twee uitvoeringen (version 1 / version 2)'),
-  ('Schouderpers', array['schouders', 'triceps'], null),
+  ('Schouderpers', array['schouders', 'triceps'], 'Barbell of dumbbell; komt terug in Workout C'),
   ('Beenpers of squats', array['benen', 'bilspieren'], null),
   ('Bicepscurls', array['biceps'], null),
   ('Triceps pushdown of dips', array['triceps'], null),
@@ -39,7 +39,6 @@ insert into exercises (name, muscle_groups, notes) values
   ('Russian twists', array['core'], null),
   ('Cable woodchoppers of side plank', array['core'], null),
   ('Deadlifts', array['rug', 'hamstrings', 'bilspieren'], null),
-  ('Schouderpers (dumbbell)', array['schouders', 'triceps'], null),
   ('Rij (cable of dumbbell)', array['rug', 'biceps'], null),
   ('Uitvalspassen', array['benen', 'bilspieren'], null),
   ('Concentration curls', array['biceps'], null),
@@ -89,7 +88,7 @@ insert into template_exercises (template_id, exercise_id, position, target_sets,
 select t.id, e.id, v.position, v.sets, v.reps_min, v.reps_max, v.seconds, v.seconds_max, v.target_note
 from (values
   ('Deadlifts', 1, 4, 6::int, 8::int, null::int, null::int, null::text),
-  ('Schouderpers (dumbbell)', 2, 3, 10::int, null::int, null::int, null::int, null::text),
+  ('Schouderpers', 2, 3, 10::int, null::int, null::int, null::int, null::text),
   ('Rij (cable of dumbbell)', 3, 3, 10::int, null::int, null::int, null::int, null::text),
   ('Uitvalspassen', 4, 3, 12::int, null::int, null::int, null::int, 'per been'::text),
   ('Concentration curls', 5, 3, 12::int, null::int, null::int, null::int, null::text),
@@ -109,10 +108,10 @@ insert into exercise_logs (session_id, exercise_id, set_number, reps, weight_kg,
 select s.id, e.id, v.set_number, v.reps, v.weight_kg, v.skipped, v.note
 from (values
   ('Deadlifts', 1, null::int, null::numeric, true, null::text),
-  ('Schouderpers (dumbbell)', 1, 10::int, 12::numeric, false, null::text),
-  ('Schouderpers (dumbbell)', 2, 7::int, 14::numeric, false, null::text),
-  ('Schouderpers (dumbbell)', 3, 7::int, 12::numeric, false, null::text),
-  ('Schouderpers (dumbbell)', 4, 8::int, 12::numeric, false, null::text),
+  ('Schouderpers', 1, 10::int, 12::numeric, false, null::text),
+  ('Schouderpers', 2, 7::int, 14::numeric, false, null::text),
+  ('Schouderpers', 3, 7::int, 12::numeric, false, null::text),
+  ('Schouderpers', 4, 8::int, 12::numeric, false, null::text),
   ('Rij (cable of dumbbell)', 1, 10::int, 10::numeric, false, null::text),
   ('Rij (cable of dumbbell)', 2, 10::int, 12::numeric, false, null::text),
   ('Rij (cable of dumbbell)', 3, 10::int, 14::numeric, false, null::text),
@@ -204,8 +203,8 @@ insert into exercise_logs (session_id, exercise_id, set_number, reps, weight_kg,
 select s.id, e.id, v.set_number, v.reps, v.weight_kg, v.skipped, v.note
 from (values
   ('Deadlifts', 1, null::int, null::numeric, true, null::text),
-  ('Schouderpers (dumbbell)', 1, 10::int, 14::numeric, false, null::text),
-  ('Schouderpers (dumbbell)', 2, 10::int, 14::numeric, false, null::text),
+  ('Schouderpers', 1, 10::int, 14::numeric, false, null::text),
+  ('Schouderpers', 2, 10::int, 14::numeric, false, null::text),
   ('Rij (cable of dumbbell)', 1, 10::int, 14::numeric, false, null::text),
   ('Rij (cable of dumbbell)', 2, 10::int, 16::numeric, false, null::text),
   ('Rij (cable of dumbbell)', 3, 10::int, 18::numeric, false, null::text),

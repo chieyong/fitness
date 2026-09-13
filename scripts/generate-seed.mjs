@@ -28,10 +28,48 @@ w('delete from exercises;');
 w('delete from workout_templates;');
 w();
 
-// Oefeningen: uniek op naam, in de volgorde waarin ze voorkomen.
+/**
+ * Oefeningen: uniek op naam, in volgorde van voorkomen. Dezelfde oefening mag in
+ * meerdere schema's zitten -- targets mogen dan per schema verschillen, maar de
+ * spiergroepen niet, want daarop wordt later geaggregeerd.
+ */
 const seen = new Map();
+const problems = [];
+
 for (const t of templates) {
-  for (const e of t.exercises) if (!seen.has(e.name)) seen.set(e.name, e);
+  for (const e of t.exercises) {
+    const known = seen.get(e.name);
+    if (!known) {
+      seen.set(e.name, e);
+      continue;
+    }
+    if (known.muscles.join() !== e.muscles.join()) {
+      problems.push(`"${e.name}" heeft verschillende spiergroepen: [${known.muscles}] en [${e.muscles}] (${t.label})`);
+    }
+  }
+}
+
+// Elke gelogde oefening moet in het schema van die sessie zitten; anders is er
+// een naam verschreven en verdwijnt de regel stilzwijgend bij het joinen.
+for (const h of history) {
+  const template = templates.find((t) => t.label === h.template);
+  if (!template) {
+    problems.push(`Sessie ${h.date} verwijst naar onbekend schema "${h.template}"`);
+    continue;
+  }
+  const inTemplate = new Set(template.exercises.map((e) => e.name));
+  for (const name of Object.keys(h.logs)) {
+    if (!inTemplate.has(name)) {
+      problems.push(`Sessie ${h.date}: "${name}" staat niet in ${h.template}`);
+    }
+  }
+}
+
+if (problems.length > 0) {
+  console.error('\nDe brondata is niet consistent:\n');
+  for (const p of problems) console.error(`  - ${p}`);
+  console.error('\nCorrigeer scripts/source-data.mjs en draai opnieuw.\n');
+  process.exit(1);
 }
 
 w('insert into exercises (name, muscle_groups, notes) values');
@@ -93,4 +131,11 @@ w('commit;');
 w();
 
 writeFileSync(new URL('../supabase/seed.sql', import.meta.url), out.join('\n'));
+const shared = [...seen.keys()].filter(
+  (name) => templates.filter((t) => t.exercises.some((e) => e.name === name)).length > 1,
+);
+
 console.log(`seed.sql geschreven — ${seen.size} oefeningen, ${templates.length} schema's, ${history.length} sessies.`);
+if (shared.length > 0) {
+  console.log(`Gedeeld over meerdere schema's: ${shared.join(', ')}`);
+}

@@ -17,7 +17,8 @@ export const templates = [
         notes: 'Barbell of dumbbell' },
       { name: 'Gebogen rij', muscles: ['rug', 'biceps'], sets: 4, reps: 8,
         notes: 'Barbell of dumbbell; twee uitvoeringen (version 1 / version 2)' },
-      { name: 'Schouderpers', muscles: ['schouders', 'triceps'], sets: 3, reps: 10 },
+      { name: 'Schouderpers', muscles: ['schouders', 'triceps'], sets: 3, reps: 10,
+        notes: 'Barbell of dumbbell; komt terug in Workout C' },
       { name: 'Beenpers of squats', muscles: ['benen', 'bilspieren'], sets: 3, reps: 10 },
       { name: 'Bicepscurls', muscles: ['biceps'], sets: 3, reps: 12 },
       { name: 'Triceps pushdown of dips', muscles: ['triceps'], sets: 3, reps: 12 },
@@ -45,7 +46,7 @@ export const templates = [
     position: 2,
     exercises: [
       { name: 'Deadlifts', muscles: ['rug', 'hamstrings', 'bilspieren'], sets: 4, reps: 6, repsMax: 8 },
-      { name: 'Schouderpers (dumbbell)', muscles: ['schouders', 'triceps'], sets: 3, reps: 10 },
+      { name: 'Schouderpers', muscles: ['schouders', 'triceps'], sets: 3, reps: 10 },
       { name: 'Rij (cable of dumbbell)', muscles: ['rug', 'biceps'], sets: 3, reps: 10 },
       { name: 'Uitvalspassen', muscles: ['benen', 'bilspieren'], sets: 3, reps: 12,
         targetNote: 'per been' },
@@ -66,7 +67,7 @@ export const history = [
     date: '2026-09-03', template: 'Workout C',
     logs: {
       'Deadlifts': SKIP,
-      'Schouderpers (dumbbell)': [[10, 12], [7, 14], [7, 12], [8, 12]],
+      'Schouderpers': [[10, 12], [7, 14], [7, 12], [8, 12]],
       'Rij (cable of dumbbell)': [[10, 10], [10, 12], [10, 14]],
       'Uitvalspassen': SKIP,
       'Concentration curls': [[10, 12], [8, 12], [10, 10]],
@@ -105,7 +106,7 @@ export const history = [
     date: '2026-09-11', template: 'Workout C',
     logs: {
       'Deadlifts': SKIP,
-      'Schouderpers (dumbbell)': [[10, 14], [10, 14]],
+      'Schouderpers': [[10, 14], [10, 14]],
       'Rij (cable of dumbbell)': [[10, 14], [10, 16], [10, 18]],
       'Uitvalspassen': SKIP,
       'Concentration curls': [[10, 12], [10, 12]],
@@ -137,7 +138,7 @@ export const ASSUMPTIONS = [
   'Triceps pushdown 5/9: komma als decimaalteken, dus 22,5 = 22.5 kg en 20,3 = 20.3 kg (ook "20.3" komt voor).',
   'Hanging leg raises heeft geen target in de bron; voorlopig 3x15 aangehouden.',
   'Plank en Hanging leg raises zijn op 13/9 niet genoemd: geen regel aangemaakt (niet als overgeslagen geteld).',
-  'Schouderpers (Workout A) en Schouderpers (dumbbell) (Workout C) als twee losse oefeningen bewaard, zoals in de bron. Samenvoegen kan later als het dezelfde beweging is.',
+  'Schouderpers komt in Workout A en C voor en is één oefening: de logs van beide dagen lopen door in dezelfde reeks.',
   'Oefeningen met "X of Y" zijn als één oefening bewaard, zodat de loggeschiedenis aaneengesloten blijft.',
   'Video-URLs voor Gebogen rij staan niet in de bron en zijn leeggelaten.',
 ];
