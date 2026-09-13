@@ -1,0 +1,31 @@
+:root {
+  /* Apple's eigen grijzen; near-black in plaats van puur zwart. */
+  --bg: #F5F5F7;
+  --surface: #FFFFFF;
+  --ink: #1D1D1F;
+  --ink-secondary: #6E6E73;
+  --ink-tertiary: #A1A1A6;
+  --accent: #0071E3;
+  --hairline: rgba(0, 0, 0, 0.10);
+  --hairline-strong: rgba(0, 0, 0, 0.18);
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+
+  /* Type-schaal: groot en licht bovenaan, rustig daaronder. */
+  --text-display: 2rem;
+  --text-title: 1.3125rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-micro: 0.8125rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+
+  --measure: 640px;
+}

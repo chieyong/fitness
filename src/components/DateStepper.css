@@ -1,0 +1,26 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-secondary);
+  font-size: var(--text-small);
+}
+
+.stepper button {
+  color: var(--ink-tertiary);
+  padding: var(--space-1) var(--space-2);
+  transition: color 120ms ease;
+}
+
+.stepper button:hover { color: var(--ink); }
+
+.stepper__value {
+  min-width: 5.5em;
+  text-align: center;
+}
+
+.stepper__reset {
+  margin-left: var(--space-2);
+  color: var(--accent) !important;
+  font-size: var(--text-small);
+}
