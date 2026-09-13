@@ -10,7 +10,8 @@ Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.
 2. Draai in de SQL-editor eerst `supabase/schema.sql`, daarna `supabase/seed.sql`.
 3. `cp .env.example .env` en vul `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY` in
    (Project Settings → API).
-4. `npm install && npm run dev`
+4. `npm install` en dan `npm run check` — dat controleert env, tabellen en seed in één keer.
+5. `npm run dev`
 
 ## Commando's
 
@@ -19,6 +20,7 @@ Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.
 | `npm run dev` | dev-server op :5173 |
 | `npm run build` | productiebuild naar `dist/` |
 | `npm test` | tests van de datumlogica |
+| `npm run check` | controleert Supabase-verbinding, schema en seed |
 
 ## De planningsregel
 
