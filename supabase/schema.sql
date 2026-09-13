@@ -66,6 +66,10 @@ create index if not exists sessions_planned_date_idx on sessions (planned_date);
 create index if not exists exercise_logs_session_idx on exercise_logs (session_id);
 create index if not exists exercise_logs_exercise_idx on exercise_logs (exercise_id, logged_at);
 
+-- Eén rij per set binnen een sessie; nodig om een set te kunnen bijwerken.
+create unique index if not exists exercise_logs_unique_set
+  on exercise_logs (session_id, exercise_id, set_number);
+
 -- Single-user app: RLS aan, anon mag alles. Bij meerdere gebruikers vervang je dit
 -- door policies op auth.uid(); daar is het datamodel nu nog niet op ingericht.
 alter table exercises enable row level security;

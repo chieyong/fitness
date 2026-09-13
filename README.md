@@ -2,12 +2,13 @@
 
 Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.md](FITNESS-APP-SPEC.md).
 
-**Status: fase 1** — schema-model en datumlogica. Nog geen logging, grafieken of foto-feedback.
+**Status: fase 2** — schema-model, datumlogica en handmatige logging. Nog geen grafieken of foto-feedback.
 
 ## Opzetten
 
 1. Maak een Supabase-project aan.
 2. Draai in de SQL-editor eerst `supabase/schema.sql`, daarna `supabase/seed.sql`.
+   Bestaat de database al, draai dan de bestanden in `supabase/migrations/` op volgorde.
 3. `cp .env.example .env` en vul `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY` in
    (Project Settings → API).
 4. `npm install` en dan `npm run check` — dat controleert env, tabellen en seed in één keer.
@@ -51,10 +52,20 @@ tests/                tests op schedule.js
 `schedule.js` is bewust vrij van React en Supabase: de doorschuifregels zijn het enige
 niet-triviale stuk in fase 1, en dit maakt ze los testbaar.
 
+## Loggen
+
+Een sessie met status `gepland` is invulbaar: per set reps en gewicht (of seconden),
+met de vorige keer als referentie erboven. Een set wordt opgeslagen zodra het veld de
+focus verliest; leegmaken wist hem. Komma en punt zijn allebei een decimaalteken.
+
+"Vorige keer" kijkt naar de oefening, niet naar de workout. Doe je de beenpers in zowel
+A als B, dan zie je gewoon de laatste keer dat je hem deed.
+
+Een sessie afronden (of overslaan) zet de status vast; pas daarna schuift het schema op
+naar de volgende training.
+
 ## Nog te doen
 
-- Echte migratie van het Notion-schema (vervangt `seed.sql`)
-- Fase 2: sets/reps/gewicht loggen, met "vorige keer" als referentie
 - Fase 3–5: progressiegrafieken, spiergroep-visualisatie, AI-foto-feedback
 - Netlify-deploy (env-vars als build-secrets)
 

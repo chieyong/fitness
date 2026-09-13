@@ -1,11 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveToday, todayISO, formatDateShort } from '../lib/schedule.js';
+import { lastPerformance, setsFor } from '../lib/progress.js';
 import {
-  fetchTemplates, fetchSessions, fetchTemplateExercises, ensureUpcomingSessions,
+  fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises,
+  ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
+  closeSession, reopenSession, saveSessionNote,
 } from '../lib/queries.js';
 import SessionHeader from '../components/SessionHeader.jsx';
-import ExerciseList from '../components/ExerciseList.jsx';
+import ExerciseBlock from '../components/ExerciseBlock.jsx';
+import SessionActions from '../components/SessionActions.jsx';
 import DateStepper from '../components/DateStepper.jsx';
+import '../components/ExerciseBlock.css';
+import '../components/SessionActions.css';
 import './Today.css';
 
 /** ?date=2026-09-15 overschrijft de begindatum; ongeldige waarden negeren we. */
@@ -21,6 +27,7 @@ export default function Today() {
   const [templates, setTemplates] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
+  const [logs, setLogs] = useState([]);
   const [status, setStatus] = useState('laden');
   const [error, setError] = useState(null);
 
@@ -54,7 +61,6 @@ export default function Today() {
     return () => { cancelled = true; };
   }, [today]);
 
-  // De geselecteerde datum bepaalt wat er te doen staat.
   const view = useMemo(
     () => (sessions.length ? resolveToday(sessions, date) : null),
     [sessions, date],
@@ -62,22 +68,77 @@ export default function Today() {
 
   // De sessie die het scherm toont: wat er te doen staat, of -- als die dag al
   // achter de rug is -- wat er gedaan is.
-  const shownSession = view?.current?.session ?? view?.done ?? null;
-  const currentTemplate = shownSession
-    ? templates.find((t) => t.id === shownSession.template_id)
-    : null;
+  const session = view?.current?.session ?? view?.done ?? null;
+  const template = session ? templates.find((t) => t.id === session.template_id) : null;
+  const readOnly = session ? session.status !== 'gepland' : true;
 
-  // Oefeningen van de getoonde sessie.
+  // Oefeningen van de getoonde sessie, plus alle logs van die oefeningen --
+  // die laatste voeden zowel de invoervelden als "vorige keer".
   useEffect(() => {
     let cancelled = false;
-    if (!currentTemplate) { setExercises([]); return undefined; }
+    if (!template) { setExercises([]); setLogs([]); return undefined; }
 
-    fetchTemplateExercises(currentTemplate.id)
-      .then((rows) => { if (!cancelled) setExercises(rows); })
-      .catch((e) => { if (!cancelled) setError(e.message); });
+    (async () => {
+      try {
+        const rows = await fetchTemplateExercises(template.id);
+        if (cancelled) return;
+        setExercises(rows);
+        const loaded = await fetchLogsForExercises(rows.map((r) => r.exercise_id));
+        if (!cancelled) setLogs(loaded);
+      } catch (e) {
+        if (!cancelled) setError(e.message);
+      }
+    })();
 
     return () => { cancelled = true; };
-  }, [currentTemplate?.id]);
+  }, [template?.id]);
+
+  const reloadLogs = useCallback(async () => {
+    if (exercises.length === 0) return;
+    setLogs(await fetchLogsForExercises(exercises.map((r) => r.exercise_id)));
+  }, [exercises]);
+
+  const handleSaveSet = useCallback(async (row) => {
+    try {
+      await saveSet({ ...row, session_id: session.id });
+      await reloadLogs();
+    } catch (e) { setError(e.message); }
+  }, [session?.id, reloadLogs]);
+
+  const handleDeleteSet = useCallback(async (id) => {
+    try { await deleteSet(id); await reloadLogs(); } catch (e) { setError(e.message); }
+  }, [reloadLogs]);
+
+  const handleToggleSkip = useCallback(async (exerciseId, skipped) => {
+    try {
+      await setExerciseSkipped(session.id, exerciseId, skipped);
+      await reloadLogs();
+    } catch (e) { setError(e.message); }
+  }, [session?.id, reloadLogs]);
+
+  const handleClose = useCallback(async (newStatus, notes) => {
+    try {
+      const updated = await closeSession(session.id, {
+        status: newStatus, actualDate: date, notes,
+      });
+      setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    } catch (e) { setError(e.message); }
+  }, [session?.id, date]);
+
+  const handleReopen = useCallback(async () => {
+    try {
+      const updated = await reopenSession(session.id);
+      setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    } catch (e) { setError(e.message); }
+  }, [session?.id]);
+
+  const handleSaveNote = useCallback(async (notes) => {
+    if ((session.notes ?? '') === notes) return;
+    try {
+      const updated = await saveSessionNote(session.id, notes);
+      setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    } catch (e) { setError(e.message); }
+  }, [session?.id, session?.notes]);
 
   if (status === 'laden') return <main className="page" />;
 
@@ -99,15 +160,41 @@ export default function Today() {
       <SessionHeader
         date={date}
         today={today}
-        template={currentTemplate}
+        template={template}
         entry={view?.current}
         done={!view?.current && view?.done ? view.done : null}
       />
 
-      {shownSession ? (
+      {error && <p className="today__error">{error}</p>}
+
+      {session ? (
         <>
-          {shownSession.notes && <p className="today__note">{shownSession.notes}</p>}
-          <ExerciseList items={exercises} />
+          <ol className="blocks">
+            {exercises.map((item) => {
+              const logged = setsFor(logs, session.id, item.exercise_id);
+              return (
+                <ExerciseBlock
+                  key={item.id}
+                  item={item}
+                  logged={logged.filter((l) => !l.skipped)}
+                  skipped={logged.length > 0 && logged.every((l) => l.skipped)}
+                  previous={lastPerformance(logs, sessions, item.exercise_id, date)}
+                  readOnly={readOnly}
+                  onSaveSet={handleSaveSet}
+                  onDeleteSet={handleDeleteSet}
+                  onToggleSkip={(skip) => handleToggleSkip(item.exercise_id, skip)}
+                />
+              );
+            })}
+          </ol>
+
+          <SessionActions
+            session={session}
+            readOnly={readOnly}
+            onClose={handleClose}
+            onReopen={handleReopen}
+            onSaveNote={handleSaveNote}
+          />
         </>
       ) : (
         <p className="today__message">
