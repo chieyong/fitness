@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { muscleTotals, findMuscle, intensities, sortByMetric, busiestBy } from '../src/lib/muscles.js';
+import { muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, intensityBucket } from '../src/lib/muscles.js';
 
 const sessions = [
   { id: 's1', planned_date: '2026-09-05', actual_date: '2026-09-05', status: 'voltooid' },
@@ -106,4 +106,14 @@ test('de drukste groep volgt de gekozen maat', () => {
   assert.equal(busiestBy(t, 'volume').muscle, 'benen');
   assert.equal(sortByMetric(t, 'volume')[0].muscle, 'benen');
   assert.equal(busiestBy([], 'sets'), null);
+});
+
+test('intensiteit valt in de juiste stap van de schaal', () => {
+  assert.equal(intensityBucket(0), 0);
+  assert.equal(intensityBucket(null), 0);
+  assert.equal(intensityBucket(0.01), 1);
+  assert.equal(intensityBucket(0.2), 1);
+  assert.equal(intensityBucket(0.21), 2);
+  assert.equal(intensityBucket(1), 5);
+  assert.equal(intensityBucket(1.5), 5);      // nooit buiten de schaal
 });

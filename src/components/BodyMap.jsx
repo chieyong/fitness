@@ -1,73 +1,54 @@
-import { FRONT, BACK, VIEWBOX } from './bodyRegions.js';
+import Model from 'react-body-highlighter';
+import { intensityBucket } from '../lib/muscles.js';
+import { muscleLabel } from '../lib/muscleLabels.js';
 import './BodyMap.css';
 
 /**
  * Sequentiële schaal: één tint, licht naar donker. De lichtheid daalt
  * monotoon, dus de volgorde is af te lezen zonder de kleuren te kennen.
  */
-const RAMP = ['#DCE9FA', '#B3D1F5', '#7FB0EC', '#3F8AE0', '#0062C4'];
-const EMPTY = '#E8E8ED';
+export const RAMP = ['#DCE9FA', '#B3D1F5', '#7FB0EC', '#3F8AE0', '#0062C4'];
+export const EMPTY = '#E3E3E8';
 
-export function rampColor(intensity) {
-  if (intensity == null || intensity <= 0) return EMPTY;
-  const i = Math.min(RAMP.length - 1, Math.floor(intensity * RAMP.length));
-  return RAMP[i];
-}
-
-export { RAMP, EMPTY };
-
-/** Voor- en achterkant naast elkaar; klik een spiergroep om die te kiezen. */
+/**
+ * Het silhouet komt van react-body-highlighter: echte spierregio's in plaats
+ * van een eigen abstractie. De aggregatie blijft van ons -- de component kleurt
+ * op `frequency`, en daar voeren we de stap van onze eigen schaal in.
+ */
 export default function BodyMap({ intensity, selected, onSelect, valueLabel }) {
+  const data = [...intensity.entries()]
+    .map(([muscle, value]) => ({
+      name: muscleLabel(muscle),
+      muscles: [muscle],
+      frequency: intensityBucket(value, RAMP.length),
+    }))
+    .filter((d) => d.frequency > 0);
+
+  const handle = ({ muscle }) => onSelect(muscle === selected ? null : muscle);
+
   return (
     <div className="body">
-      <Figure parts={FRONT} label="Voorkant"
-        intensity={intensity} selected={selected} onSelect={onSelect} valueLabel={valueLabel} />
-      <Figure parts={BACK} label="Achterkant"
-        intensity={intensity} selected={selected} onSelect={onSelect} valueLabel={valueLabel} />
+      <Figure type="anterior" label="Voorkant" data={data} onClick={handle} />
+      <Figure type="posterior" label="Achterkant" data={data} onClick={handle} />
+      <p className="body__sr">
+        {[...intensity.keys()].map((m) => `${muscleLabel(m)}: ${valueLabel(m)}`).join('. ')}
+      </p>
     </div>
   );
 }
 
-function Figure({ parts, label, intensity, selected, onSelect, valueLabel }) {
+function Figure({ type, label, data, onClick }) {
   return (
     <figure className="body__figure">
-      <svg viewBox={VIEWBOX} className="body__svg" role="group" aria-label={label}>
-        {parts.map((part) => {
-          const muscle = part.muscle;
-          const value = muscle ? intensity.get(muscle) ?? 0 : null;
-          const isSelected = muscle != null && muscle === selected;
-
-          const common = {
-            className: [
-              'region',
-              muscle ? 'region--active' : 'region--neutral',
-              isSelected ? 'region--selected' : '',
-            ].filter(Boolean).join(' '),
-            fill: muscle ? rampColor(value) : EMPTY,
-            ...(muscle ? {
-              tabIndex: 0,
-              role: 'button',
-              'aria-pressed': isSelected,
-              'aria-label': `${muscle}: ${valueLabel(muscle)}`,
-              onClick: () => onSelect(isSelected ? null : muscle),
-              onKeyDown: (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect(isSelected ? null : muscle);
-                }
-              },
-            } : {}),
-          };
-
-          return part.shape.r != null && part.shape.cx == null
-            ? <rect key={part.id} {...common}
-                x={part.shape.x} y={part.shape.y}
-                width={part.shape.w} height={part.shape.h}
-                rx={part.shape.r} ry={part.shape.r} />
-            : <circle key={part.id} {...common}
-                cx={part.shape.cx} cy={part.shape.cy} r={part.shape.r} />;
-        })}
-      </svg>
+      <Model
+        type={type}
+        data={data}
+        onClick={onClick}
+        bodyColor={EMPTY}
+        highlightedColors={RAMP}
+        style={{ width: '100%' }}
+        svgStyle={{ width: '100%', height: 'auto' }}
+      />
       <figcaption className="body__caption">{label}</figcaption>
     </figure>
   );

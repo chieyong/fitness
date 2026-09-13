@@ -110,8 +110,19 @@ alle groepen is daarom hoger dan het werkelijke werk — de vergelijking tússen
 is wat deze cijfers dragen, niet de som.
 
 De kleurschaal is één tint van licht naar donker, met monotoon dalende lichtheid, zodat
-de volgorde afleesbaar is zonder de kleuren te kennen. Het silhouet is handgetekende SVG
-zonder D3: er is geen datagestuurde layout, alleen een kleurschaal over vaste vormen.
+de volgorde afleesbaar is zonder de kleuren te kennen.
+
+Het silhouet komt van [react-body-highlighter](https://github.com/giavinh79/react-body-highlighter)
+(MIT, ~20 kB): echte spierregio's in plaats van een eigen abstractie. De aggregatie blijft
+van ons — de component kleurt op `frequency`, en daar voeren we de stap van onze eigen
+schaal in. Twee beperkingen van die component: de polygonen zijn alleen met de muis te
+bedienen en ze dragen geen selectiestaat. Daarom is de tabel eronder ook een selecteerbare
+lijst; die is wel met het toetsenbord te bedienen en markeert de gekozen groep.
+
+**Spiersleutels zijn Engels, labels Nederlands.** `exercises.muscle_groups` bevat de
+sleutels die de component kent (`chest`, `upper-back`, `front-deltoids`, …); `src/lib/muscleLabels.js`
+vertaalt die naar wat het scherm toont. Bij een nieuwe oefening moet je die sleutels
+gebruiken, anders kleurt het silhouet niets.
 
 ## Nog te doen
 

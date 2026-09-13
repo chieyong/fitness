@@ -91,3 +91,16 @@
 @media (max-width: 480px) {
   .body__figure { flex: 1 1 0; }
 }
+
+/* De tabel is ook de toetsenbord-ingang: de polygonen van het silhouet zijn
+   alleen met de muis te bedienen. */
+.log__pick {
+  color: inherit;
+  text-align: left;
+  transition: color 120ms ease;
+}
+
+.log__pick:hover { color: var(--accent); }
+
+.log__table tr.is-selected td { color: var(--ink); }
+.log__table tr.is-selected .log__pick { color: var(--accent); font-weight: 500; }

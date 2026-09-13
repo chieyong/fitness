@@ -4,7 +4,7 @@ import { addDays, todayISO, formatDateShort } from '../lib/schedule.js';
 import { formatNumber } from '../lib/input.js';
 import { fetchAllExercises, fetchAllLogs, fetchSessions } from '../lib/queries.js';
 import BodyMap, { RampLegend } from '../components/BodyMap.jsx';
-import { MAPPED } from '../components/bodyRegions.js';
+import { muscleLabel, KNOWN_MUSCLES } from '../lib/muscleLabels.js';
 import './Body.css';
 
 const RANGES = [
@@ -76,7 +76,7 @@ export default function Body({ muscle, onSelectMuscle, onOpenExercise, onBack })
   const chosen = selected ? findMuscle(totals, selected) : null;
 
   // Spiergroepen die wel in de data zitten maar niet op het silhouet staan.
-  const offBody = totals.filter((t) => !MAPPED.includes(t.muscle));
+  const offBody = totals.filter((t) => !KNOWN_MUSCLES.includes(t.muscle));
 
   return (
     <main className="page">
@@ -118,14 +118,19 @@ export default function Body({ muscle, onSelectMuscle, onOpenExercise, onBack })
             valueLabel={valueOf}
           />
 
-          <RampLegend maxLabel={busiest ? `${valueOf(busiest.muscle)} (${busiest.muscle})` : ''} />
+          <RampLegend
+            maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle)})` : ''} />
 
-          {chosen ? (
+          {selected ? (
             <section className="detail">
-              <h2 className="detail__title">{chosen.muscle}</h2>
-              <p className="detail__value">{valueOf(chosen.muscle)} in deze periode</p>
+              <h2 className="detail__title">{muscleLabel(selected)}</h2>
+              <p className="detail__value">
+                {chosen
+                  ? `${valueOf(selected)} in deze periode`
+                  : 'Niets gedaan in deze periode.'}
+              </p>
               <ul className="detail__list">
-                {chosen.byExercise.map((e) => (
+                {(chosen?.byExercise ?? []).map((e) => (
                   <li key={e.exerciseId}>
                     <button type="button" className="detail__item"
                       onClick={() => onOpenExercise(e.exerciseId)}>
@@ -143,7 +148,9 @@ export default function Body({ muscle, onSelectMuscle, onOpenExercise, onBack })
           )}
 
           <section className="detail">
-            <h2 className="detail__heading">Alle spiergroepen</h2>
+            <h2 className="detail__heading">
+              Alle spiergroepen — kies er een om de oefeningen te zien
+            </h2>
             <table className="log__table">
               <thead>
                 <tr>
@@ -154,8 +161,15 @@ export default function Body({ muscle, onSelectMuscle, onOpenExercise, onBack })
               </thead>
               <tbody>
                 {ranked.map((t) => (
-                  <tr key={t.muscle}>
-                    <td>{t.muscle}</td>
+                  <tr key={t.muscle}
+                    className={t.muscle === selected ? 'is-selected' : undefined}>
+                    <td>
+                      <button type="button" className="log__pick"
+                        aria-pressed={t.muscle === selected}
+                        onClick={() => setSelected(t.muscle === selected ? null : t.muscle)}>
+                        {muscleLabel(t.muscle)}
+                      </button>
+                    </td>
                     <td>{t.sets}</td>
                     <td>{formatNumber(Math.round(t.volume))} kg</td>
                   </tr>
@@ -164,7 +178,7 @@ export default function Body({ muscle, onSelectMuscle, onOpenExercise, onBack })
             </table>
             {offBody.length > 0 && (
               <p className="body__hint">
-                Niet op het silhouet: {offBody.map((t) => t.muscle).join(', ')}.
+                Niet op het silhouet: {offBody.map((t) => muscleLabel(t.muscle)).join(', ')}.
               </p>
             )}
           </section>

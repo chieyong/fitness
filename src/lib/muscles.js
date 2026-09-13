@@ -70,6 +70,17 @@ export function muscleTotals(logs, sessions, exercises, range = {}) {
     .sort((a, b) => b.sets - a.sets);
 }
 
+/**
+ * Zet een intensiteit van 0..1 om in een stap van de kleurschaal.
+ * 0 betekent "niets gedaan" en krijgt geen stap; alles daarboven valt in
+ * 1..steps. react-body-highlighter leest dit als `frequency` en pakt daarmee
+ * highlightedColors[frequency - 1].
+ */
+export function intensityBucket(intensity, steps = 5) {
+  if (!intensity || intensity <= 0) return 0;
+  return Math.min(steps, Math.max(1, Math.ceil(intensity * steps)));
+}
+
 /** Sorteer op de maat die het scherm toont; muscleTotals sorteert op sets. */
 export function sortByMetric(totals, metric = 'sets') {
   return [...totals].sort((a, b) => b[metric] - a[metric]);
