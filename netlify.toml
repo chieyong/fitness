@@ -1,0 +1,10 @@
+# Netlify-configuratie. De Supabase-sleutels staan hier bewust niet in: Vite
+# bakt ze tijdens de build in de bundel, dus ze horen als build-variabelen in
+# de site-instellingen (Site configuration -> Environment variables).
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

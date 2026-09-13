@@ -9,9 +9,11 @@ export default function App() {
           Nog niet verbonden
         </h1>
         <p style={{ color: 'var(--ink-secondary)', marginTop: 'var(--space-3)', maxWidth: '34em' }}>
-          Kopieer <code>.env.example</code> naar <code>.env</code> en vul de Supabase-URL en
-          anon-key van je project in. Draai daarna <code>supabase/schema.sql</code> en{' '}
-          <code>supabase/seed.sql</code> in de SQL-editor.
+          Deze build heeft geen Supabase-sleutels meegekregen.
+          {' '}Lokaal: kopieer <code>.env.example</code> naar <code>.env</code> en vul
+          {' '}<code>VITE_SUPABASE_URL</code> en <code>VITE_SUPABASE_ANON_KEY</code> in.
+          {' '}Op Netlify: zet diezelfde twee als environment variables en draai de
+          {' '}deploy opnieuw — Vite leest ze tijdens de build, niet in de browser.
         </p>
       </main>
     );

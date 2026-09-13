@@ -52,6 +52,21 @@ tests/                tests op schedule.js
 `schedule.js` is bewust vrij van React en Supabase: de doorschuifregels zijn het enige
 niet-triviale stuk in fase 1, en dit maakt ze los testbaar.
 
+## Deploy (Netlify)
+
+`netlify.toml` legt build (`npm run build`) en publicatiemap (`dist`) vast. De twee
+Supabase-variabelen staan er bewust niet in — die horen in **Site configuration →
+Environment variables**:
+
+```
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+Vite bakt ze tijdens de build in de bundel. Zet je ze later, dan moet je de deploy
+opnieuw draaien; een herstart van de site is niet genoeg. Toont de site "Nog niet
+verbonden", dan zijn ze niet meegekomen in de build.
+
 ## Loggen
 
 Een sessie met status `gepland` is invulbaar: per set reps en gewicht (of seconden),
