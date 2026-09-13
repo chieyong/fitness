@@ -4,10 +4,7 @@ import { setDataSource } from './lib/queries.js';
 import Today from './screens/Today.jsx';
 import Exercise from './screens/Exercise.jsx';
 import ProgressIndex from './screens/Progress.jsx';
-import Login from './screens/Login.jsx';
 import AccessBanner from './components/AccessBanner.jsx';
-
-const DEMO_KEY = 'fitness.demo';
 
 /** Welk scherm staat er in de URL? Leeg = het scherm van vandaag. */
 function routeFromUrl() {
@@ -33,7 +30,6 @@ function takeAuthError() {
 
 export default function App() {
   const [access, setAccess] = useState(null);
-  const [demoChosen, setDemoChosen] = useState(() => sessionStorage.getItem(DEMO_KEY) === '1');
   const [authError, setAuthError] = useState(takeAuthError);
 
   useEffect(() => {
@@ -54,45 +50,28 @@ export default function App() {
     return () => { cancelled = true; stop(); };
   }, []);
 
-  const chooseDemo = () => {
-    sessionStorage.setItem(DEMO_KEY, '1');
-    setDemoChosen(true);
-  };
-
   const login = async () => {
     setAuthError(null);
     const { error } = await signInWithGoogle();
     if (error) setAuthError(error.message);
   };
 
-  const logout = async () => {
-    sessionStorage.removeItem(DEMO_KEY);
-    setDemoChosen(false);
-    await signOut();
-  };
+  const logout = () => signOut();
 
   if (!access) return <main className="page" />;
 
-  // Niet ingelogd en nog geen keuze gemaakt: eerst het inlogscherm.
-  if (access.reason === 'niet-ingelogd' && !demoChosen) {
-    return <Login onLogin={login} onDemo={chooseDemo} error={authError} />;
-  }
-
+  // Geen inlogscherm vooraf: een nieuwe bezoeker ziet meteen de demo, met in
+  // de balk bovenaan hoe je je eigen trainingen bewaart.
   return (
     <>
-      {access.mode === 'demo' && (
-        <AccessBanner access={access} onLogin={login} onLogout={logout} />
-      )}
+      <AccessBanner access={access} error={authError} onLogin={login} onLogout={logout} />
       {/* Andere bron = alles opnieuw ophalen; de key dwingt dat af. */}
-      <Router
-        key={`${access.mode}:${access.email ?? ''}`}
-        account={access.mode === 'owner' ? { email: access.email, onLogout: logout } : null}
-      />
+      <Router key={`${access.mode}:${access.email ?? ''}`} />
     </>
   );
 }
 
-function Router({ account }) {
+function Router() {
   const [route, setRoute] = useState(routeFromUrl);
 
   // De browserknoppen horen gewoon te werken.
@@ -145,5 +124,5 @@ function Router({ account }) {
       />
     );
   }
-  return <Today onOpenExercise={openExercise} onOpenProgress={openProgress} account={account} />;
+  return <Today onOpenExercise={openExercise} onOpenProgress={openProgress} />;
 }

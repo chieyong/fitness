@@ -57,11 +57,14 @@ niet-triviale stuk in fase 1, en dit maakt ze los testbaar.
 
 ## Inloggen en demo
 
-Wie de app opent zonder in te loggen, krijgt een inlogscherm met twee keuzes: inloggen
-met Google of de demo bekijken. De demo is een half jaar aan voorbeeldtrainingen volgens
-het echte programma, gemaakt in de browser zelf (`src/lib/demo/generate.js`, met vaste
-seed). Loggen werkt in de demo gewoon, maar niets gaat naar de database; na herladen
-staat alles weer op de voorbeeldgegevens.
+Er is geen inlogscherm vooraf: wie de app opent, ziet meteen de demo, met bovenaan een
+balk die zegt dat je moet inloggen om je eigen trainingen op te slaan. De demo is een half
+jaar aan voorbeeldtrainingen volgens het echte programma, gemaakt in de browser zelf
+(`src/lib/demo/generate.js`, met vaste seed). Loggen werkt in de demo gewoon, maar niets
+gaat naar de database; na herladen staat alles weer op de voorbeeldgegevens.
+
+Ingelogd staat in dezelfde balk met welk account, met een knop om uit te loggen — op elk
+scherm, niet alleen op het scherm van vandaag.
 
 Na inloggen beslist de **database** wie de echte gegevens ziet, niet de app: de functie
 `is_owner()` kijkt of het Google-adres in de tabel `app_owners` staat, en de policies op

@@ -21,7 +21,7 @@ function dateFromUrl() {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
-export default function Today({ onOpenExercise, onOpenProgress, account }) {
+export default function Today({ onOpenExercise, onOpenProgress }) {
   const today = useMemo(() => todayISO(), []);
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
 
@@ -226,14 +226,6 @@ export default function Today({ onOpenExercise, onOpenProgress, account }) {
             ))}
           </ul>
         </section>
-      )}
-      {account && (
-        <footer className="account">
-          <span>Ingelogd als {account.email}</span>
-          <button type="button" className="account__logout" onClick={account.onLogout}>
-            Uitloggen
-          </button>
-        </footer>
       )}
     </main>
   );

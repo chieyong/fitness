@@ -65,16 +65,3 @@
   margin-bottom: var(--space-4);
 }
 
-.account {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-4);
-  margin-top: var(--space-8);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--hairline);
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
-}
-
-.account__logout { color: var(--accent); font-size: var(--text-small); }

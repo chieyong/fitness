@@ -30,3 +30,12 @@
 @media (max-width: 480px) {
   .banner__inner { padding: var(--space-2) var(--space-4); }
 }
+
+/* Voor de eigenaar: geen tint, alleen een haarlijn. Het is informatie, geen waarschuwing. */
+.banner--owner { background: transparent; }
+
+.banner__error {
+  display: block;
+  color: #B3261E;
+  margin-top: 2px;
+}
