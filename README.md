@@ -81,6 +81,10 @@ naar de volgende training.
 
 ## Nog te doen
 
+- **Beveiliging.** De RLS-policies staan op `using (true)` voor `anon`, en de anon-sleutel
+  zit in de client-bundel. Op een publieke Netlify-URL betekent dat: iedereen die het adres
+  kent kan de trainingsdata lezen en wijzigen. Bewust uitgesteld, niet vergeten. De oplossing
+  is Supabase Auth (single user) plus policies op `auth.uid()`.
 - Fase 3–5: progressiegrafieken, spiergroep-visualisatie, AI-foto-feedback
 - Netlify-deploy (env-vars als build-secrets)
 
