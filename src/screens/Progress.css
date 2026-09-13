@@ -155,3 +155,18 @@
   .line { gap: var(--space-3); }
   .line__now { min-width: 3.8em; }
 }
+
+/* Terug links, Vandaag rechts: altijd één tik naar de planning van vandaag. */
+.progress__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.progress__bar .back { margin-bottom: 0; }
+
+.today__link {
+  color: var(--accent);
+  font-size: var(--text-small);
+}

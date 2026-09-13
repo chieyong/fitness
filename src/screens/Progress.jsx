@@ -23,7 +23,7 @@ const METRICS = [
   { id: 'volume', label: 'Volume', unit: 'kg' },
 ];
 
-export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBack }) {
+export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoToday, onBack }) {
   const today = useMemo(() => todayISO(), []);
   const [range, setRange] = useState('30');
   const [metric, setMetric] = useState('sets');
@@ -106,7 +106,8 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBac
   const select = (m) => {
     const next = m === selected ? null : m;
     onSelectMuscle(next);
-    if (next) requestAnimationFrame(() => scrollTo(`spier-${next}`));
+    // Openen: naar de spiergroep. Dichtklappen: terug naar het lichaam.
+    requestAnimationFrame(() => scrollTo(next ? `spier-${next}` : 'lichaam'));
   };
 
   // Binnenkomen via een gedeelde link opent de juiste groep meteen.
@@ -121,6 +122,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBac
 
   return (
     <main className="page">
+      <div className="progress__bar">
       <button type="button" className="back" onClick={onBack}>
         <svg width="10" height="14" viewBox="0 0 10 14" fill="none" aria-hidden="true">
           <path d="M7.5 1.5 2.5 7l5 5.5" stroke="currentColor" strokeWidth="1.5"
@@ -128,6 +130,10 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onBac
         </svg>
         Terug
       </button>
+        <button type="button" className="today__link" onClick={onGoToday}>
+          Vandaag
+        </button>
+      </div>
 
       <h1 className="exercise__title">Voortgang</h1>
       {error && <p className="exercise__meta">{error}</p>}

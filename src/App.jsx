@@ -46,14 +46,24 @@ function Router() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const go = (params) => {
+  /**
+   * Naar een ander scherm: nieuwe geschiedenisstap en bovenaan beginnen.
+   * Met `inPlace` blijft het hetzelfde scherm (bijv. een spiergroep openklappen):
+   * dan geen extra stap in de geschiedenis en geen sprong naar boven -- het
+   * scherm regelt het scrollen zelf, geanimeerd.
+   */
+  const go = (params, { inPlace = false } = {}) => {
     const url = new URL(window.location.href);
     url.searchParams.delete('oefening');
     url.searchParams.delete('voortgang');
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-    window.history.pushState(null, '', url);
+    if (inPlace) {
+      window.history.replaceState(null, '', url);
+    } else {
+      window.history.pushState(null, '', url);
+      window.scrollTo(0, 0);
+    }
     setRoute(routeFromUrl());
-    window.scrollTo(0, 0);
   };
 
   const openExercise = (id) => go({ oefening: id });
@@ -72,8 +82,9 @@ function Router() {
     return (
       <ProgressIndex
         muscle={route.muscle}
-        onSelectMuscle={(m) => go({ voortgang: m ?? '1' })}
+        onSelectMuscle={(m) => go({ voortgang: m ?? '1' }, { inPlace: true })}
         onOpenExercise={openExercise}
+        onGoToday={() => go({})}
         onBack={back}
       />
     );
