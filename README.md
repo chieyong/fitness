@@ -2,8 +2,8 @@
 
 Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.md](FITNESS-APP-SPEC.md).
 
-**Status: fase 3** — schema-model, datumlogica, logging en progressiegrafieken per oefening.
-Nog geen spiergroep-visualisatie of foto-feedback.
+**Status: fase 4** — schema-model, datumlogica, logging, progressiegrafieken en
+spiergroep-aggregatie op een lichaamssilhouet. Nog geen foto-feedback.
 
 ## Opzetten
 
@@ -92,13 +92,34 @@ staat. De y-as begint bewust niet bij nul: bij een lijngrafiek is het verschil t
 bereikbaar met muis én toetsenbord, en dezelfde cijfers staan in de tabel eronder,
 zodat niets alleen achter een hover zit.
 
+## Spiergroepen
+
+Via Voortgang → "Per spiergroep": een silhouet van voor- en achterkant waarin elke
+spiergroep gekleurd is naar hoe zwaar hij belast is. Klik een groep aan voor de
+oefeningen die eraan bijdroegen. Een gekozen groep staat in de URL (`?spieren=triceps`),
+dus een selectie is deelbaar.
+
+**Sets is de standaardmaat, niet kilo's.** Volume in kg is binnen één oefening een
+prima maat voor vooruitgang, maar tussen spiergroepen misleidend: in de huidige data
+hebben benen en triceps bijna hetzelfde kg-volume (6602 om 6496) terwijl benen 9 sets
+kreeg en triceps 39. Een beenpers verplaatst meer gewicht dan een curl door anatomie,
+niet door inspanning. Beide maten zitten erin; het scherm waarschuwt bij kilo's.
+
+Een oefening telt volledig mee voor elke spiergroep die eraan meedoet. Het totaal over
+alle groepen is daarom hoger dan het werkelijke werk — de vergelijking tússen groepen
+is wat deze cijfers dragen, niet de som.
+
+De kleurschaal is één tint van licht naar donker, met monotoon dalende lichtheid, zodat
+de volgorde afleesbaar is zonder de kleuren te kennen. Het silhouet is handgetekende SVG
+zonder D3: er is geen datagestuurde layout, alleen een kleurschaal over vaste vormen.
+
 ## Nog te doen
 
 - **Beveiliging.** De RLS-policies staan op `using (true)` voor `anon`, en de anon-sleutel
   zit in de client-bundel. Op een publieke Netlify-URL betekent dat: iedereen die het adres
   kent kan de trainingsdata lezen en wijzigen. Bewust uitgesteld, niet vergeten. De oplossing
   is Supabase Auth (single user) plus policies op `auth.uid()`.
-- Fase 4–5: spiergroep-aggregatie met lichaamsvisualisatie, AI-foto-feedback
+- Fase 5: AI-feedback op voortgangsfoto's
 - Target voor "Hanging leg raises of buikspier crunch" staat op 3x15; die kwam niet uit
   de bron en is een plaatshouder.
 

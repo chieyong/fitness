@@ -144,3 +144,17 @@ export function fetchAllTemplateExercises() {
       .order('position'),
   );
 }
+
+/** Alle oefeningen uit de bibliotheek. */
+export function fetchAllExercises() {
+  return unwrap(supabase.from('exercises').select('id, name, muscle_groups').order('name'));
+}
+
+/** Alle gelogde sets — basis voor de spiergroep-aggregatie. */
+export function fetchAllLogs() {
+  return unwrap(
+    supabase
+      .from('exercise_logs')
+      .select('id, session_id, exercise_id, set_number, reps, weight_kg, seconds, skipped'),
+  );
+}

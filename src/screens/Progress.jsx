@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { fetchTemplates, fetchAllTemplateExercises } from '../lib/queries.js';
 import './Progress.css';
+import './Exercise.css';
 
 /** Alle oefeningen per schema, als ingang naar hun voortgang. */
-export default function Progress({ onOpenExercise, onBack }) {
+export default function Progress({ onOpenExercise, onOpenBody, onBack }) {
   const [templates, setTemplates] = useState([]);
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState('laden');
@@ -36,6 +37,9 @@ export default function Progress({ onOpenExercise, onBack }) {
       </button>
 
       <h1 className="exercise__title">Voortgang</h1>
+      <button type="button" className="progress__link" onClick={onOpenBody}>
+        Per spiergroep
+      </button>
       {error && <p className="exercise__meta">{error}</p>}
 
       {templates.map((t) => (

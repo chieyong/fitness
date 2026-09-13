@@ -3,6 +3,7 @@ import { isConfigured } from './lib/supabase.js';
 import Today from './screens/Today.jsx';
 import Exercise from './screens/Exercise.jsx';
 import ProgressIndex from './screens/Progress.jsx';
+import Body from './screens/Body.jsx';
 
 /** Welk scherm staat er in de URL? Leeg = het scherm van vandaag. */
 function routeFromUrl() {
@@ -10,6 +11,7 @@ function routeFromUrl() {
   const exercise = params.get('oefening');
   if (exercise) return { screen: 'oefening', exercise };
   if (params.has('voortgang')) return { screen: 'voortgang' };
+  if (params.has('spieren')) return { screen: 'spieren', muscle: params.get('spieren') || null };
   return { screen: 'vandaag' };
 }
 
@@ -48,6 +50,7 @@ function Router() {
     const url = new URL(window.location.href);
     url.searchParams.delete('oefening');
     url.searchParams.delete('voortgang');
+    url.searchParams.delete('spieren');
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
     window.history.pushState(null, '', url);
     setRoute(routeFromUrl());
@@ -56,6 +59,7 @@ function Router() {
 
   const openExercise = (id) => go({ oefening: id });
   const openProgress = () => go({ voortgang: '1' });
+  const openBody = () => go({ spieren: '1' });
   // Kom je hier via een gedeelde link, dan is er geen geschiedenis om naar
   // terug te gaan; val dan terug op het scherm van vandaag.
   const back = () => {
@@ -67,7 +71,17 @@ function Router() {
     return <Exercise exerciseId={route.exercise} onBack={back} />;
   }
   if (route.screen === 'voortgang') {
-    return <ProgressIndex onOpenExercise={openExercise} onBack={back} />;
+    return <ProgressIndex onOpenExercise={openExercise} onOpenBody={openBody} onBack={back} />;
+  }
+  if (route.screen === 'spieren') {
+    return (
+      <Body
+        muscle={route.muscle}
+        onSelectMuscle={(m) => go({ spieren: m ?? '1' })}
+        onOpenExercise={openExercise}
+        onBack={back}
+      />
+    );
   }
   return <Today onOpenExercise={openExercise} onOpenProgress={openProgress} />;
 }

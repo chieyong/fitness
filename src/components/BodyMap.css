@@ -1,0 +1,55 @@
+.body {
+  display: flex;
+  gap: var(--space-5);
+  justify-content: flex-start;
+  margin: var(--space-5) 0 var(--space-4);
+}
+
+.body__figure { margin: 0; flex: 0 1 180px; }
+
+.body__svg { width: 100%; height: auto; display: block; }
+
+.body__caption {
+  margin-top: var(--space-2);
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+  text-align: center;
+}
+
+/* Een dunne lijn houdt het silhouet leesbaar, ook waar de vulling bijna
+   dezelfde toon heeft als de achtergrond. */
+.region {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+  transition: fill 160ms ease;
+}
+
+.region--active { cursor: pointer; }
+
+.region--active:hover { stroke: var(--ink-tertiary); }
+
+.region--selected { stroke: var(--ink); stroke-width: 2; }
+
+.region--active:focus { outline: none; }
+.region--active:focus-visible { stroke: var(--accent); stroke-width: 2.5; }
+
+/* Legenda */
+.ramp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+}
+
+.ramp__bar {
+  display: flex;
+  height: 8px;
+  width: 120px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ramp__bar i { flex: 1; }
+
+.ramp__end { white-space: nowrap; }

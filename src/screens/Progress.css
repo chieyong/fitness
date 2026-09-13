@@ -31,3 +31,10 @@
   font-size: var(--text-micro);
   color: var(--ink-tertiary);
 }
+
+.progress__link {
+  display: inline-block;
+  margin-top: var(--space-3);
+  color: var(--accent);
+  font-size: var(--text-small);
+}
