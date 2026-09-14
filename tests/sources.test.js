@@ -97,3 +97,58 @@ test('twee demo-bronnen delen geen staat', async () => {
   await a.saveSessionNote(s.id, 'alleen in a');
   assert.notEqual((await b.fetchSessions())[0].notes, 'alleen in a');
 });
+
+test('oefening aanmaken en aan een workout koppelen', async () => {
+  const src = fresh();
+  const ex = await src.createExercise({ name: 'Push-ups', muscle_groups: ['chest'], equipment: 'zonder', measure: 'reps', catalog_key: 'push-ups' });
+  const rows = await src.fetchTemplateExercises('demo-tpl-0');
+  await src.addTemplateExercise({
+    template_id: 'demo-tpl-0', exercise_id: ex.id, position: rows.length + 1, target_sets: 3, target_reps_min: 10,
+  });
+  const after = await src.fetchTemplateExercises('demo-tpl-0');
+  assert.equal(after.length, rows.length + 1);
+  assert.equal(after.at(-1).exercise.name, 'Push-ups');
+  const all = await src.fetchAllExercises();
+  assert.equal(all.find((x) => x.id === ex.id).equipment, 'zonder');
+});
+
+test('volgorde wijzigen en een target aanpassen', async () => {
+  const src = fresh();
+  const rows = await src.fetchTemplateExercises('demo-tpl-0');
+  await src.updateTemplateExercisePositions([{ id: rows[0].id, position: 2 }, { id: rows[1].id, position: 1 }]);
+  const after = await src.fetchTemplateExercises('demo-tpl-0');
+  assert.equal(after[0].id, rows[1].id);
+  const changed = await src.updateTemplateExercise(rows[0].id, { target_sets: 5 });
+  assert.equal(changed.target_sets, 5);
+});
+
+test('oefening uit een workout halen laat de oefening en haar logs staan', async () => {
+  const src = fresh();
+  const [row] = await src.fetchTemplateExercises('demo-tpl-0');
+  const logsBefore = (await src.fetchAllLogs()).filter((l) => l.exercise_id === row.exercise_id).length;
+  await src.deleteTemplateExercise(row.id);
+  assert.ok(!(await src.fetchTemplateExercises('demo-tpl-0')).some((r) => r.id === row.id));
+  assert.ok((await src.fetchAllExercises()).some((e) => e.id === row.exercise_id));
+  assert.equal((await src.fetchAllLogs()).filter((l) => l.exercise_id === row.exercise_id).length, logsBefore);
+  assert.ok(logsBefore > 0);
+});
+
+test('workout toevoegen, hernoemen en archiveren', async () => {
+  const src = fresh();
+  const d = await src.createTemplate({ label: 'Workout D', position: 3 });
+  assert.equal((await src.fetchTemplates()).length, 4);
+  assert.equal((await src.renameTemplate(d.id, 'Benen extra')).label, 'Benen extra');
+
+  const templates = await src.fetchTemplates();
+  await src.ensureUpcomingSessions(templates, await src.fetchSessions(), today);
+  const target = 'demo-tpl-1';
+  const before = await src.fetchSessions();
+  const history = before.filter((s) => s.template_id === target && s.status !== 'gepland').length;
+  assert.ok(before.some((s) => s.template_id === target && s.status === 'gepland'));
+
+  await src.archiveTemplate(target);
+  const after = await src.fetchSessions();
+  assert.ok(!(await src.fetchTemplates()).some((t) => t.id === target));
+  assert.ok(!after.some((s) => s.template_id === target && s.status === 'gepland'));
+  assert.equal(after.filter((s) => s.template_id === target).length, history);
+});

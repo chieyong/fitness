@@ -4,6 +4,8 @@ import { setDataSource } from './lib/queries.js';
 import Today from './screens/Today.jsx';
 import Exercise from './screens/Exercise.jsx';
 import ProgressIndex from './screens/Progress.jsx';
+import Schema from './screens/Schema.jsx';
+import AddExercise from './screens/AddExercise.jsx';
 import AccessBanner from './components/AccessBanner.jsx';
 
 /** Welk scherm staat er in de URL? Leeg = het scherm van vandaag. */
@@ -11,6 +13,9 @@ function routeFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const exercise = params.get('oefening');
   if (exercise) return { screen: 'oefening', exercise };
+  const adding = params.get('toevoegen');
+  if (adding) return { screen: 'toevoegen', template: adding };
+  if (params.has('schema')) return { screen: 'schema' };
   if (params.has('voortgang')) {
     return { screen: 'voortgang', muscle: params.get('voortgang') || null };
   }
@@ -91,6 +96,8 @@ function Router() {
     const url = new URL(window.location.href);
     url.searchParams.delete('oefening');
     url.searchParams.delete('voortgang');
+    url.searchParams.delete('schema');
+    url.searchParams.delete('toevoegen');
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
     if (inPlace) {
       window.history.replaceState(null, '', url);
@@ -103,6 +110,8 @@ function Router() {
 
   const openExercise = (id) => go({ oefening: id });
   const openProgress = () => go({ voortgang: '1' });
+  const openSchema = () => go({ schema: '1' });
+  const openAddExercise = (templateId) => go({ toevoegen: templateId });
   // Kom je hier via een gedeelde link, dan is er geen geschiedenis om naar
   // terug te gaan; val dan terug op het scherm van vandaag.
   const back = () => {
@@ -124,5 +133,12 @@ function Router() {
       />
     );
   }
-  return <Today onOpenExercise={openExercise} onOpenProgress={openProgress} />;
+  if (route.screen === 'schema') {
+    return <Schema onAddExercise={openAddExercise} onGoToday={() => go({})} onBack={back} />;
+  }
+  if (route.screen === 'toevoegen') {
+    // Terug of klaar: naar het schema. Het toevoegscherm opent altijd vanuit daar.
+    return <AddExercise templateId={route.template} onDone={back} onBack={back} />;
+  }
+  return <Today onOpenExercise={openExercise} onOpenProgress={openProgress} onOpenSchema={openSchema} />;
 }

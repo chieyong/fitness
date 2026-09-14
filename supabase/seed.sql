@@ -21,28 +21,28 @@ delete from template_exercises;
 delete from exercises;
 delete from workout_templates;
 
-insert into exercises (name, muscle_groups, notes) values
-  ('Bankdrukken', array['chest', 'triceps', 'front-deltoids'], 'Barbell of dumbbell'),
-  ('Gebogen rij', array['upper-back', 'trapezius', 'biceps', 'back-deltoids'], 'Barbell, dumbbell of cable; twee uitvoeringen (version 1 / version 2)'),
-  ('Schouderpers', array['front-deltoids', 'triceps', 'trapezius'], 'Barbell of dumbbell'),
-  ('Beenpers of squats', array['quadriceps', 'gluteal', 'hamstring'], null),
-  ('Bicepscurls', array['biceps', 'forearm'], null),
-  ('Triceps pushdown of dips', array['triceps'], null),
-  ('Plank', array['abs', 'obliques', 'lower-back'], null),
-  ('Hanging leg raises of buikspier crunch', array['abs', 'obliques'], null),
-  ('Lat pulldown of pull-ups', array['upper-back', 'biceps', 'back-deltoids'], null),
-  ('Incline dumbbell press', array['chest', 'front-deltoids', 'triceps'], null),
-  ('Romanian deadlift', array['hamstring', 'gluteal', 'lower-back'], null),
-  ('Hammer curls', array['biceps', 'forearm'], null),
-  ('Skull crushers of overhead triceps extension', array['triceps'], null),
-  ('Russian twists', array['obliques', 'abs'], null),
-  ('Cable woodchoppers of side plank', array['obliques', 'abs'], null),
-  ('Deadlifts', array['lower-back', 'gluteal', 'hamstring', 'trapezius', 'upper-back'], null),
-  ('Uitvalspassen', array['quadriceps', 'gluteal', 'hamstring'], null),
-  ('Concentration curls', array['biceps'], null),
-  ('Close-grip bankdrukken', array['triceps', 'chest', 'front-deltoids'], 'Ook met dumbbells'),
-  ('Ab wheel of decline crunches', array['abs', 'obliques'], null),
-  ('Plank met schouder taps', array['abs', 'obliques', 'front-deltoids'], null);
+insert into exercises (name, muscle_groups, notes, equipment, measure) values
+  ('Bankdrukken', array['chest', 'triceps', 'front-deltoids'], 'Barbell of dumbbell', 'losse-gewichten', 'gewicht'),
+  ('Gebogen rij', array['upper-back', 'trapezius', 'biceps', 'back-deltoids'], 'Barbell, dumbbell of cable; twee uitvoeringen (version 1 / version 2)', 'losse-gewichten', 'gewicht'),
+  ('Schouderpers', array['front-deltoids', 'triceps', 'trapezius'], 'Barbell of dumbbell', 'losse-gewichten', 'gewicht'),
+  ('Beenpers of squats', array['quadriceps', 'gluteal', 'hamstring'], null, 'machine', 'gewicht'),
+  ('Bicepscurls', array['biceps', 'forearm'], null, 'losse-gewichten', 'gewicht'),
+  ('Triceps pushdown of dips', array['triceps'], null, 'machine', 'gewicht'),
+  ('Plank', array['abs', 'obliques', 'lower-back'], null, 'zonder', 'tijd'),
+  ('Hanging leg raises of buikspier crunch', array['abs', 'obliques'], null, 'zonder', 'reps'),
+  ('Lat pulldown of pull-ups', array['upper-back', 'biceps', 'back-deltoids'], null, 'machine', 'gewicht'),
+  ('Incline dumbbell press', array['chest', 'front-deltoids', 'triceps'], null, 'losse-gewichten', 'gewicht'),
+  ('Romanian deadlift', array['hamstring', 'gluteal', 'lower-back'], null, 'losse-gewichten', 'gewicht'),
+  ('Hammer curls', array['biceps', 'forearm'], null, 'losse-gewichten', 'gewicht'),
+  ('Skull crushers of overhead triceps extension', array['triceps'], null, 'losse-gewichten', 'gewicht'),
+  ('Russian twists', array['obliques', 'abs'], null, 'zonder', 'reps'),
+  ('Cable woodchoppers of side plank', array['obliques', 'abs'], null, 'zonder', 'tijd'),
+  ('Deadlifts', array['lower-back', 'gluteal', 'hamstring', 'trapezius', 'upper-back'], null, 'losse-gewichten', 'gewicht'),
+  ('Uitvalspassen', array['quadriceps', 'gluteal', 'hamstring'], null, 'losse-gewichten', 'gewicht'),
+  ('Concentration curls', array['biceps'], null, 'losse-gewichten', 'gewicht'),
+  ('Close-grip bankdrukken', array['triceps', 'chest', 'front-deltoids'], 'Ook met dumbbells', 'losse-gewichten', 'gewicht'),
+  ('Ab wheel of decline crunches', array['abs', 'obliques'], null, 'zonder', 'reps'),
+  ('Plank met schouder taps', array['abs', 'obliques', 'front-deltoids'], null, 'zonder', 'reps');
 
 insert into workout_templates (label, position) values
   ('Workout A', 0),

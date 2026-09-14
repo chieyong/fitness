@@ -1,0 +1,34 @@
+.target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.target__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-micro);
+  color: var(--ink-tertiary);
+}
+
+.target__field input {
+  font: inherit;
+  font-size: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  width: 5em;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+}
+
+.target__field input:focus { outline: none; border-color: var(--accent); }
+
+.target__dash {
+  padding-bottom: var(--space-2);
+  font-size: var(--text-small);
+  color: var(--ink-tertiary);
+}

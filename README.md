@@ -97,7 +97,9 @@ precies dezelfde functies hebben.
    `is_owner()` bestaat dan nog niet en de app valt veilig terug.
 3. `supabase/migrations/003_owner_access.sql` draaien, en direct daarna:
    `insert into public.app_owners (email) values ('jouw-adres@gmail.com');`
-4. Inloggen.
+4. `supabase/migrations/004_exercise_kind.sql` draaien: materiaal en meetwijze per
+   oefening, nodig voor het aanpassen van je schema.
+5. Inloggen.
 
 ### Beheerscripts
 
@@ -138,6 +140,26 @@ A als B, dan zie je gewoon de laatste keer dat je hem deed.
 
 Een sessie afronden (of overslaan) zet de status vast; pas daarna schuift het schema op
 naar de volgende training.
+
+## Schema aanpassen
+
+Via "Schema" op het scherm van vandaag. Per workout kun je oefeningen verplaatsen, hun
+target aanpassen (sets plus reps of seconden, met een optionele bovengrens) en ze uit de
+workout halen. Workouts kun je toevoegen, hernoemen en verwijderen.
+
+**Oefening toevoegen** gaat via keuzelijsten: kies een spiergroep, filter op materiaal
+(losse gewichten, machine of kabel, zonder hulpmiddelen) en kies uit de bibliotheek van
+zo'n 90 oefeningen in `src/data/catalog.js`. Of zoek op naam. Staat je oefening er niet
+tussen, dan maak je een eigen oefening met naam, spiergroepen, materiaal en meetwijze
+(kilo's en reps, alleen reps, of seconden).
+
+**Je geschiedenis blijft altijd bewaard.** Een oefening uit een workout halen verwijdert
+alleen de koppeling, niet de oefening of haar logs. Een workout verwijderen archiveert hem:
+afgeronde trainingen blijven, alleen zijn geplande sessies vervallen. Kies je een oefening
+uit de bibliotheek die je al hebt (op sleutel of naam), dan wordt dat dezelfde oefening en
+loopt de grafiek door.
+
+Ingelogd worden wijzigingen bewaard; in de demo werken ze tot je de pagina herlaadt.
 
 ## Voortgang
 

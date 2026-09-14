@@ -43,6 +43,9 @@ for (const t of templates) {
       seen.set(e.name, e);
       continue;
     }
+    if (known.equipment !== e.equipment || known.measure !== e.measure) {
+      problems.push(`"${e.name}" heeft verschillend materiaal of meetwijze in ${t.label}`);
+    }
     if (known.muscles.join() !== e.muscles.join()) {
       problems.push(`"${e.name}" heeft verschillende spiergroepen: [${known.muscles}] en [${e.muscles}] (${t.label})`);
     }
@@ -72,9 +75,9 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-w('insert into exercises (name, muscle_groups, notes) values');
+w('insert into exercises (name, muscle_groups, notes, equipment, measure) values');
 w([...seen.values()]
-  .map((e) => `  (${q(e.name)}, ${arr(e.muscles)}, ${q(e.notes)})`)
+  .map((e) => `  (${q(e.name)}, ${arr(e.muscles)}, ${q(e.notes)}, ${q(e.equipment)}, ${q(e.measure)})`)
   .join(',\n') + ';');
 w();
 

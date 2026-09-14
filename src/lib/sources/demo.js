@@ -129,8 +129,70 @@ export function createDemoSource({ today, data } = {}) {
 
     async fetchAllExercises() {
       return copy(db.exercises
-        .map((e) => ({ id: e.id, name: e.name, muscle_groups: e.muscle_groups }))
+        .map((e) => ({
+          id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes ?? null,
+          equipment: e.equipment ?? null, measure: e.measure ?? null, catalog_key: e.catalog_key ?? null,
+        }))
         .sort((a, b) => a.name.localeCompare(b.name, 'nl')));
+    },
+
+    async createExercise(row) {
+      const created = {
+        id: newId('ex'), notes: null, video_urls: null, equipment: null, measure: null, catalog_key: null, ...row,
+      };
+      db.exercises.push(created);
+      return copy(created);
+    },
+
+    async addTemplateExercise(row) {
+      const created = {
+        id: newId('te'), target_reps_min: null, target_reps_max: null,
+        target_seconds: null, target_seconds_max: null, target_note: null, ...row,
+      };
+      db.template_exercises.push(created);
+      return copy(created);
+    },
+
+    async updateTemplateExercise(id, changes) {
+      const row = db.template_exercises.find((te) => te.id === id);
+      if (!row) throw new Error('Koppeling niet gevonden');
+      Object.assign(row, changes);
+      return copy(row);
+    },
+
+    async deleteTemplateExercise(id) {
+      const removed = db.template_exercises.filter((te) => te.id === id);
+      db.template_exercises = db.template_exercises.filter((te) => te.id !== id);
+      return copy(removed);
+    },
+
+    async updateTemplateExercisePositions(changes) {
+      for (const { id, position } of changes) {
+        const row = db.template_exercises.find((te) => te.id === id);
+        if (row) row.position = position;
+      }
+      return copy(changes);
+    },
+
+    async createTemplate({ label, position }) {
+      const created = { id: newId('tpl'), label, position, active: true };
+      db.templates.push(created);
+      return copy(created);
+    },
+
+    async renameTemplate(id, label) {
+      const t = templateById(id);
+      if (!t) throw new Error('Workout niet gevonden');
+      t.label = label;
+      return copy(t);
+    },
+
+    async archiveTemplate(id) {
+      const t = templateById(id);
+      if (!t) throw new Error('Workout niet gevonden');
+      db.sessions = db.sessions.filter((x) => !(x.template_id === id && x.status === 'gepland'));
+      t.active = false;
+      return copy(t);
     },
 
     async fetchAllLogs() {

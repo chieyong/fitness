@@ -10,6 +10,9 @@ create table if not exists exercises (
   muscle_groups text[] not null,
   video_urls text[],
   notes text,
+  equipment text check (equipment is null or equipment in ('losse-gewichten', 'machine', 'zonder')),
+  measure text check (measure is null or measure in ('gewicht', 'reps', 'tijd')),
+  catalog_key text,
   created_at timestamptz default now()
 );
 
@@ -61,6 +64,8 @@ create table if not exists exercise_logs (
   logged_at timestamptz default now()
 );
 
+create unique index if not exists exercises_catalog_key_idx
+  on exercises (catalog_key) where catalog_key is not null;
 create index if not exists template_exercises_template_idx on template_exercises (template_id, position);
 create index if not exists sessions_planned_date_idx on sessions (planned_date);
 create index if not exists exercise_logs_session_idx on exercise_logs (session_id);

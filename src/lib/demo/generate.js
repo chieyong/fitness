@@ -69,6 +69,9 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
         id: `demo-ex-${exercises.length + 1}`,
         name: e.name,
         muscle_groups: [...e.muscles],
+        equipment: e.equipment ?? null,
+        measure: e.measure ?? null,
+        catalog_key: null,
         video_urls: null,
         notes: e.notes ?? null,
       };

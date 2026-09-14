@@ -147,7 +147,8 @@ function fetchAllTemplateExercises() {
 
 /** Alle oefeningen uit de bibliotheek. */
 function fetchAllExercises() {
-  return unwrap(supabase.from('exercises').select('id, name, muscle_groups').order('name'));
+  // '*' in plaats van een kolomlijst: werkt zowel vóór als na migratie 004.
+  return unwrap(supabase.from('exercises').select('*').order('name'));
 }
 
 /** Alle gelogde sets — basis voor de spiergroep-aggregatie. */
@@ -159,8 +160,69 @@ function fetchAllLogs() {
   );
 }
 
+/** Nieuwe oefening in de bibliotheek. */
+async function createExercise(row) {
+  const data = await unwrap(supabase.from('exercises').insert(row).select());
+  return data[0];
+}
+
+/** Oefening aan een workout koppelen. */
+async function addTemplateExercise(row) {
+  const data = await unwrap(supabase.from('template_exercises').insert(row).select());
+  return data[0];
+}
+
+/** Target van een koppeling wijzigen. */
+async function updateTemplateExercise(id, changes) {
+  const data = await unwrap(supabase.from('template_exercises').update(changes).eq('id', id).select());
+  return data[0];
+}
+
+/** Oefening uit een workout halen. De oefening en haar logs blijven bestaan. */
+function deleteTemplateExercise(id) {
+  return unwrap(supabase.from('template_exercises').delete().eq('id', id).select());
+}
+
+/** Nieuwe volgorde binnen een workout: [{ id, position }]. */
+async function updateTemplateExercisePositions(changes) {
+  for (const { id, position } of changes) {
+    await unwrap(supabase.from('template_exercises').update({ position }).eq('id', id).select());
+  }
+  return changes;
+}
+
+/** Nieuwe workout. */
+async function createTemplate({ label, position }) {
+  const data = await unwrap(supabase.from('workout_templates').insert({ label, position, active: true }).select());
+  return data[0];
+}
+
+async function renameTemplate(id, label) {
+  const data = await unwrap(supabase.from('workout_templates').update({ label }).eq('id', id).select());
+  return data[0];
+}
+
+/**
+ * Workout verwijderen = archiveren. Afgeronde trainingen blijven bewaard; alleen
+ * de nog geplande sessies van deze workout vervallen, zodat de planning opnieuw
+ * rond de overgebleven workouts roteert.
+ */
+async function archiveTemplate(id) {
+  await unwrap(supabase.from('sessions').delete().eq('template_id', id).eq('status', 'gepland').select());
+  const data = await unwrap(supabase.from('workout_templates').update({ active: false }).eq('id', id).select());
+  return data[0];
+}
+
 /** Echte gegevens, voor de ingelogde eigenaar. */
 export const supabaseSource = {
+  createExercise,
+  addTemplateExercise,
+  updateTemplateExercise,
+  deleteTemplateExercise,
+  updateTemplateExercisePositions,
+  createTemplate,
+  renameTemplate,
+  archiveTemplate,
   fetchTemplates,
   fetchSessions,
   fetchTemplateExercises,

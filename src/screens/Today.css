@@ -65,3 +65,5 @@
   margin-bottom: var(--space-4);
 }
 
+
+.today__links { display: flex; gap: var(--space-4); }

@@ -47,3 +47,11 @@ export const fetchExerciseTemplates = (...args) => active.fetchExerciseTemplates
 export const fetchAllTemplateExercises = (...args) => active.fetchAllTemplateExercises(...args);
 export const fetchAllExercises = (...args) => active.fetchAllExercises(...args);
 export const fetchAllLogs = (...args) => active.fetchAllLogs(...args);
+export const createExercise = (...args) => active.createExercise(...args);
+export const addTemplateExercise = (...args) => active.addTemplateExercise(...args);
+export const updateTemplateExercise = (...args) => active.updateTemplateExercise(...args);
+export const deleteTemplateExercise = (...args) => active.deleteTemplateExercise(...args);
+export const updateTemplateExercisePositions = (...args) => active.updateTemplateExercisePositions(...args);
+export const createTemplate = (...args) => active.createTemplate(...args);
+export const renameTemplate = (...args) => active.renameTemplate(...args);
+export const archiveTemplate = (...args) => active.archiveTemplate(...args);
