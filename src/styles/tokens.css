@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light dark;
+
   /* Apple's eigen grijzen; near-black in plaats van puur zwart. */
   --bg: #F5F5F7;
   --surface: #FFFFFF;
@@ -6,8 +8,33 @@
   --ink-secondary: #6E6E73;
   --ink-tertiary: #A1A1A6;
   --accent: #0071E3;
+  --on-accent: #FFFFFF;
+  --danger: #B3261E;
   --hairline: rgba(0, 0, 0, 0.10);
   --hairline-strong: rgba(0, 0, 0, 0.18);
+
+  /* Vlakken voor bediening: segmenten, meldingen, tooltips. */
+  --fill: rgba(118, 118, 128, 0.12);
+  --seg-on: #FFFFFF;
+  --banner-bg: #EDEDF0;
+  --tip-bg: #1D1D1F;
+  --tip-ink: #FFFFFF;
+  --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* Data: het de-emfaselijntje van een sparkline en het lege lichaam. */
+  --spark: #9CC3F1;
+  --body-empty: #E8E8ED;
+
+  /*
+   * Sequentiële schaal voor het silhouet: één tint, lichtheid dalend met
+   * de belasting. Nagemeten: monotoon, hue-spreiding 2,8 graden, en de laagste
+   * stap verschilt dE 9,2 van het lege lichaam (de oude schaal: 2,5).
+   */
+  --ramp-1: #B6D3F6;
+  --ramp-2: #8CBAF0;
+  --ramp-3: #5F9DE8;
+  --ramp-4: #337FDB;
+  --ramp-5: #0062C4;
 
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
 
@@ -28,4 +55,41 @@
   --space-8: 72px;
 
   --measure: 640px;
+}
+
+/*
+ * Donker volgt de instelling van de telefoon. Eigen waarden, geen omgekeerde
+ * kopie: Apple's donkere systeemkleuren, en de tekst- en accentkleuren zijn
+ * nagemeten op contrast tegen deze achtergronden.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1C1C1E;
+    --ink: #F5F5F7;
+    --ink-secondary: #A1A1A6;
+    --ink-tertiary: #8E8E93;
+    --accent: #0A84FF;
+    --on-accent: #FFFFFF;
+    --danger: #FF6961;
+    --hairline: rgba(255, 255, 255, 0.12);
+    --hairline-strong: rgba(255, 255, 255, 0.22);
+
+    --fill: rgba(118, 118, 128, 0.24);
+    --seg-on: #3A3A3C;
+    --banner-bg: #1C1C1E;
+    --tip-bg: #F5F5F7;
+    --tip-ink: #000000;
+    --shadow-pop: 0 4px 20px rgba(0, 0, 0, 0.6);
+
+    --spark: #3F6FA8;
+    --body-empty: #2C2C2E;
+
+    /* Op donker betekent meer belasting juist lichter. Monotoon, dE 9,8 van leeg. */
+    --ramp-1: #223F63;
+    --ramp-2: #265B96;
+    --ramp-3: #3079CA;
+    --ramp-4: #5A9FEE;
+    --ramp-5: #A3CFFA;
+  }
 }

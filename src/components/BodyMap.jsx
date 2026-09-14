@@ -4,11 +4,14 @@ import { muscleLabel } from '../lib/muscleLabels.js';
 import './BodyMap.css';
 
 /**
- * Sequentiële schaal: één tint, licht naar donker. De lichtheid daalt
- * monotoon, dus de volgorde is af te lezen zonder de kleuren te kennen.
+ * Sequentiële schaal: één tint, monotoon in lichtheid, zodat de volgorde af te
+ * lezen is zonder de kleuren te kennen. De waarden staan als tokens in
+ * tokens.css, met een eigen reeks voor donker. De component zet de kleur als
+ * inline fill, en daarin werkt var() gewoon: het silhouet wisselt dus mee met
+ * het thema zonder dat hier iets hoeft te luisteren.
  */
-export const RAMP = ['#DCE9FA', '#B3D1F5', '#7FB0EC', '#3F8AE0', '#0062C4'];
-export const EMPTY = '#E3E3E8';
+export const RAMP = [1, 2, 3, 4, 5].map((n) => `var(--ramp-${n})`);
+export const EMPTY = 'var(--body-empty)';
 
 /**
  * Het silhouet komt van react-body-highlighter: echte spierregio's in plaats

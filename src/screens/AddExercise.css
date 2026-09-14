@@ -21,7 +21,7 @@
 }
 
 .chip:hover { border-color: var(--hairline-strong); }
-.chip--on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip--on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 .pick__search {
   font: inherit;

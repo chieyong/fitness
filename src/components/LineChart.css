@@ -59,8 +59,8 @@
   position: absolute;
   transform: translate(-50%, -100%);
   pointer-events: none;
-  background: var(--ink);
-  color: #fff;
+  background: var(--tip-bg);
+  color: var(--tip-ink);
   padding: var(--space-2) var(--space-3);
   border-radius: 8px;
   white-space: nowrap;

@@ -2,33 +2,61 @@
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
-  margin: var(--space-5) 0 var(--space-4);
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+/* Maat-schakelaar met de uitleg als pop-up eraan vast. */
+.metric { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); }
+
+.metric__info {
+  display: inline-flex;
+  color: var(--ink-tertiary);
+  padding: 2px;
+  border-radius: 50%;
+}
+
+.metric__info:hover, .metric__info[aria-expanded="true"] { color: var(--accent); }
+
+.pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(280px, calc(100vw - 32px));
+  padding: var(--space-3);
+  font-size: var(--text-micro);
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  box-shadow: var(--shadow-pop);
+  animation: unfold 160ms ease;
 }
 
 .segmented {
   display: inline-flex;
-  border: 1px solid var(--hairline);
-  border-radius: 980px;
-  overflow: hidden;
-  background: var(--surface);
+  padding: 2px;
+  gap: 2px;
+  border-radius: 8px;
+  background: var(--fill);
 }
 
 .segmented__item {
-  font-size: var(--text-small);
+  font-size: var(--text-micro);
   color: var(--ink-secondary);
-  padding: var(--space-2) var(--space-4);
+  padding: 3px 10px;
+  border-radius: 6px;
   transition: background 120ms ease, color 120ms ease;
 }
 
-.segmented__item + .segmented__item { border-left: 1px solid var(--hairline); }
-.segmented__item--on { background: var(--accent); color: #fff; }
-
-.body__caveat {
-  font-size: var(--text-small);
-  color: var(--ink-secondary);
-  max-width: 34em;
-  margin-bottom: var(--space-3);
+.segmented__item--on {
+  background: var(--seg-on);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .body__hint {
@@ -47,7 +75,12 @@
 .muscle {
   margin-top: var(--space-4);
   scroll-margin-top: var(--space-4);
+  transition: opacity 200ms ease;
 }
+
+/* Eén spiergroep open: de rest treedt terug, zodat de keuze eruit springt. */
+.muscle--dimmed { opacity: 0.42; }
+.muscle--dimmed:hover { opacity: 0.7; }
 
 .muscle__head {
   display: flex;
@@ -91,8 +124,8 @@
   right: var(--space-5);
   bottom: var(--space-5);
   z-index: 10;
-  background: var(--ink);
-  color: #fff;
+  background: var(--tip-bg);
+  color: var(--tip-ink);
   font-size: var(--text-small);
   padding: var(--space-3) var(--space-5);
   border-radius: 980px;

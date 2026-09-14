@@ -8,8 +8,8 @@ const MESSAGES = {
 };
 
 /**
- * Smalle balk bovenaan elk scherm: laat zien of je naar demo- of eigen gegevens
- * kijkt, en biedt in- of uitloggen. Als eigenaar is hij bewust rustiger.
+ * De balk bovenaan elk scherm: de naam van de app, en in- of uitloggen.
+ * In de demo staat eronder een regel die zegt waar je naar kijkt.
  */
 export default function AccessBanner({ access, error, onLogin, onLogout }) {
   const owner = access.mode === 'owner';
@@ -17,22 +17,29 @@ export default function AccessBanner({ access, error, onLogin, onLogout }) {
   const canLogin = access.reason === 'niet-ingelogd';
 
   return (
-    <div className={`banner${owner ? ' banner--owner' : ''}`} role="status">
-      <div className="banner__inner">
-        <span className="banner__text">
-          {owner ? `Ingelogd als ${access.email}` : MESSAGES[access.reason] ?? MESSAGES['niet-ingelogd']}
-          {!owner && loggedIn && <span className="banner__account">{access.email}</span>}
-          {error && <span className="banner__error" role="alert">Inloggen lukte niet: {error}</span>}
+    <header className="appbar">
+      <div className="appbar__inner">
+        <span className="appbar__name">Repz</span>
+        <span className="appbar__actions">
+          {owner && <span className="appbar__account">{access.email}</span>}
+          {canLogin && (
+            <button type="button" className="appbar__action" onClick={onLogin}>Inloggen met Google</button>
+          )}
+          {loggedIn && (
+            <button type="button" className="appbar__action" onClick={onLogout}>Uitloggen</button>
+          )}
         </span>
-        {canLogin && (
-          <button type="button" className="banner__action" onClick={onLogin}>
-            Inloggen met Google
-          </button>
-        )}
-        {loggedIn && (
-          <button type="button" className="banner__action" onClick={onLogout}>Uitloggen</button>
-        )}
       </div>
-    </div>
+
+      {(!owner || error) && (
+        <div className="appbar__note" role="status">
+          <div className="appbar__note-inner">
+            {!owner && (MESSAGES[access.reason] ?? MESSAGES['niet-ingelogd'])}
+            {!owner && loggedIn && <span className="appbar__note-account">{access.email}</span>}
+            {error && <span className="appbar__error" role="alert">Inloggen lukte niet: {error}</span>}
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

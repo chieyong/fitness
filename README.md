@@ -1,4 +1,4 @@
-# Fitness Tracker
+# Repz
 
 Persoonlijke 3-daagse trainingstracker (Workout A/B/C). Spec: [FITNESS-APP-SPEC.md](FITNESS-APP-SPEC.md).
 
@@ -108,6 +108,17 @@ precies dezelfde functies hebben.
 Project Settings → API). Die sleutel omzeilt alle toegangsregels: nooit met `VITE_` ervoor,
 nooit in Netlify, nooit committen. De app zelf gebruikt hem niet; Vite geeft alleen
 `VITE_`-variabelen door aan de browser.
+
+## Licht en donker
+
+De app volgt de instelling van je telefoon. Alle kleuren staan als tokens in
+`src/styles/tokens.css`, met een eigen donkere reeks in `@media (prefers-color-scheme: dark)`
+— geen omgekeerde kopie, maar Apple's donkere systeemkleuren, nagemeten op contrast.
+
+Het silhouet heeft per modus een eigen kleurschaal: op licht betekent meer belasting
+donkerder, op donker juist lichter. Beide reeksen zijn gecontroleerd op monotone
+lichtheid, één tint, en genoeg afstand tussen de laagste stap en een onbelaste spier.
+Nieuwe kleuren horen als token in `tokens.css`, niet hardgecodeerd in een component.
 
 ## Deploy (Netlify)
 

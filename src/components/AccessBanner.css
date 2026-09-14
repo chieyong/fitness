@@ -1,41 +1,65 @@
-.banner {
-  background: #EBEBF0;
+.appbar {
+  background: var(--bg);
   border-bottom: 1px solid var(--hairline);
 }
 
-.banner__inner {
+.appbar__inner {
   max-width: var(--measure);
   margin: 0 auto;
-  padding: var(--space-2) var(--space-5);
+  padding: var(--space-3) var(--space-5);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+/* De naam: rustig, iets zwaarder dan lopende tekst, geen logo-effecten. */
+.appbar__name {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.appbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.appbar__account {
   font-size: var(--text-micro);
-  color: var(--ink-secondary);
-}
-
-.banner__account {
-  display: block;
   color: var(--ink-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 18em;
 }
 
-.banner__action {
+.appbar__action {
   color: var(--accent);
   font-size: var(--text-small);
   font-weight: 500;
   white-space: nowrap;
 }
 
-@media (max-width: 480px) {
-  .banner__inner { padding: var(--space-2) var(--space-4); }
+/* Demo-melding: een tint lager dan de balk zelf, zodat hij informeert zonder te schreeuwen. */
+.appbar__note { background: var(--banner-bg); border-top: 1px solid var(--hairline); }
+
+.appbar__note-inner {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-micro);
+  color: var(--ink-secondary);
 }
 
-/* Voor de eigenaar: geen tint, alleen een haarlijn. Het is informatie, geen waarschuwing. */
-.banner--owner { background: transparent; }
+.appbar__note-account { display: block; color: var(--ink-tertiary); }
 
-.banner__error {
-  display: block;
-  color: #B3261E;
-  margin-top: 2px;
+.appbar__error { display: block; color: var(--danger); margin-top: 2px; }
+
+@media (max-width: 480px) {
+  .appbar__inner, .appbar__note-inner { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .appbar__account { display: none; }
 }

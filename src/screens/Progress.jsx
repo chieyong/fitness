@@ -27,6 +27,26 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoT
   const today = useMemo(() => todayISO(), []);
   const [range, setRange] = useState('30');
   const [metric, setMetric] = useState('sets');
+  const [infoOpen, setInfoOpen] = useState(false);
+  const infoRef = useRef(null);
+
+  // Kiezen voor volume opent de uitleg; terug naar sets sluit hem.
+  const chooseMetric = (next) => {
+    setMetric(next);
+    setInfoOpen(next === 'volume');
+  };
+
+  useEffect(() => {
+    if (!infoOpen) return undefined;
+    const onPointer = (e) => { if (!infoRef.current?.contains(e.target)) setInfoOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setInfoOpen(false); };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [infoOpen]);
 
   const selected = muscle && muscle !== '1' ? muscle : null;
 
@@ -106,8 +126,8 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoT
   const select = (m) => {
     const next = m === selected ? null : m;
     onSelectMuscle(next);
-    // Openen: naar de spiergroep. Dichtklappen: terug naar het lichaam.
-    requestAnimationFrame(() => scrollTo(next ? `spier-${next}` : 'lichaam'));
+    // Openen brengt je naar de spiergroep; nog een keer tikken klapt alleen in.
+    if (next) requestAnimationFrame(() => scrollTo(`spier-${next}`));
   };
 
   // Binnenkomen via een gedeelde link opent de juiste groep meteen.
@@ -140,16 +160,27 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoT
 
       <div className="filters">
         <Segmented options={RANGES} value={range} onChange={setRange} label="Periode" />
-        <Segmented options={METRICS} value={metric} onChange={setMetric} label="Maat" />
+        <span className="metric" ref={infoRef}>
+          <Segmented options={METRICS} value={metric} onChange={chooseMetric} label="Maat" />
+          {metric === 'volume' && (
+            <button type="button" className="metric__info" aria-label="Uitleg over volume"
+              aria-expanded={infoOpen} onClick={() => setInfoOpen(!infoOpen)}>
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                <circle cx="7" cy="7" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M7 6.2v3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                <circle cx="7" cy="4.2" r="0.85" fill="currentColor" />
+              </svg>
+            </button>
+          )}
+          {infoOpen && (
+            <span className="pop" role="dialog" aria-label="Uitleg over volume">
+              Volume in kilo's zegt veel binnen één oefening, maar weinig tussen
+              spiergroepen: een beenpers verplaatst meer gewicht dan een curl, door
+              anatomie en niet door inspanning. Sets geven een eerlijker beeld.
+            </span>
+          )}
+        </span>
       </div>
-
-      {metric === 'volume' && (
-        <p className="body__caveat">
-          Volume in kilo's is goed te vergelijken binnen één oefening, maar niet
-          tussen spiergroepen: een beenpers verplaatst meer gewicht dan een curl
-          door anatomie, niet door inspanning. Sets geven een eerlijker beeld.
-        </p>
-      )}
 
       {totals.length === 0 ? (
         <p className="exercise__empty">
@@ -173,6 +204,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoT
               total={t}
               metric={metric}
               open={t.muscle === selected}
+              dimmed={selected != null && t.muscle !== selected}
               onToggle={() => select(t.muscle)}
               series={muscleSeries(logs, sessions, exercises, t.muscle, from ? { from } : {})}
               logs={logs}
@@ -199,7 +231,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoT
 }
 
 function MuscleSection({
-  total, metric, open, onToggle, series, logs, sessions, onOpenExercise,
+  total, metric, open, dimmed, onToggle, series, logs, sessions, onOpenExercise,
 }) {
   const value = metric === 'sets'
     ? `${total.sets} sets`
@@ -210,7 +242,7 @@ function MuscleSection({
 
   return (
     <section id={`spier-${total.muscle}`}
-      className={`muscle${open ? ' muscle--open' : ''}`}>
+      className={`muscle${open ? ' muscle--open' : ''}${dimmed ? ' muscle--dimmed' : ''}`}>
       <button type="button" className="muscle__head" onClick={onToggle}
         aria-expanded={open}>
         <span className="muscle__name">{muscleLabel(total.muscle)}</span>
