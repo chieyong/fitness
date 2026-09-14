@@ -33,11 +33,5 @@ export function tourSteps({ demo }) {
       title: 'Je schema',
       body: "Pas targets aan en zet YouTube-video's bij je oefeningen.",
     },
-    {
-      id: 'thema',
-      target: '.appbar__theme',
-      title: 'Licht of donker',
-      body: 'Kies zelf, of laat Repz de instelling van je telefoon volgen.',
-    },
   ];
 }

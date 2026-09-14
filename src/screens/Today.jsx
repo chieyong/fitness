@@ -15,6 +15,7 @@ import VideoModal from '../components/VideoModal.jsx';
 import Tour from '../components/Tour.jsx';
 import { tourSteps } from '../data/tourSteps.js';
 import { hasSeenTour, markTourSeen } from '../lib/tour.js';
+import { whenSplashGone } from '../lib/splash.js';
 import '../components/ExerciseBlock.css';
 import '../components/SessionActions.css';
 import './Today.css';
@@ -159,11 +160,15 @@ export default function Today({ onOpenExercise }) {
     } catch (e) { setError(e.message); }
   }, [session?.id]);
 
-  // Pas starten als het scherm staat en het laadscherm weg is.
+  // Pas starten als het scherm staat én het laadscherm helemaal weg is.
   useEffect(() => {
     if (status !== 'klaar' || hasSeenTour(window.localStorage)) return undefined;
-    const t = setTimeout(() => setTourOpen(true), 1500);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    let timer = 0;
+    whenSplashGone().then(() => {
+      if (!cancelled) timer = setTimeout(() => setTourOpen(true), 500);
+    });
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [status]);
 
   if (status === 'laden') return <main className="page" />;

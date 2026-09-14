@@ -147,8 +147,7 @@ Nieuwe kleuren horen als token in `tokens.css`, niet hardgecodeerd in een compon
 ## Eerste gebruik, laadscherm en installeren
 
 **Rondleiding.** Bij het eerste bezoek start op het scherm van vandaag een korte
-rondleiding: welkom, een oefeningkaart, een videoknop, de tabs Voortgang en Schema, en de
-themaknop. Elke stap licht het echte onderdeel uit met een uitlegkaartje erbij. Staat een
+rondleiding: welkom, een oefeningkaart, een videoknop, en de tabs Voortgang en Schema. Elke stap licht het echte onderdeel uit met een uitlegkaartje erbij. Staat een
 onderdeel er niet (geen videoknop, of een rustdag zonder oefeningen), dan wordt die stap
 overgeslagen. Overslaan kan altijd, ook met Escape; met de pijltjestoetsen blader je. Of je
 hem gezien hebt staat in `localStorage` (`repz.tour.v1`). Onderaan Vandaag staat
@@ -157,8 +156,8 @@ de plaatsing van het kaartje in `src/lib/tour.js` (getest).
 
 **Laadscherm.** Het logo springt in beeld, de halter pompt en de letters van Repz schuiven
 in. Het staat inline in `index.html`, zodat het er is vóór de app geladen is, en verdwijnt
-zodra de app weet wat hij moet tonen — maar niet eerder dan na 0,9 seconde, anders flitst
-het voorbij. Met "minder beweging" aan staat alles stil.
+zodra de app weet wat hij moet tonen — maar niet eerder dan na 2,4 seconden, zodat de animatie helemaal te zien is. De
+rondleiding wacht tot het laadscherm weg is. Met "minder beweging" aan staat alles stil.
 
 **Installeren als app (PWA).** Repz is te installeren via "Zet op beginscherm" (iPhone,
 Safari) of de installatieknop (Android, Chrome). Het manifest, de service worker en de
