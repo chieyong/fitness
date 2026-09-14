@@ -77,11 +77,25 @@ test('er zit echte vooruitgang in', () => {
 test('de demo bevat overgeslagen oefeningen en opmerkingen', () => {
   assert.ok(data.exercise_logs.some((l) => l.skipped));
   assert.ok(data.sessions.some((s) => s.notes));
-  assert.ok(data.exercise_logs.some((l) => l.note));
+  assert.ok(data.exercise_feedback.some((f) => f.comment));
 });
 
 test('de demo gebruikt precies het echte programma', () => {
   const names = new Set(program.flatMap((t) => t.exercises.map((e) => e.name)));
   assert.deepEqual(new Set(data.exercises.map((e) => e.name)), names);
   assert.equal(data.template_exercises.length, program.reduce((n, t) => n + t.exercises.length, 0));
+});
+
+test('demo-feedback: geldige sterren, geldige verwijzingen, één per oefening per sessie', () => {
+  const sessionIds = new Set(data.sessions.map((x) => x.id));
+  const exerciseIds = new Set(data.exercises.map((e) => e.id));
+  const keys = new Set();
+  assert.ok(data.exercise_feedback.length > 100, `${data.exercise_feedback.length} beoordelingen`);
+  for (const f of data.exercise_feedback) {
+    assert.ok(f.rating >= 1 && f.rating <= 5, String(f.rating));
+    assert.ok(sessionIds.has(f.session_id) && exerciseIds.has(f.exercise_id));
+    const k = `${f.session_id}|${f.exercise_id}`;
+    assert.ok(!keys.has(k), `dubbel: ${k}`);
+    keys.add(k);
+  }
 });

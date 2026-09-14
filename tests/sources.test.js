@@ -152,3 +152,35 @@ test('workout toevoegen, hernoemen en archiveren', async () => {
   assert.ok(!after.some((s) => s.template_id === target && s.status === 'gepland'));
   assert.equal(after.filter((s) => s.template_id === target).length, history);
 });
+
+test('feedback: sterren en opmerking bewaren als één rij per oefening per sessie', async () => {
+  const src = fresh();
+  const [session] = await src.fetchSessions();
+  const [exercise] = await src.fetchAllExercises();
+  const key = { session_id: session.id, exercise_id: exercise.id };
+
+  const a = await src.saveFeedback({ ...key, rating: 4, comment: '' });
+  const b = await src.saveFeedback({ ...key, rating: 4, comment: '  Ging goed  ' });
+  assert.equal(a.id, b.id);
+  assert.equal(b.comment, 'Ging goed');
+  assert.equal(a.comment, null);
+
+  const mine = (await src.fetchFeedbackForExercises([exercise.id]))
+    .filter((f) => f.session_id === session.id);
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0].rating, 4);
+
+  const cleared = await src.saveFeedback({ ...key, rating: null, comment: null });
+  assert.equal(cleared.rating, null);
+});
+
+test("video's bij een oefening opslaan en terugzien in het schema", async () => {
+  const src = fresh();
+  const [row] = await src.fetchTemplateExercises('demo-tpl-0');
+  const urls = ['https://www.youtube.com/watch?v=abcdefghijk'];
+  const updated = await src.updateExercise(row.exercise_id, { video_urls: urls });
+  assert.deepEqual(updated.video_urls, urls);
+  const again = await src.fetchTemplateExercises('demo-tpl-0');
+  assert.deepEqual(again[0].exercise.video_urls, urls);
+  assert.deepEqual((await src.fetchAllExercises()).find((e) => e.id === row.exercise_id).video_urls, urls);
+});

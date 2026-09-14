@@ -123,11 +123,24 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
 
   // Een spiergroep kiezen klapt hem open en brengt je erheen. Nog een keer
   // tikken klapt hem weer dicht.
+  // Waar je stond voordat je een spiergroep opende: daar keer je bij dichtklappen
+  // rustig naar terug. Wissel je direct naar een andere groep, dan blijft het
+  // oorspronkelijke punt staan.
+  const returnTo = useRef(null);
+
   const select = (m) => {
     const next = m === selected ? null : m;
+    if (next && selected == null) returnTo.current = window.scrollY;
     onSelectMuscle(next);
-    // Openen brengt je naar de spiergroep; nog een keer tikken klapt alleen in.
-    if (next) requestAnimationFrame(() => scrollTo(`spier-${next}`));
+
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (next) {
+      requestAnimationFrame(() => scrollTo(`spier-${next}`));
+    } else if (returnTo.current != null) {
+      const top = returnTo.current;
+      returnTo.current = null;
+      window.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
+    }
   };
 
   // Binnenkomen via een gedeelde link opent de juiste groep meteen.
@@ -221,6 +234,27 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
 function MuscleSection({
   total, metric, open, dimmed, onToggle, series, logs, sessions, onOpenExercise,
 }) {
+  // Open en dicht allebei geanimeerd: bij dichtklappen blijft de lijst even
+  // staan tot de inklapbeweging klaar is, daarna pas weg.
+  const [mounted, setMounted] = useState(open);
+  const [expanded, setExpanded] = useState(open);
+
+  useEffect(() => {
+    let frame = 0;
+    let timer = 0;
+    if (open) {
+      setMounted(true);
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(() => setExpanded(true));
+      });
+    } else {
+      setExpanded(false);
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      timer = setTimeout(() => setMounted(false), reduced ? 0 : 340);
+    }
+    return () => { cancelAnimationFrame(frame); clearTimeout(timer); };
+  }, [open]);
+
   const value = metric === 'sets'
     ? `${total.sets} sets`
     : `${formatNumber(Math.round(total.volume))} kg`;
@@ -238,14 +272,18 @@ function MuscleSection({
         <span className="muscle__value">{value}</span>
       </button>
 
-      {open && (
-        <ul className="muscle__list">
-          {total.byExercise.map((e) => (
-            <ExerciseLine key={e.exerciseId} entry={e}
-              logs={logs} sessions={sessions} onOpen={() => onOpenExercise(e.exerciseId)} />
-          ))}
-        </ul>
-      )}
+      <div className={`muscle__panel${expanded ? ' muscle__panel--open' : ''}`} aria-hidden={!open}>
+        <div className="muscle__panel-inner">
+          {mounted && (
+            <ul className="muscle__list">
+              {total.byExercise.map((e) => (
+                <ExerciseLine key={e.exerciseId} entry={e}
+                  logs={logs} sessions={sessions} onOpen={() => onOpenExercise(e.exerciseId)} />
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

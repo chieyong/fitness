@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveToday, todayISO, formatDateShort } from '../lib/schedule.js';
-import { lastPerformance, setsFor } from '../lib/progress.js';
+import { lastPerformance, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
 import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises,
+  fetchFeedbackForExercises, saveFeedback,
   ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
-  closeSession, reopenSession, saveSessionNote,
+  closeSession, reopenSession,
 } from '../lib/queries.js';
 import SessionHeader from '../components/SessionHeader.jsx';
 import ExerciseBlock from '../components/ExerciseBlock.jsx';
 import SessionActions from '../components/SessionActions.jsx';
 import DateStepper from '../components/DateStepper.jsx';
+import VideoModal from '../components/VideoModal.jsx';
 import '../components/ExerciseBlock.css';
 import '../components/SessionActions.css';
 import './Today.css';
@@ -29,6 +31,9 @@ export default function Today({ onOpenExercise }) {
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [video, setVideo] = useState(null);
+  const closeVideo = useCallback(() => setVideo(null), []);
   // Eén oefening tegelijk open houdt het scherm compact in de gym.
   const [openId, setOpenId] = useState(null);
   const [status, setStatus] = useState('laden');
@@ -79,15 +84,16 @@ export default function Today({ onOpenExercise }) {
   // die laatste voeden zowel de invoervelden als "vorige keer".
   useEffect(() => {
     let cancelled = false;
-    if (!template) { setExercises([]); setLogs([]); return undefined; }
+    if (!template) { setExercises([]); setLogs([]); setFeedback([]); return undefined; }
 
     (async () => {
       try {
         const rows = await fetchTemplateExercises(template.id);
         if (cancelled) return;
         setExercises(rows);
-        const loaded = await fetchLogsForExercises(rows.map((r) => r.exercise_id));
-        if (!cancelled) setLogs(loaded);
+        const ids = rows.map((r) => r.exercise_id);
+        const [loaded, fb] = await Promise.all([fetchLogsForExercises(ids), fetchFeedbackForExercises(ids)]);
+        if (!cancelled) { setLogs(loaded); setFeedback(fb); }
       } catch (e) {
         if (!cancelled) setError(e.message);
       }
@@ -135,13 +141,15 @@ export default function Today({ onOpenExercise }) {
     } catch (e) { setError(e.message); }
   }, [session?.id]);
 
-  const handleSaveNote = useCallback(async (notes) => {
-    if ((session.notes ?? '') === notes) return;
+  const handleSaveFeedback = useCallback(async (exerciseId, fields) => {
     try {
-      const updated = await saveSessionNote(session.id, notes);
-      setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      const saved = await saveFeedback({ session_id: session.id, exercise_id: exerciseId, ...fields });
+      setFeedback((prev) => [
+        ...prev.filter((f) => !(f.session_id === saved.session_id && f.exercise_id === saved.exercise_id)),
+        saved,
+      ]);
     } catch (e) { setError(e.message); }
-  }, [session?.id, session?.notes]);
+  }, [session?.id]);
 
   if (status === 'laden') return <main className="page" />;
 
@@ -181,7 +189,7 @@ export default function Today({ onOpenExercise }) {
                   item={item}
                   logged={logged.filter((l) => !l.skipped)}
                   skipped={logged.length > 0 && logged.every((l) => l.skipped)}
-                  previous={lastPerformance(logs, sessions, item.exercise_id, date)}
+                  previous={lastPerformance(logs, sessions, item.exercise_id, date, session.id)}
                   readOnly={readOnly}
                   onSaveSet={handleSaveSet}
                   onDeleteSet={handleDeleteSet}
@@ -189,6 +197,10 @@ export default function Today({ onOpenExercise }) {
                   onToggleOpen={() => setOpenId(openId === item.id ? null : item.id)}
                   onToggleSkip={(skip) => handleToggleSkip(item.exercise_id, skip)}
                   onOpen={() => onOpenExercise(item.exercise_id)}
+                  feedback={feedbackFor(feedback, session.id, item.exercise_id)}
+                  previousFeedback={lastFeedback(feedback, sessions, item.exercise_id, date, session.id)}
+                  onSaveFeedback={(fields) => handleSaveFeedback(item.exercise_id, fields)}
+                  onPlayVideo={setVideo}
                 />
               );
             })}
@@ -199,7 +211,6 @@ export default function Today({ onOpenExercise }) {
             readOnly={readOnly}
             onClose={handleClose}
             onReopen={handleReopen}
-            onSaveNote={handleSaveNote}
           />
         </>
       ) : (
@@ -224,6 +235,7 @@ export default function Today({ onOpenExercise }) {
           </ul>
         </section>
       )}
+      <VideoModal video={video} onClose={closeVideo} />
     </main>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   fetchTemplates, fetchTemplateExercises, fetchSessions, fetchAllExercises,
   updateTemplateExercise, deleteTemplateExercise, updateTemplateExercisePositions,
-  createTemplate, renameTemplate, archiveTemplate,
+  createTemplate, renameTemplate, archiveTemplate, updateExercise,
 } from '../lib/queries.js';
 import { formatTarget } from '../lib/schedule.js';
 import {
@@ -10,11 +10,15 @@ import {
   nextTemplateLabel, archiveImpact, validateTemplateLabel,
 } from '../lib/editor.js';
 import { EQUIPMENT } from '../data/equipment.js';
+import { MAX_VIDEOS, validateVideoUrls, cleanVideoUrls } from '../lib/youtube.js';
 import TargetFields from '../components/TargetFields.jsx';
 import './Schema.css';
 import './Exercise.css';
 
 const equipmentLabel = (id) => EQUIPMENT.find((e) => e.id === id)?.label ?? null;
+
+/** Altijd drie velden, gevuld met wat er al is. */
+const videoFields = (urls) => Array.from({ length: MAX_VIDEOS }, (_, i) => urls?.[i] ?? '');
 
 /** Je workouts en hun oefeningen aanpassen. */
 export default function Schema({ onAddExercise }) {
@@ -61,16 +65,22 @@ export default function Schema({ onAddExercise }) {
 
   const startTarget = (row) => {
     setEditing({ type: 'target', id: row.id });
-    setForm(formFromColumns(row));
+    setForm({ ...formFromColumns(row), videos: videoFields(exercises.get(row.exercise_id)?.video_urls ?? row.exercise?.video_urls) });
     setFormErrors([]);
   };
 
   const saveTarget = (row) => {
     const measure = measureOf(row, exercises.get(row.exercise_id));
-    const errs = validateTarget(measure, form);
+    const errs = [...validateTarget(measure, form), ...validateVideoUrls(form.videos)];
     if (errs.length) { setFormErrors(errs); return; }
     run(async () => {
       await updateTemplateExercise(row.id, targetColumns(measure, form));
+      // Video's horen bij de oefening zelf: alleen wegschrijven als ze veranderd zijn.
+      const before = exercises.get(row.exercise_id)?.video_urls ?? null;
+      const after = cleanVideoUrls(form.videos);
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        await updateExercise(row.exercise_id, { video_urls: after });
+      }
       close();
     });
   };
@@ -181,6 +191,11 @@ export default function Schema({ onAddExercise }) {
                         {equipmentLabel(exercise?.equipment) && (
                           <span className="item__meta">{equipmentLabel(exercise.equipment)}</span>
                         )}
+                        {exercise?.video_urls?.length > 0 && (
+                          <span className="item__meta item__meta--video">
+                            {exercise.video_urls.length === 1 ? '1 video' : `${exercise.video_urls.length} video's`}
+                          </span>
+                        )}
                       </span>
                       <span className="item__tools">
                         <IconButton label={`${row.exercise?.name} omhoog`} disabled={busy || i === 0}
@@ -197,6 +212,20 @@ export default function Schema({ onAddExercise }) {
                     {open && (
                       <div className="item__edit">
                         <TargetFields measure={measure} value={form} onChange={setForm} />
+                        <div className="videos">
+                          <span className="videos__label">Video's</span>
+                          {(form.videos ?? []).map((url, vi) => (
+                            <input key={vi} className="videos__input" type="url" inputMode="url"
+                              placeholder={`YouTube-link ${vi + 1}`} value={url}
+                              aria-label={`YouTube-link ${vi + 1}`}
+                              onChange={(e) => setForm({
+                                ...form, videos: form.videos.map((u, j) => (j === vi ? e.target.value : u)),
+                              })} />
+                          ))}
+                          <span className="videos__hint">
+                            Maximaal {MAX_VIDEOS}. Ze horen bij de oefening, dus je ziet ze in elke workout waar hij in staat.
+                          </span>
+                        </div>
                         {formErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
                         <span className="item__buttons">
                           <button type="button" className="schema__primary" disabled={busy} onClick={() => saveTarget(row)}>Opslaan</button>

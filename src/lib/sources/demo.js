@@ -12,6 +12,7 @@ const copy = (value) => structuredClone(value);
 
 export function createDemoSource({ today, data } = {}) {
   const db = copy(data ?? generateDemoData({ today }));
+  db.exercise_feedback ??= [];
   let counter = 0;
   const newId = (kind) => `demo-new-${kind}-${++counter}`;
 
@@ -44,7 +45,7 @@ export function createDemoSource({ today, data } = {}) {
         .sort((a, b) => a.position - b.position)
         .map((te) => {
           const e = exerciseById(te.exercise_id);
-          return { ...te, exercise: { id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes } };
+          return { ...te, exercise: { id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes, video_urls: e.video_urls ?? null } };
         }));
     },
 
@@ -103,7 +104,7 @@ export function createDemoSource({ today, data } = {}) {
 
     async fetchExercise(id) {
       const e = exerciseById(id);
-      return e ? copy({ id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes }) : null;
+      return e ? copy({ id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes, video_urls: e.video_urls ?? null }) : null;
     },
 
     async fetchExerciseTemplates(exerciseId) {
@@ -132,6 +133,7 @@ export function createDemoSource({ today, data } = {}) {
         .map((e) => ({
           id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes ?? null,
           equipment: e.equipment ?? null, measure: e.measure ?? null, catalog_key: e.catalog_key ?? null,
+          video_urls: e.video_urls ?? null,
         }))
         .sort((a, b) => a.name.localeCompare(b.name, 'nl')));
     },
@@ -193,6 +195,31 @@ export function createDemoSource({ today, data } = {}) {
       db.sessions = db.sessions.filter((x) => !(x.template_id === id && x.status === 'gepland'));
       t.active = false;
       return copy(t);
+    },
+
+    async fetchFeedbackForExercises(exerciseIds) {
+      const wanted = new Set(exerciseIds);
+      return copy(db.exercise_feedback.filter((f) => wanted.has(f.exercise_id)));
+    },
+
+    async saveFeedback({ session_id, exercise_id, rating, comment }) {
+      const text = String(comment ?? '').trim();
+      const fields = { rating: rating ?? null, comment: text || null };
+      const existing = db.exercise_feedback.find((f) => f.session_id === session_id && f.exercise_id === exercise_id);
+      if (existing) {
+        Object.assign(existing, fields);
+        return copy(existing);
+      }
+      const created = { id: newId('f'), session_id, exercise_id, ...fields };
+      db.exercise_feedback.push(created);
+      return copy(created);
+    },
+
+    async updateExercise(id, changes) {
+      const e = exerciseById(id);
+      if (!e) throw new Error('Oefening niet gevonden');
+      Object.assign(e, changes);
+      return copy(e);
     },
 
     async fetchAllLogs() {

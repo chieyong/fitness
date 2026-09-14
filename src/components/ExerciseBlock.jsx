@@ -3,6 +3,8 @@ import { formatTarget } from '../lib/schedule.js';
 import { formatSets, exerciseStatus } from '../lib/progress.js';
 import { parseDecimal, parseWhole, formatNumber } from '../lib/input.js';
 import { formatDateShort } from '../lib/schedule.js';
+import { parseYouTube } from '../lib/youtube.js';
+import Stars from './Stars.jsx';
 
 /** Zoveel invoerregels als het target vraagt, maar nooit minder dan al gelogd is. */
 function buildRows(item, logged) {
@@ -22,12 +24,27 @@ function buildRows(item, logged) {
 export default function ExerciseBlock({
   item, logged, previous, readOnly, skipped,
   open, onToggleOpen, onSaveSet, onDeleteSet, onToggleSkip, onOpen,
+  feedback, previousFeedback, onSaveFeedback, onPlayVideo,
 }) {
   const exercise = item.exercise;
   const isTimed = item.target_seconds != null;
 
   const [rows, setRows] = useState(() => buildRows(item, logged));
   const [busy, setBusy] = useState(null);
+
+  // Hoe het ging: sterren direct opslaan, de toelichting bij het verlaten van het veld.
+  const [comment, setComment] = useState(feedback?.comment ?? '');
+  const [commentOpen, setCommentOpen] = useState(false);
+  useEffect(() => { setComment(feedback?.comment ?? ''); }, [feedback?.comment]);
+
+  const saveRating = (rating) => onSaveFeedback({ rating, comment: feedback?.comment ?? null });
+  const saveComment = () => {
+    if ((feedback?.comment ?? '') === comment.trim()) return;
+    onSaveFeedback({ rating: feedback?.rating ?? null, comment });
+  };
+
+  // Maximaal drie video's; ongeldige links worden stil overgeslagen.
+  const videos = (exercise.video_urls ?? []).map(parseYouTube).filter(Boolean);
 
   // Na een herlaadactie de serverwaarden overnemen, zonder te typen te onderbreken.
   useEffect(() => { setRows(buildRows(item, logged)); }, [item.id, logged]);
@@ -74,16 +91,35 @@ export default function ExerciseBlock({
 
   return (
     <li className={`block block--${status}${open ? ' block--open' : ''}`}>
-      <button type="button" className="row" onClick={onToggleOpen}
-        aria-expanded={open}>
-        <Status status={status} />
-        <span className="row__main">
-          <span className="row__name">{exercise.name}</span>
-          {/* Uitgeklapt staat dezelfde informatie eronder, mét datum. */}
-          {summary && !open && <span className="row__summary">{summary}</span>}
-        </span>
-        <span className="row__target">{formatTarget(item)}</span>
-      </button>
+      <div className="row-wrap">
+        <button type="button" className="row" onClick={onToggleOpen}
+          aria-expanded={open}>
+          <Status status={status} />
+          <span className="row__main">
+            <span className="row__name">{exercise.name}</span>
+            {/* Uitgeklapt staat dezelfde informatie eronder, mét datum. */}
+            {summary && !open && <span className="row__summary">{summary}</span>}
+            {!open && feedback?.rating ? <Stars value={feedback.rating} size={11} /> : null}
+          </span>
+          <span className="row__target">{formatTarget(item)}</span>
+        </button>
+        {videos.length > 0 && (
+          <span className="row__videos">
+            {videos.map((v, i) => (
+              <button key={v.id} type="button" className="vbtn"
+                aria-label={`Video${videos.length > 1 ? ` ${i + 1}` : ''} van ${exercise.name} afspelen`}
+                onClick={() => onPlayVideo({
+                  ...v, title: videos.length > 1 ? `${exercise.name}, video ${i + 1}` : exercise.name,
+                })}>
+                <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                  <path d="M2.5 1.4v7.2L8.6 5z" fill="currentColor" />
+                </svg>
+                {videos.length > 1 && <span className="vbtn__n">{i + 1}</span>}
+              </button>
+            ))}
+          </span>
+        )}
+      </div>
 
       {!open ? null : (
       <div className="block__body">
@@ -93,6 +129,14 @@ export default function ExerciseBlock({
             ? `Vorige keer niet gedaan — ${formatDateShort(previous.date)}`
             : `Vorige keer ${formatSets(previous.sets)} — ${formatDateShort(previous.date)}`}
           {previous.note && <span className="block__previous-note">{previous.note}</span>}
+        </p>
+      )}
+
+      {previousFeedback && (previousFeedback.rating || previousFeedback.comment) && (
+        <p className="block__previous feedback__previous">
+          <span>Vorige keer ging het</span>
+          <Stars value={previousFeedback.rating} size={12} />
+          {previousFeedback.comment && <span className="block__previous-note">{previousFeedback.comment}</span>}
         </p>
       )}
 
@@ -162,6 +206,26 @@ export default function ExerciseBlock({
             </div>
           )}
         </>
+      )}
+
+      {!skipped && (!readOnly || feedback?.rating || feedback?.comment) && (
+        <div className="feedback">
+          <span className="feedback__label">Hoe ging het?</span>
+          <Stars value={feedback?.rating ?? null} onChange={readOnly ? undefined : saveRating} />
+          {readOnly ? (
+            feedback?.comment && <p className="feedback__comment-read">{feedback.comment}</p>
+          ) : commentOpen || feedback?.comment ? (
+            <textarea className="feedback__comment" rows={2}
+              placeholder="Toelichting, bijvoorbeeld: laatste set met hulp"
+              value={comment} aria-label={`Toelichting bij ${exercise.name}`}
+              onChange={(e) => setComment(e.target.value)}
+              onBlur={saveComment} />
+          ) : (
+            <button type="button" className="block__link feedback__add" onClick={() => setCommentOpen(true)}>
+              Toelichting toevoegen
+            </button>
+          )}
+        </div>
       )}
 
       <button type="button" className="block__link block__progress" onClick={onOpen}>

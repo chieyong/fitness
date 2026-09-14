@@ -1,0 +1,17 @@
+.stars { display: inline-flex; align-items: center; gap: 2px; }
+
+.stars__button {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 8px;
+  transition: transform 120ms ease;
+}
+
+.stars__button:active { transform: scale(0.9); }
+
+.star { fill: none; stroke: var(--ink-tertiary); transition: fill 120ms ease, stroke 120ms ease; }
+.star--on { fill: var(--accent); stroke: var(--accent); }
+
+.stars__label { margin-left: var(--space-2); font-size: var(--text-micro); font-weight: 500; color: var(--ink-secondary); }
+
+.stars--static { gap: 1px; }

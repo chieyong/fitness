@@ -15,6 +15,7 @@
 begin;
 
 -- Schoon beginnen: dit vervangt de placeholder-seed volledig.
+delete from exercise_feedback;
 delete from exercise_logs;
 delete from sessions;
 delete from template_exercises;
@@ -250,5 +251,11 @@ from (values
 join exercises e on e.name = v.name
 join workout_templates t on t.label = 'Workout A'
 join sessions s on s.template_id = t.id and s.planned_date = '2026-09-13';
+
+-- Opmerkingen per oefening ook als feedback, zoals migratie 005 doet.
+insert into exercise_feedback (session_id, exercise_id, comment)
+select session_id, exercise_id, string_agg(note, ' ' order by set_number)
+from exercise_logs where note is not null and btrim(note) <> ''
+group by session_id, exercise_id;
 
 commit;

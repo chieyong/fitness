@@ -21,6 +21,7 @@ w();
 w('begin;');
 w();
 w('-- Schoon beginnen: dit vervangt de placeholder-seed volledig.');
+w('delete from exercise_feedback;');
 w('delete from exercise_logs;');
 w('delete from sessions;');
 w('delete from template_exercises;');
@@ -130,6 +131,12 @@ for (const h of history) {
   w();
 }
 
+w('-- Opmerkingen per oefening ook als feedback, zoals migratie 005 doet.');
+w('insert into exercise_feedback (session_id, exercise_id, comment)');
+w("select session_id, exercise_id, string_agg(note, ' ' order by set_number)");
+w("from exercise_logs where note is not null and btrim(note) <> ''");
+w('group by session_id, exercise_id;');
+w();
 w('commit;');
 w();
 

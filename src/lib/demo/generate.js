@@ -50,7 +50,7 @@ const SESSION_NOTES = [
   'Druk in de sportschool',
 ];
 
-const EXERCISE_NOTES = ['Nieuw record', 'Laatste set met hulp', 'Techniek gefilmd'];
+const EXERCISE_NOTES = ['Nieuw record', 'Laatste set met hulp', 'Techniek gefilmd', 'Voelde licht', 'Techniek beter'];
 
 const isCore = (e) => e.muscles.some((m) => m === 'abs' || m === 'obliques');
 
@@ -109,6 +109,7 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
 
   const sessions = [];
   const exercise_logs = [];
+  const exercise_feedback = [];
   let logId = 0;
   let rotation = 0;
 
@@ -159,7 +160,18 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
       if (chance(0.1)) sets = Math.max(2, sets - 1);
       else if (chance(0.05)) sets += 1;
 
-      const note = chance(0.04) ? pick(EXERCISE_NOTES) : null;
+      // Hoe het ging: niet elke keer ingevuld, en op een slechte dag lager.
+      const comment = chance(0.06) ? pick(EXERCISE_NOTES) : null;
+      if (comment || chance(0.55)) {
+        exercise_feedback.push({
+          id: `demo-f-${exercise_feedback.length + 1}`,
+          session_id: session.id,
+          exercise_id: exercise.id,
+          rating: badDay ? 2 + Math.floor(random() * 2) : 3 + Math.floor(random() * 3),
+          comment,
+        });
+      }
+      const note = null;
 
       if (e.seconds != null) {
         // Tijd: elke paar keer vijf seconden langer, tot de bovengrens.
@@ -214,7 +226,7 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
     };
   }
 
-  return { exercises, templates, template_exercises, sessions, exercise_logs };
+  return { exercises, templates, template_exercises, sessions, exercise_logs, exercise_feedback };
 }
 
 const round = (n) => Math.round(n * 10) / 10;

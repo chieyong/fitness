@@ -55,3 +55,6 @@ export const updateTemplateExercisePositions = (...args) => active.updateTemplat
 export const createTemplate = (...args) => active.createTemplate(...args);
 export const renameTemplate = (...args) => active.renameTemplate(...args);
 export const archiveTemplate = (...args) => active.archiveTemplate(...args);
+export const fetchFeedbackForExercises = (...args) => active.fetchFeedbackForExercises(...args);
+export const saveFeedback = (...args) => active.saveFeedback(...args);
+export const updateExercise = (...args) => active.updateExercise(...args);

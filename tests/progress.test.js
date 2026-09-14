@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   lastPerformance, formatSets, bestSet, volume, setsFor, sessionDate,
-  seriesFor, trend, exerciseStatus, preferredMetric, chartPoints,
+  seriesFor, trend, exerciseStatus, preferredMetric, chartPoints, feedbackFor, lastFeedback,
 } from '../src/lib/progress.js';
 
 const sessions = [
@@ -133,4 +133,38 @@ test('chartPoints levert punten met de juiste eenheid', () => {
   assert.equal(t.points[0].value, 45);
 
   assert.deepEqual(chartPoints([]), { points: [], unit: null });
+});
+
+test('feedbackFor vindt de feedback van één oefening in één sessie', () => {
+  const fb = [{ session_id: 's1', exercise_id: 'bank', rating: 4, comment: null }];
+  assert.equal(feedbackFor(fb, 's1', 'bank').rating, 4);
+  assert.equal(feedbackFor(fb, 's2', 'bank'), null);
+});
+
+test('lastFeedback pakt de laatste eerdere feedback en slaat lege over', () => {
+  const fb = [
+    { session_id: 's1', exercise_id: 'bank', rating: 3, comment: 'Zwaar' },
+    { session_id: 's2', exercise_id: 'bank', rating: null, comment: '  ' },   // leeg: telt niet
+    { session_id: 's3', exercise_id: 'bank', rating: 5, comment: null },      // vandaag zelf
+  ];
+  assert.deepEqual(lastFeedback(fb, sessions, 'bank', '2026-09-13'), { date: '2026-09-05', rating: 3, comment: 'Zwaar' });
+  assert.equal(lastFeedback(fb, sessions, 'bank', '2026-09-05'), null);
+  assert.equal(lastFeedback(fb, sessions, 'pers', '2026-09-13'), null);
+});
+
+test('een ingehaalde sessie telt nooit als haar eigen "vorige keer"', () => {
+  // s3 staat gepland op 13 sep maar wordt later ingehaald en bekeken op 16 sep.
+  const own = [...logs, log('s3', 'bank', 1, 12, 18)];
+  const withoutExclude = lastPerformance(own, sessions, 'bank', '2026-09-16');
+  assert.equal(withoutExclude.date, '2026-09-13');                       // de fout die dit voorkomt
+  const r = lastPerformance(own, sessions, 'bank', '2026-09-16', 's3');
+  assert.equal(r.date, '2026-09-11');
+  assert.equal(formatSets(r.sets), '10×16, 8×16');
+
+  const fb = [
+    { session_id: 's1', exercise_id: 'bank', rating: 3, comment: null },
+    { session_id: 's3', exercise_id: 'bank', rating: 5, comment: 'Eigen sessie' },
+  ];
+  assert.equal(lastFeedback(fb, sessions, 'bank', '2026-09-16').rating, 5);
+  assert.deepEqual(lastFeedback(fb, sessions, 'bank', '2026-09-16', 's3'), { date: '2026-09-05', rating: 3, comment: null });
 });

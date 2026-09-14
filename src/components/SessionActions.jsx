@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 /**
- * Onderaan de sessie: een opmerking bij de hele training, en de knoppen die
- * de sessie afsluiten. Pas als een sessie is afgerond schuift het schema op.
+ * Onderaan de sessie: afronden of overslaan. Opmerkingen horen nu bij een
+ * oefening zelf (sterren en toelichting), dus hier geen tekstvak meer.
+ * Pas als een sessie is afgerond schuift het schema op.
  */
-export default function SessionActions({ session, readOnly, onClose, onReopen, onSaveNote }) {
-  const [note, setNote] = useState(session.notes ?? '');
+export default function SessionActions({ session, readOnly, onClose, onReopen }) {
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => { setNote(session.notes ?? ''); }, [session.id, session.notes]);
 
   const run = async (fn) => { setBusy(true); try { await fn(); } finally { setBusy(false); } };
 
@@ -16,32 +14,25 @@ export default function SessionActions({ session, readOnly, onClose, onReopen, o
     return (
       <div className="actions">
         {session.notes && <p className="actions__note-read">{session.notes}</p>}
-        <button type="button" className="actions__secondary" disabled={busy}
-          onClick={() => run(onReopen)}>
-          Heropenen
-        </button>
+        <div className="actions__buttons">
+          <button type="button" className="actions__secondary" disabled={busy}
+            onClick={() => run(onReopen)}>
+            Heropenen
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="actions">
-      <label className="actions__label" htmlFor="session-note">Opmerking bij deze sessie</label>
-      <textarea
-        id="session-note" className="actions__note" rows={2}
-        placeholder="Bijvoorbeeld: het ging net!"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        onBlur={() => onSaveNote(note)}
-      />
-
       <div className="actions__buttons">
         <button type="button" className="actions__primary" disabled={busy}
-          onClick={() => run(() => onClose('voltooid', note))}>
+          onClick={() => run(() => onClose('voltooid', session.notes))}>
           Sessie afronden
         </button>
         <button type="button" className="actions__secondary" disabled={busy}
-          onClick={() => run(() => onClose('overgeslagen', note))}>
+          onClick={() => run(() => onClose('overgeslagen', session.notes))}>
           Overslaan
         </button>
       </div>

@@ -25,7 +25,7 @@ function fetchTemplateExercises(templateId) {
   return unwrap(
     supabase
       .from('template_exercises')
-      .select('*, exercise:exercises(id, name, muscle_groups, notes)')
+      .select('*, exercise:exercises(id, name, muscle_groups, notes, video_urls)')
       .eq('template_id', templateId)
       .order('position'),
   );
@@ -213,8 +213,43 @@ async function archiveTemplate(id) {
   return data[0];
 }
 
+/** Sterren en opmerkingen bij een reeks oefeningen. */
+function fetchFeedbackForExercises(exerciseIds) {
+  if (exerciseIds.length === 0) return Promise.resolve([]);
+  return unwrap(
+    supabase.from('exercise_feedback')
+      .select('id, session_id, exercise_id, rating, comment')
+      .in('exercise_id', exerciseIds),
+  );
+}
+
+/** Hoe het ging bij één oefening in één sessie; één rij per combinatie. */
+async function saveFeedback({ session_id, exercise_id, rating, comment }) {
+  const text = String(comment ?? '').trim();
+  const data = await unwrap(
+    supabase.from('exercise_feedback')
+      .upsert({
+        session_id, exercise_id,
+        rating: rating ?? null,
+        comment: text || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'session_id,exercise_id' })
+      .select('id, session_id, exercise_id, rating, comment'),
+  );
+  return data[0];
+}
+
+/** Een oefening zelf aanpassen, bijvoorbeeld haar video's. */
+async function updateExercise(id, changes) {
+  const data = await unwrap(supabase.from('exercises').update(changes).eq('id', id).select());
+  return data[0];
+}
+
 /** Echte gegevens, voor de ingelogde eigenaar. */
 export const supabaseSource = {
+  fetchFeedbackForExercises,
+  saveFeedback,
+  updateExercise,
   createExercise,
   addTemplateExercise,
   updateTemplateExercise,

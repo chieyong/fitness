@@ -99,7 +99,9 @@ precies dezelfde functies hebben.
    `insert into public.app_owners (email) values ('jouw-adres@gmail.com');`
 4. `supabase/migrations/004_exercise_kind.sql` draaien: materiaal en meetwijze per
    oefening, nodig voor het aanpassen van je schema.
-5. Inloggen.
+5. `supabase/migrations/005_feedback_and_videos.sql` draaien: sterren en toelichting per
+   oefening, en de grens van drie video's.
+6. Inloggen.
 
 ### Beheerscripts
 
@@ -190,12 +192,34 @@ loopt de grafiek door.
 
 Ingelogd worden wijzigingen bewaard; in de demo werken ze tot je de pagina herlaadt.
 
+## Hoe ging het?
+
+Onder de sets van een oefening geef je met 1 tot 5 sterren aan hoe het ging, met eventueel
+een toelichting. Sterren worden direct bewaard, de toelichting zodra je het veld verlaat.
+Nog een keer op dezelfde ster tikken wist de beoordeling. Ingeklapt staat de beoordeling
+klein onder de naam, en bij de volgende keer zie je hoe het toen ging.
+
+Dit staat per oefening per sessie in `exercise_feedback`. Het oude opmerkingenvak onder
+de hele sessie is weg; opmerkingen die al op een set stonden ("Ging net!") heeft
+migratie 005 meegenomen.
+
+## Video's
+
+In het schema kun je per oefening maximaal drie YouTube-links opslaan: gewone links,
+youtu.be, Shorts en embed-links worden herkend (`src/lib/youtube.js`). De video's horen
+bij de oefening zelf, dus je ziet ze in elke workout waar die oefening in staat.
+
+Op het scherm van vandaag staan kleine afspeelknopjes rechts op de oefeningkaart. Een
+tik opent de video in een venster boven de app, via youtube-nocookie. Shorts krijgen een
+staand venster. Sluiten met de knop, Escape of een tik ernaast.
+
 ## Voortgang
 
 "Voortgang" opent met het lichaamssilhouet. Daaronder staat elke spiergroep als een
 ingeklapte regel met een sparkline en het totaal — je ziet het verloop dus zonder iets
 open te klappen. Tik een spiergroep aan (op het silhouet of op de regel zelf) en de
-pagina springt erheen en klapt de oefeningen uit; er staat er één tegelijk open.
+pagina schuift erheen en klapt de oefeningen uit; er staat er één tegelijk open. Nog een
+keer tikken klapt hem geanimeerd in en brengt je rustig terug naar waar je stond.
 
 Per oefening: een sparkline, waar je nu staat en het verschil sinds de eerste keer. Tik
 de oefening aan voor de volledige grafieken en een tabel met alle sets. Tijdgebaseerde

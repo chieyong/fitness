@@ -21,11 +21,13 @@ export function setsFor(logs, sessionId, exerciseId) {
  * Geeft null als er geen eerdere sessie is, en `skipped` als die keer bewust
  * is overgeslagen -- dat is andere informatie dan "nooit gedaan".
  */
-export function lastPerformance(logs, sessions, exerciseId, beforeDate) {
+export function lastPerformance(logs, sessions, exerciseId, beforeDate, excludeSessionId = null) {
   const dateOf = new Map(sessions.map((s) => [s.id, sessionDate(s)]));
 
   const candidates = logs
-    .filter((l) => l.exercise_id === exerciseId)
+    // De sessie die je nu bekijkt is nooit "vorige keer" -- ook niet als het een
+    // ingehaalde sessie is waarvan de geplande datum vóór vandaag ligt.
+    .filter((l) => l.exercise_id === exerciseId && l.session_id !== excludeSessionId)
     .map((l) => ({ log: l, date: dateOf.get(l.session_id) }))
     .filter((c) => c.date && c.date < beforeDate);
 
@@ -145,4 +147,24 @@ export function chartPoints(series) {
     points: series.filter((p) => p[metric] != null).map((p) => ({ date: p.date, value: p[metric] })),
     unit: metric === 'bestWeight' ? 'kg' : 'sec',
   };
+}
+
+/** De sterren en opmerking bij één oefening in één sessie, of null. */
+export function feedbackFor(feedback, sessionId, exerciseId) {
+  return feedback.find((f) => f.session_id === sessionId && f.exercise_id === exerciseId) ?? null;
+}
+
+/**
+ * De laatste keer vóór `beforeDate` dat je iets over deze oefening zei: sterren,
+ * een opmerking of allebei. Lege feedback telt niet.
+ */
+export function lastFeedback(feedback, sessions, exerciseId, beforeDate, excludeSessionId = null) {
+  const dateOf = new Map(sessions.map((s) => [s.id, sessionDate(s)]));
+  const latest = feedback
+    .filter((f) => f.exercise_id === exerciseId && f.session_id !== excludeSessionId
+      && (f.rating != null || String(f.comment ?? '').trim()))
+    .map((f) => ({ ...f, date: dateOf.get(f.session_id) }))
+    .filter((f) => f.date && f.date < beforeDate)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))[0];
+  return latest ? { date: latest.date, rating: latest.rating ?? null, comment: latest.comment ?? null } : null;
 }

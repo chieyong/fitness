@@ -8,7 +8,7 @@ create table if not exists exercises (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   muscle_groups text[] not null,
-  video_urls text[],
+  video_urls text[] check (video_urls is null or cardinality(video_urls) <= 3),
   notes text,
   equipment text check (equipment is null or equipment in ('losse-gewichten', 'machine', 'zonder')),
   measure text check (measure is null or measure in ('gewicht', 'reps', 'tijd')),
@@ -64,6 +64,17 @@ create table if not exists exercise_logs (
   logged_at timestamptz default now()
 );
 
+-- Hoe een oefening ging: 1 tot 5 sterren en/of een opmerking, per oefening per sessie.
+create table if not exists exercise_feedback (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references sessions(id) on delete cascade,
+  exercise_id uuid not null references exercises(id) on delete cascade,
+  rating int check (rating is null or rating between 1 and 5),
+  comment text,
+  updated_at timestamptz default now(),
+  unique (session_id, exercise_id)
+);
+
 create unique index if not exists exercises_catalog_key_idx
   on exercises (catalog_key) where catalog_key is not null;
 create index if not exists template_exercises_template_idx on template_exercises (template_id, position);
@@ -82,6 +93,7 @@ alter table workout_templates enable row level security;
 alter table template_exercises enable row level security;
 alter table sessions enable row level security;
 alter table exercise_logs enable row level security;
+alter table exercise_feedback enable row level security;
 
 create table if not exists public.app_owners (
   email text primary key
@@ -110,7 +122,7 @@ grant execute on function public.is_owner() to anon, authenticated;
 do $$
 declare t text;
 begin
-  foreach t in array array['exercises','workout_templates','template_exercises','sessions','exercise_logs']
+  foreach t in array array['exercises','workout_templates','template_exercises','sessions','exercise_logs','exercise_feedback']
   loop
     execute format('drop policy if exists %I on %I', t || '_anon_all', t);
     execute format('drop policy if exists %I on %I', t || '_owner_all', t);

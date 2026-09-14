@@ -1,0 +1,57 @@
+.vmodal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(10, 14, 24, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: vmodal-in 180ms ease;
+}
+
+@keyframes vmodal-in { from { opacity: 0; } to { opacity: 1; } }
+
+.vmodal__box {
+  width: min(720px, 100%);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  animation: unfold 200ms ease;
+}
+
+/* Shorts zijn staand: smaller venster, en nooit hoger dan het scherm. */
+.vmodal__box--vertical { width: min(360px, 100%); }
+
+.vmodal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.vmodal__title { font-weight: 600; font-size: var(--text-small); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.vmodal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 10px;
+  color: var(--ink-secondary);
+  background: var(--inset);
+  box-shadow: var(--shadow-inset);
+}
+
+.vmodal__close:hover { color: var(--ink); }
+
+.vmodal__frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+.vmodal__box--vertical .vmodal__frame { aspect-ratio: 9 / 16; max-height: 78vh; margin: 0 auto; }
+
+.vmodal__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }

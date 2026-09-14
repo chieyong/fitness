@@ -6,26 +6,9 @@
   box-shadow: var(--shadow-card);
 }
 
-.actions__label { display: block; font-size: var(--text-small); font-weight: 600; color: var(--ink); margin-bottom: var(--space-2); }
-
-.actions__note {
-  font: inherit;
-  color: var(--ink);
-  width: 100%;
-  padding: var(--space-3);
-  background: var(--inset);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  box-shadow: var(--shadow-inset);
-  resize: vertical;
-}
-
-.actions__note::placeholder { color: var(--ink-tertiary); }
-.actions__note:focus { outline: none; border-color: var(--accent); }
-
 .actions__note-read { color: var(--ink-secondary); margin-bottom: var(--space-4); }
 
-.actions__buttons { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); margin-top: var(--space-4); }
+.actions__buttons { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
 
 .actions__primary {
   flex: 1;
