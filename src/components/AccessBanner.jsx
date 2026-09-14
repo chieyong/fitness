@@ -3,7 +3,7 @@ import { THEME_LABELS, getThemePreference, nextTheme, setThemePreference } from 
 import './AccessBanner.css';
 
 const MESSAGES = {
-  'niet-ingelogd': 'Dit zijn demo-gegevens. Log in om je eigen trainingen op te slaan.',
+  'niet-ingelogd': 'Dit zijn demo-gegevens. Wat je aanpast blijft bewaard tot je de browser sluit; log in om je eigen trainingen op te slaan.',
   'niet-geconfigureerd': 'Dit zijn demo-gegevens. Deze versie is niet met een database verbonden.',
   'geen-toegang': 'Dit account heeft geen toegang tot eigen gegevens. Je ziet de demo.',
   'controle-mislukt': 'Je toegang kon niet worden gecontroleerd. Je ziet de demo.',

@@ -8,7 +8,7 @@ import {
 } from '../lib/editor.js';
 import {
   fetchTemplates, fetchTemplateExercises, fetchAllTemplateExercises, fetchAllExercises,
-  createExercise, addTemplateExercise,
+  createExercise, addTemplateExercise, dataMode,
 } from '../lib/queries.js';
 import TargetFields from '../components/TargetFields.jsx';
 import './AddExercise.css';
@@ -148,6 +148,26 @@ export default function AddExercise({ templateId, onDone, onBack }) {
       setErrors([e.message]); setBusy(false);
     }
   };
+
+  // Ook via een directe link: in de demo voeg je geen oefeningen toe.
+  if (dataMode() === 'demo') {
+    return (
+      <main className="page">
+        <div className="progress__bar">
+          <button type="button" className="back" onClick={onBack}>
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
+              <path d="M8 2 2 8l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="sr-only">Terug</span>
+          </button>
+        </div>
+        <h1 className="exercise__title">Oefening toevoegen</h1>
+        <p className="exercise__empty">
+          In de demo kun je geen oefeningen toevoegen. Log in om je eigen schema op te bouwen.
+        </p>
+      </main>
+    );
+  }
 
   if (status === 'laden') return <main className="page" />;
 

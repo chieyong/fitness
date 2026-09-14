@@ -184,3 +184,55 @@ test("video's bij een oefening opslaan en terugzien in het schema", async () => 
   assert.deepEqual(again[0].exercise.video_urls, urls);
   assert.deepEqual((await src.fetchAllExercises()).find((e) => e.id === row.exercise_id).video_urls, urls);
 });
+
+const memoryStorage = () => {
+  const m = new Map();
+  return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) };
+};
+
+test('demo-aanpassingen overleven herladen, maar een nieuwe dag begint vers', async () => {
+  const storage = memoryStorage();
+  const url = 'https://www.youtube.com/watch?v=abcdefghijk';
+  const a = createDemoSource({ today, storage });
+  const [row] = await a.fetchTemplateExercises('demo-tpl-0');
+  await a.updateTemplateExercise(row.id, { target_sets: 7 });
+  await a.updateExercise(row.exercise_id, { video_urls: [url] });
+
+  const reloaded = createDemoSource({ today, storage });
+  const [again] = await reloaded.fetchTemplateExercises('demo-tpl-0');
+  assert.equal(again.target_sets, 7);
+  assert.deepEqual(again.exercise.video_urls, [url]);
+
+  const tomorrow = createDemoSource({ today: '2026-09-20', storage });
+  assert.notEqual((await tomorrow.fetchTemplateExercises('demo-tpl-0'))[0].target_sets, 7);
+});
+
+test('nieuwe id\'s botsen niet na herladen', async () => {
+  const storage = memoryStorage();
+  const a = createDemoSource({ today, storage });
+  const [s1] = await a.fetchSessions();
+  const [e1] = await a.fetchAllExercises();
+  const first = await a.saveSet({ session_id: s1.id, exercise_id: e1.id, set_number: 99, reps: 5 });
+  const b = createDemoSource({ today, storage });
+  const second = await b.saveSet({ session_id: s1.id, exercise_id: e1.id, set_number: 98, reps: 6 });
+  assert.notEqual(first.id, second.id);
+  assert.equal((await b.fetchAllLogs()).filter((l) => l.id === first.id).length, 1);
+});
+
+test('kapotte opslag valt terug op een verse demo', async () => {
+  const storage = memoryStorage();
+  storage.setItem('repz.demo.v1', '{kapot');
+  assert.equal((await createDemoSource({ today, storage }).fetchTemplates()).length, 3);
+});
+
+test('met de structuur op slot mogen targets wel, workouts en oefeningen niet', async () => {
+  const src = createDemoSource({ today, lockStructure: true });
+  await assert.rejects(src.createTemplate({ label: 'Workout D', position: 3 }), /demo/);
+  await assert.rejects(src.renameTemplate('demo-tpl-0', 'X'), /demo/);
+  await assert.rejects(src.archiveTemplate('demo-tpl-0'), /demo/);
+  const [row] = await src.fetchTemplateExercises('demo-tpl-0');
+  await assert.rejects(src.deleteTemplateExercise(row.id), /demo/);
+  await assert.rejects(src.addTemplateExercise({ template_id: 'demo-tpl-0', exercise_id: row.exercise_id, position: 99, target_sets: 3 }), /demo/);
+  assert.equal((await src.updateTemplateExercise(row.id, { target_sets: 2 })).target_sets, 2);
+  assert.ok(await src.updateExercise(row.exercise_id, { video_urls: null }));
+});

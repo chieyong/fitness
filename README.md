@@ -60,8 +60,12 @@ niet-triviale stuk in fase 1, en dit maakt ze los testbaar.
 Er is geen inlogscherm vooraf: wie de app opent, ziet meteen de demo, met bovenaan een
 balk die zegt dat je moet inloggen om je eigen trainingen op te slaan. De demo is een half
 jaar aan voorbeeldtrainingen volgens het echte programma, gemaakt in de browser zelf
-(`src/lib/demo/generate.js`, met vaste seed). Loggen werkt in de demo gewoon, maar niets
-gaat naar de database; na herladen staat alles weer op de voorbeeldgegevens.
+(`src/lib/demo/generate.js`, met vaste seed). In de demo pas je bestaande dingen aan: sets loggen, sterren geven, targets en
+video's van oefeningen. Dat gaat niet naar de database, maar blijft in `sessionStorage`
+staan: herladen behoudt het, de browser sluiten wist het, en een nieuwe dag begint vers.
+Het schema ombouwen kan in de demo niet — geen workouts toevoegen, hernoemen, verwijderen
+of ordenen, en geen oefeningen toevoegen of uit een workout halen. De demo-bron weigert dat
+ook zelf (`lockStructure`), zodat het via een directe link evenmin kan.
 
 Ingelogd staat in dezelfde balk met welk account, met een knop om uit te loggen — op elk
 scherm, niet alleen op het scherm van vandaag.
@@ -190,7 +194,7 @@ afgeronde trainingen blijven, alleen zijn geplande sessies vervallen. Kies je ee
 uit de bibliotheek die je al hebt (op sleutel of naam), dan wordt dat dezelfde oefening en
 loopt de grafiek door.
 
-Ingelogd worden wijzigingen bewaard; in de demo werken ze tot je de pagina herlaadt.
+Ingelogd worden wijzigingen bewaard. In de demo pas je alleen targets en video's van bestaande oefeningen aan, tot je de browser sluit.
 
 ## Hoe ging het?
 
@@ -205,7 +209,7 @@ migratie 005 meegenomen.
 
 ## Video's
 
-In het schema kun je per oefening maximaal drie YouTube-links opslaan: gewone links,
+In het schema kun je per oefening maximaal drie YouTube-links opslaan. Je begint met één veld; na elke ingevulde link verschijnt er één bij. Herkend worden: gewone links,
 youtu.be, Shorts en embed-links worden herkend (`src/lib/youtube.js`). De video's horen
 bij de oefening zelf, dus je ziet ze in elke workout waar die oefening in staat.
 

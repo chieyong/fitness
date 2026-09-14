@@ -13,7 +13,12 @@ let demo = null;
 /** 'supabase' voor de eigenaar, 'demo' voor iedereen anders. */
 export function setDataSource(next) {
   if (next === 'demo') {
-    demo ??= createDemoSource({ today: todayISO() });
+    // In de browser: aanpassingen bewaren tot de browser sluit, en de structuur op slot.
+    demo ??= createDemoSource({
+      today: todayISO(),
+      storage: globalThis.sessionStorage ?? null,
+      lockStructure: true,
+    });
     active = demo;
   } else {
     active = supabaseSource;

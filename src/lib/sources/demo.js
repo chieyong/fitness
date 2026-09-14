@@ -7,13 +7,56 @@ import { generateDemoData } from '../demo/generate.js';
 import { planNextSessions } from '../schedule.js';
 
 const HORIZON = 6;
+const STORAGE_KEY = 'repz.demo.v1';
+
+/** Wat de structuur van het schema verandert: in de demo niet toegestaan. */
+const STRUCTURE = [
+  'createTemplate', 'renameTemplate', 'archiveTemplate', 'createExercise',
+  'addTemplateExercise', 'deleteTemplateExercise', 'updateTemplateExercisePositions',
+];
+
+/** Alles wat iets wijzigt, en dus bewaard moet worden. */
+const MUTATORS = [
+  ...STRUCTURE, 'ensureUpcomingSessions', 'saveSet', 'deleteSet', 'setExerciseSkipped',
+  'closeSession', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
+  'saveFeedback', 'updateExercise',
+];
+
+/** Een bewaarde demo, maar alleen als hij voor vandaag is gemaakt en leesbaar is. */
+function readSnapshot(storage, today) {
+  try {
+    const raw = storage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const snap = JSON.parse(raw);
+    return snap && snap.today === today && snap.db ? snap : null;
+  } catch {
+    return null;
+  }
+}
 const byPlannedDate = (a, b) => (a.planned_date < b.planned_date ? -1 : a.planned_date > b.planned_date ? 1 : 0);
 const copy = (value) => structuredClone(value);
 
-export function createDemoSource({ today, data } = {}) {
-  const db = copy(data ?? generateDemoData({ today }));
+/**
+ * @param storage       optioneel, bijv. sessionStorage: aanpassingen overleven dan
+ *                      herladen, tot de browser sluit. Een nieuwe dag begint vers.
+ * @param lockStructure in de demo geen workouts of oefeningen toevoegen, verwijderen
+ *                      of ordenen; targets, video's, sets en sterren mogen wel.
+ */
+export function createDemoSource({ today, data, storage = null, lockStructure = false } = {}) {
+  const saved = !data && storage ? readSnapshot(storage, today) : null;
+  const db = saved?.db ?? copy(data ?? generateDemoData({ today }));
   db.exercise_feedback ??= [];
-  let counter = 0;
+  // De teller voor nieuwe id's reist mee, anders botsen id's na herladen.
+  let counter = saved?.counter ?? 0;
+
+  const persist = () => {
+    if (!storage) return;
+    try {
+      storage.setItem(STORAGE_KEY, JSON.stringify({ today, counter, db }));
+    } catch {
+      // Vol of geblokkeerd: dan blijft het bij het geheugen van deze pagina.
+    }
+  };
   const newId = (kind) => `demo-new-${kind}-${++counter}`;
 
   const exerciseById = (id) => db.exercises.find((e) => e.id === id);
@@ -30,7 +73,7 @@ export function createDemoSource({ today, data } = {}) {
     return copy(s);
   };
 
-  return {
+  const source = {
     async fetchTemplates() {
       return copy(db.templates.filter((t) => t.active).sort((a, b) => a.position - b.position));
     },
@@ -226,4 +269,18 @@ export function createDemoSource({ today, data } = {}) {
       return copy(db.exercise_logs.map(logFields));
     },
   };
+
+  for (const name of MUTATORS) {
+    const original = source[name];
+    source[name] = async (...args) => {
+      if (lockStructure && STRUCTURE.includes(name)) {
+        throw new Error('In de demo kun je geen workouts of oefeningen toevoegen of verwijderen. Log in om je eigen schema op te bouwen.');
+      }
+      const result = await original.apply(source, args);
+      persist();
+      return result;
+    };
+  }
+
+  return source;
 }

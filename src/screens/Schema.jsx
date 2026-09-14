@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   fetchTemplates, fetchTemplateExercises, fetchSessions, fetchAllExercises,
   updateTemplateExercise, deleteTemplateExercise, updateTemplateExercisePositions,
-  createTemplate, renameTemplate, archiveTemplate, updateExercise,
+  createTemplate, renameTemplate, archiveTemplate, updateExercise, dataMode,
 } from '../lib/queries.js';
 import { formatTarget } from '../lib/schedule.js';
 import {
@@ -20,8 +20,17 @@ const equipmentLabel = (id) => EQUIPMENT.find((e) => e.id === id)?.label ?? null
 /** Altijd drie velden, gevuld met wat er al is. */
 const videoFields = (urls) => Array.from({ length: MAX_VIDEOS }, (_, i) => urls?.[i] ?? '');
 
+/** Eén veld om mee te beginnen; na elke ingevulde link verschijnt er één bij, tot drie. */
+const visibleVideoFields = (videos = []) => {
+  let last = -1;
+  videos.forEach((u, i) => { if (String(u ?? '').trim()) last = i; });
+  return Math.min(MAX_VIDEOS, last + 2);
+};
+
 /** Je workouts en hun oefeningen aanpassen. */
 export default function Schema({ onAddExercise }) {
+  // In de demo pas je bestaande oefeningen aan, maar bouw je het schema niet om.
+  const demo = dataMode() === 'demo';
   const [templates, setTemplates] = useState([]);
   const [rows, setRows] = useState(new Map());
   const [exercises, setExercises] = useState(new Map());
@@ -125,8 +134,9 @@ export default function Schema({ onAddExercise }) {
 
       <h1 className="exercise__title">Schema</h1>
       <p className="exercise__meta">
-        Pas je workouts aan. Je trainingsgeschiedenis blijft bewaard, ook als je een
-        oefening of workout weghaalt.
+        {demo
+          ? "In de demo pas je targets en video's van bestaande oefeningen aan; dat blijft bewaard tot je de browser sluit. Log in om workouts en oefeningen toe te voegen."
+          : 'Pas je workouts aan. Je trainingsgeschiedenis blijft bewaard, ook als je een oefening of workout weghaalt.'}
       </p>
       {error && <p className="schema__error" role="alert">{error}</p>}
 
@@ -149,15 +159,17 @@ export default function Schema({ onAddExercise }) {
               ) : (
                 <>
                   <h2 className="wk__title">{t.label}</h2>
-                  <span className="wk__actions">
-                    <button type="button" className="schema__link" onClick={() => startRename(t)}>Hernoemen</button>
-                    {templates.length > 1 && (
-                      <button type="button" className="schema__link schema__link--quiet"
-                        onClick={() => { setEditing({ type: 'archive', id: t.id }); setFormErrors([]); }}>
-                        Verwijderen
-                      </button>
-                    )}
-                  </span>
+                  {!demo && (
+                    <span className="wk__actions">
+                      <button type="button" className="schema__link" onClick={() => startRename(t)}>Hernoemen</button>
+                      {templates.length > 1 && (
+                        <button type="button" className="schema__link schema__link--quiet"
+                          onClick={() => { setEditing({ type: 'archive', id: t.id }); setFormErrors([]); }}>
+                          Verwijderen
+                        </button>
+                      )}
+                    </span>
+                  )}
                 </>
               )}
             </div>
@@ -198,10 +210,14 @@ export default function Schema({ onAddExercise }) {
                         )}
                       </span>
                       <span className="item__tools">
+{!demo && (
+                          <>
                         <IconButton label={`${row.exercise?.name} omhoog`} disabled={busy || i === 0}
                           onClick={() => move(t.id, row.id, -1)}><Chevron direction="up" /></IconButton>
                         <IconButton label={`${row.exercise?.name} omlaag`} disabled={busy || i === list.length - 1}
                           onClick={() => move(t.id, row.id, +1)}><Chevron direction="down" /></IconButton>
+                          </>
+                        )}
                         <button type="button" className="schema__link"
                           onClick={() => (open ? close() : startTarget(row))}>
                           {open ? 'Sluiten' : 'Aanpassen'}
@@ -214,24 +230,28 @@ export default function Schema({ onAddExercise }) {
                         <TargetFields measure={measure} value={form} onChange={setForm} />
                         <div className="videos">
                           <span className="videos__label">Video's</span>
-                          {(form.videos ?? []).map((url, vi) => (
+                          {(form.videos ?? []).slice(0, visibleVideoFields(form.videos)).map((url, vi) => (
                             <input key={vi} className="videos__input" type="url" inputMode="url"
-                              placeholder={`YouTube-link ${vi + 1}`} value={url}
+                              placeholder={vi === 0 ? 'Plak een YouTube-link' : 'Nog een link (optioneel)'} value={url}
                               aria-label={`YouTube-link ${vi + 1}`}
                               onChange={(e) => setForm({
                                 ...form, videos: form.videos.map((u, j) => (j === vi ? e.target.value : u)),
                               })} />
                           ))}
-                          <span className="videos__hint">
-                            Maximaal {MAX_VIDEOS}. Ze horen bij de oefening, dus je ziet ze in elke workout waar hij in staat.
-                          </span>
+                          {(form.videos ?? []).some((u) => String(u ?? '').trim()) && (
+                            <span className="videos__hint">
+                              Maximaal {MAX_VIDEOS}. Hoort bij de oefening, dus zichtbaar in elke workout.
+                            </span>
+                          )}
                         </div>
                         {formErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
                         <span className="item__buttons">
                           <button type="button" className="schema__primary" disabled={busy} onClick={() => saveTarget(row)}>Opslaan</button>
                           <button type="button" className="schema__link" onClick={close}>Annuleren</button>
-                          <button type="button" className="schema__link schema__link--danger" disabled={busy}
+                          {!demo && (
+                                                    <button type="button" className="schema__link schema__link--danger" disabled={busy}
                             onClick={() => remove(t.id, row)}>Uit workout halen</button>
+                          )}
                         </span>
                       </div>
                     )}
@@ -241,21 +261,27 @@ export default function Schema({ onAddExercise }) {
             </ol>
             {list.length === 0 && <p className="exercise__meta">Nog geen oefeningen in deze workout.</p>}
 
-            <button type="button" className="schema__add" onClick={() => onAddExercise(t.id)}>
+            {!demo && (
+
+                        <button type="button" className="schema__add" onClick={() => onAddExercise(t.id)}>
               Oefening toevoegen
             </button>
+
+            )}
           </section>
         );
       })}
 
-      <div className="schema__footer">
-        <button type="button" className="schema__primary" disabled={busy} onClick={addWorkout}>
-          Workout toevoegen
-        </button>
-        <p className="exercise__meta">
-          Een nieuwe workout komt in de rotatie na de sessies die al gepland staan.
-        </p>
-      </div>
+      {!demo && (
+        <div className="schema__footer">
+          <button type="button" className="schema__primary" disabled={busy} onClick={addWorkout}>
+            Workout toevoegen
+          </button>
+          <p className="exercise__meta">
+            Een nieuwe workout komt in de rotatie na de sessies die al gepland staan.
+          </p>
+        </div>
+      )}
     </main>
   );
 }

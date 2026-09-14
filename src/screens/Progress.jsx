@@ -163,16 +163,20 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
         <Segmented options={RANGES} value={range} onChange={setRange} label="Periode" />
         <span className="metric" ref={infoRef}>
           <Segmented options={METRICS} value={metric} onChange={chooseMetric} label="Maat" />
-          {metric === 'volume' && (
-            <button type="button" className="metric__info" aria-label="Uitleg over volume"
-              aria-expanded={infoOpen} onClick={() => setInfoOpen(!infoOpen)}>
-              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          {/* Altijd in de layout en alleen zichtbaar bij volume: zo is de rij in beide
+              standen even breed en verspringt hij niet naar een volgende regel. */}
+          <button type="button"
+            className={`metric__info${metric === 'volume' ? '' : ' metric__info--hidden'}`}
+            aria-label="Uitleg over volume"
+            aria-hidden={metric !== 'volume'}
+            tabIndex={metric === 'volume' ? 0 : -1}
+            aria-expanded={infoOpen} onClick={() => setInfoOpen(!infoOpen)}>
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
                 <circle cx="7" cy="7" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.2" />
                 <path d="M7 6.2v3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
                 <circle cx="7" cy="4.2" r="0.85" fill="currentColor" />
               </svg>
-            </button>
-          )}
+          </button>
           {infoOpen && (
             <span className="pop" role="dialog" aria-label="Uitleg over volume">
               Volume in kilo's zegt veel binnen één oefening, maar weinig tussen

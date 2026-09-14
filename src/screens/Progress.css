@@ -38,6 +38,7 @@
 
 .metric__info { display: inline-flex; color: var(--ink-tertiary); padding: 2px; border-radius: 50%; }
 .metric__info:hover, .metric__info[aria-expanded="true"] { color: var(--accent); }
+.metric__info--hidden { visibility: hidden; pointer-events: none; }
 
 .pop {
   position: absolute;
@@ -153,6 +154,11 @@
 }
 
 @media (max-width: 480px) {
+  /* Compacter, zodat periode, maat en uitleg samen op één regel passen. */
+  .filters { gap: 6px; }
+  .metric { gap: 4px; }
+  .segmented { padding: 2px; gap: 1px; }
+  .segmented__item { padding: 4px 7px; }
   .line { gap: var(--space-3); }
   .line__now { min-width: 3.8em; }
 }
