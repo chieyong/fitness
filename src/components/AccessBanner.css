@@ -1,32 +1,23 @@
-.appbar {
-  background: var(--bg);
-  border-bottom: 1px solid var(--hairline);
-}
+.appbar { position: relative; z-index: 2; }
 
 .appbar__inner {
   max-width: var(--measure);
   margin: 0 auto;
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-4) var(--space-5) var(--space-2);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
 }
 
-/* De naam: rustig, iets zwaarder dan lopende tekst, geen logo-effecten. */
 .appbar__name {
-  font-size: 1.0625rem;
-  font-weight: 600;
+  font-size: 1.375rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
 }
 
-.appbar__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  min-width: 0;
-}
+.appbar__actions { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 
 .appbar__account {
   font-size: var(--text-micro);
@@ -34,32 +25,58 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 18em;
+  max-width: 16em;
 }
 
-.appbar__action {
-  color: var(--accent);
-  font-size: var(--text-small);
+/* Themaknop als verzonken pil, net als de tabs in het voorbeeld. */
+.appbar__theme {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-micro);
   font-weight: 500;
+  color: var(--ink-secondary);
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--inset);
+  box-shadow: var(--shadow-inset);
+}
+
+.appbar__theme:hover { color: var(--ink); }
+
+.appbar__action {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--on-accent);
+  padding: 7px 14px;
+  border-radius: var(--radius-control);
+  background: var(--accent-gradient);
+  box-shadow: var(--shadow-button);
   white-space: nowrap;
 }
 
-/* Demo-melding: een tint lager dan de balk zelf, zodat hij informeert zonder te schreeuwen. */
-.appbar__note { background: var(--banner-bg); border-top: 1px solid var(--hairline); }
+.appbar__note { max-width: var(--measure); margin: 0 auto; padding: 0 var(--space-5); }
 
 .appbar__note-inner {
-  max-width: var(--measure);
-  margin: 0 auto;
-  padding: var(--space-2) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   font-size: var(--text-micro);
   color: var(--ink-secondary);
+  background: var(--banner-bg);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-inset);
 }
 
 .appbar__note-account { display: block; color: var(--ink-tertiary); }
-
 .appbar__error { display: block; color: var(--danger); margin-top: 2px; }
 
+.appbar__action-short { display: none; }
+
+/* Smal scherm: de themaknop houdt zijn label (anders vind je hem niet), en de
+   inlogknop wordt korter om daar ruimte voor te maken. */
 @media (max-width: 480px) {
-  .appbar__inner, .appbar__note-inner { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .appbar__inner { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .appbar__note { padding: 0 var(--space-4); }
   .appbar__account { display: none; }
+  .appbar__action-long { display: none; }
+  .appbar__action-short { display: inline; }
 }

@@ -21,7 +21,7 @@ function dateFromUrl() {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
-export default function Today({ onOpenExercise, onOpenProgress, onOpenSchema }) {
+export default function Today({ onOpenExercise }) {
   const today = useMemo(() => todayISO(), []);
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
 
@@ -158,14 +158,6 @@ export default function Today({ onOpenExercise, onOpenProgress, onOpenSchema }) 
     <main className="page">
       <div className="today__bar">
         <DateStepper date={date} today={today} onChange={setDate} />
-        <span className="today__links">
-          <button type="button" className="today__link" onClick={onOpenSchema}>
-            Schema
-          </button>
-          <button type="button" className="today__link" onClick={onOpenProgress}>
-            Voortgang
-          </button>
-        </span>
       </div>
 
       <SessionHeader

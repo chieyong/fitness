@@ -1,112 +1,97 @@
-/* Filters in één rij boven alles wat ze beïnvloeden. */
 .filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin: var(--space-4) 0 var(--space-3);
+  margin: var(--space-4) 0;
 }
 
-/* Maat-schakelaar met de uitleg als pop-up eraan vast. */
+/* Verzonken spoor met een verhoogde pil, zoals Description/Specification. */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--inset);
+  box-shadow: var(--shadow-inset);
+}
+
+.segmented__item {
+  font-size: var(--text-micro);
+  font-weight: 500;
+  color: var(--ink-tertiary);
+  padding: 4px 12px;
+  border-radius: 11px;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.segmented__item:hover { color: var(--ink-secondary); }
+
+.segmented__item--on {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--seg-on);
+  box-shadow: var(--shadow-raised);
+}
+
 .metric { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); }
 
-.metric__info {
-  display: inline-flex;
-  color: var(--ink-tertiary);
-  padding: 2px;
-  border-radius: 50%;
-}
-
+.metric__info { display: inline-flex; color: var(--ink-tertiary); padding: 2px; border-radius: 50%; }
 .metric__info:hover, .metric__info[aria-expanded="true"] { color: var(--accent); }
 
 .pop {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  z-index: 20;
+  z-index: 25;
   width: min(280px, calc(100vw - 32px));
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   font-size: var(--text-micro);
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--ink-secondary);
   background: var(--surface);
-  border: 1px solid var(--hairline);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   box-shadow: var(--shadow-pop);
   animation: unfold 160ms ease;
 }
 
-.segmented {
-  display: inline-flex;
-  padding: 2px;
-  gap: 2px;
-  border-radius: 8px;
-  background: var(--fill);
-}
+/* Het lichaam in een grote kaart, als de uitgelichte kaart bovenaan het voorbeeld. */
+.body-card { padding: var(--space-4) var(--space-4) var(--space-3); scroll-margin-top: var(--space-4); }
 
-.segmented__item {
-  font-size: var(--text-micro);
-  color: var(--ink-secondary);
-  padding: 3px 10px;
-  border-radius: 6px;
-  transition: background 120ms ease, color 120ms ease;
-}
+.body__hint { margin-top: var(--space-3); font-size: var(--text-micro); color: var(--ink-tertiary); }
 
-.segmented__item--on {
-  background: var(--seg-on);
-  color: var(--ink);
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-}
-
-.body__hint {
+/* Spiergroepen als losse kaarten. */
+.muscle {
   margin-top: var(--space-3);
-  font-size: var(--text-small);
-  color: var(--ink-tertiary);
-  max-width: 34em;
-}
-
-/* Eén blok per spiergroep; het anker waar het silhouet naartoe scrollt. */
-.muscle {
-  margin-top: var(--space-6);
-  scroll-margin-top: var(--space-5);
-}
-
-.muscle {
-  margin-top: var(--space-4);
   scroll-margin-top: var(--space-4);
-  transition: opacity 200ms ease;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  transition: opacity 200ms ease, box-shadow 200ms ease;
 }
 
-/* Eén spiergroep open: de rest treedt terug, zodat de keuze eruit springt. */
+.muscle--open { box-shadow: var(--shadow-raised); }
 .muscle--dimmed { opacity: 0.42; }
-.muscle--dimmed:hover { opacity: 0.7; }
+.muscle--dimmed:hover { opacity: 0.72; }
 
 .muscle__head {
   display: flex;
   align-items: center;
   gap: var(--space-4);
   width: 100%;
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline);
+  padding: var(--space-3) var(--space-4);
 }
 
 .muscle__head .miniline { margin-left: auto; }
 
-.muscle__name {
-  font-size: var(--text-body);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  text-align: left;
-}
-
+.muscle__name { font-weight: 600; letter-spacing: -0.01em; text-align: left; }
 .muscle--open .muscle__name { color: var(--accent); }
 
 .muscle__value {
   font-size: var(--text-small);
+  font-weight: 500;
   color: var(--ink-secondary);
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
   min-width: 4.5em;
   text-align: right;
 }
@@ -114,92 +99,48 @@
 .muscle__list {
   list-style: none;
   margin: 0;
-  padding: 0 0 var(--space-4) var(--space-4);
+  padding: 0 var(--space-4) var(--space-2);
   animation: unfold 160ms ease;
 }
 
-/* Snel terug naar het totaaloverzicht, zodra het silhouet uit beeld is. */
-.tobody {
-  position: fixed;
-  right: var(--space-5);
-  bottom: var(--space-5);
-  z-index: 10;
-  background: var(--tip-bg);
-  color: var(--tip-ink);
-  font-size: var(--text-small);
-  padding: var(--space-3) var(--space-5);
-  border-radius: 980px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.16);
-  animation: unfold 160ms ease;
-}
-
-.tobody:hover { opacity: 0.9; }
-
-/* Oefeningregel: naam, staafjes per training, waar je nu staat. */
 .line {
   display: flex;
   align-items: center;
   gap: var(--space-4);
   width: 100%;
   padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline);
+  border-top: 1px solid var(--hairline);
   text-align: left;
-  transition: color 120ms ease;
 }
 
 .line:hover .line__name { color: var(--accent); }
 
 .line__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.line__name { font-weight: 500; transition: color 120ms ease; }
+.line__meta { font-size: var(--text-micro); color: var(--ink-tertiary); }
 
-.line__name {
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  transition: color 120ms ease;
+.line__now { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; min-width: 4.5em; }
+.line__value { font-weight: 600; white-space: nowrap; }
+.line__delta { font-size: var(--text-micro); color: var(--ink-tertiary); }
+.line__delta--up { color: var(--accent); font-weight: 600; }
+
+/* Terug naar het lichaam: boven de tabbalk zwevend. */
+.tobody {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--tabbar-h) + var(--space-5) + env(safe-area-inset-bottom));
+  z-index: 25;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--on-accent);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--accent-gradient);
+  box-shadow: var(--shadow-button);
+  animation: unfold 160ms ease;
 }
-
-.line__meta {
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.line__now {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-  min-width: 4.5em;
-}
-
-.line__value {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.line__delta {
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-.line__delta--up { color: var(--accent); }
 
 @media (max-width: 480px) {
   .line { gap: var(--space-3); }
   .line__now { min-width: 3.8em; }
-}
-
-/* Terug links, Vandaag rechts: altijd één tik naar de planning van vandaag. */
-.progress__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-6);
-}
-
-.progress__bar .back { margin-bottom: 0; }
-
-.today__link {
-  color: var(--accent);
-  font-size: var(--text-small);
 }

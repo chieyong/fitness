@@ -1,0 +1,58 @@
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-radius: 26px 26px 0 0;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.tabbar__inner {
+  max-width: var(--measure);
+  height: var(--tabbar-h);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 var(--space-4);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 72px;
+  color: var(--ink-tertiary);
+  transition: color 120ms ease;
+}
+
+.tab:hover { color: var(--ink-secondary); }
+
+.tab__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 40px;
+  border-radius: 14px;
+  transition: transform 180ms cubic-bezier(0.2, 0.9, 0.3, 1.2), background 180ms ease;
+}
+
+.tab__label { font-size: 0.6875rem; font-weight: 500; }
+
+/* Actieve tab: verhoogd blauw vierkant, zoals de fiets-knop in het voorbeeld. */
+.tab--on { color: var(--accent); }
+
+.tab--on .tab__icon {
+  height: 46px;
+  color: var(--on-accent);
+  background: var(--accent-gradient);
+  box-shadow: var(--shadow-button);
+  transform: translateY(-12px) rotate(-6deg);
+}
+
+.tab--on .tab__label { transform: translateY(-8px); font-weight: 600; }

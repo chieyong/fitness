@@ -155,11 +155,11 @@ export default function AddExercise({ templateId, onDone, onBack }) {
     <main className="page">
       <div className="progress__bar">
         <button type="button" className="back" onClick={onBack}>
-          <svg width="10" height="14" viewBox="0 0 10 14" fill="none" aria-hidden="true">
-            <path d="M7.5 1.5 2.5 7l5 5.5" stroke="currentColor" strokeWidth="1.5"
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
+            <path d="M8 2 2 8l6 6" stroke="currentColor" strokeWidth="2"
               strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Terug
+          <span className="sr-only">Terug</span>
         </button>
       </div>
 

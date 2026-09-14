@@ -17,7 +17,7 @@ import './Exercise.css';
 const equipmentLabel = (id) => EQUIPMENT.find((e) => e.id === id)?.label ?? null;
 
 /** Je workouts en hun oefeningen aanpassen. */
-export default function Schema({ onAddExercise, onGoToday, onBack }) {
+export default function Schema({ onAddExercise }) {
   const [templates, setTemplates] = useState([]);
   const [rows, setRows] = useState(new Map());
   const [exercises, setExercises] = useState(new Map());
@@ -112,13 +112,6 @@ export default function Schema({ onAddExercise, onGoToday, onBack }) {
 
   return (
     <main className="page">
-      <div className="progress__bar">
-        <button type="button" className="back" onClick={onBack}>
-          <Chevron direction="left" />
-          Terug
-        </button>
-        <button type="button" className="today__link" onClick={onGoToday}>Vandaag</button>
-      </div>
 
       <h1 className="exercise__title">Schema</h1>
       <p className="exercise__meta">
@@ -134,7 +127,7 @@ export default function Schema({ onAddExercise, onGoToday, onBack }) {
         const impact = archiving ? archiveImpact(sessions, t.id) : null;
 
         return (
-          <section key={t.id} className="wk">
+          <section key={t.id} className="wk card">
             <div className="wk__head">
               {renaming ? (
                 <form className="wk__rename" onSubmit={(e) => { e.preventDefault(); saveRename(t); }}>

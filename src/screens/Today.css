@@ -4,69 +4,57 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-5);
 }
 
-.today__link {
-  color: var(--accent);
-  font-size: var(--text-small);
-}
+.today__message { color: var(--ink-secondary); max-width: 34em; }
 
-.today__message {
+.today__note {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   color: var(--ink-secondary);
-  max-width: 34em;
+  background: var(--inset);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-inset);
 }
 
-.upcoming { margin-top: var(--space-7); }
+.today__error { color: var(--danger); font-size: var(--text-small); margin-bottom: var(--space-4); }
 
-.upcoming__heading {
-  font-size: var(--text-small);
-  font-weight: 400;
-  color: var(--ink-tertiary);
-  margin-bottom: var(--space-3);
-}
-
-.upcoming__list {
+/* Oefeningen als losse, zwevende kaarten met lucht ertussen. */
+.blocks {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
+
+.upcoming {
+  margin-top: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.upcoming__heading {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--space-2);
+}
+
+.upcoming__list { list-style: none; margin: 0; padding: 0; }
 
 .upcoming__item {
   display: flex;
   gap: var(--space-5);
   padding: var(--space-2) 0;
-  color: var(--ink-secondary);
   font-size: var(--text-small);
-}
-
-.upcoming__item span:first-child {
-  min-width: 6em;
-  color: var(--ink-tertiary);
-}
-
-.upcoming__label { color: var(--ink-secondary); }
-
-.today__note {
-  margin-bottom: var(--space-5);
   color: var(--ink-secondary);
-  max-width: 34em;
 }
 
-.blocks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.today__error {
-  color: var(--danger);
-  font-size: var(--text-small);
-  margin-bottom: var(--space-4);
-}
-
-
-/* Past de rij niet op een smal scherm, dan schuiven de links naar een eigen regel
-   rechts, in plaats van buiten beeld te vallen. */
-.today__links { display: flex; gap: var(--space-4); margin-left: auto; }
+.upcoming__item + .upcoming__item { border-top: 1px solid var(--hairline); }
+.upcoming__item span:first-child { min-width: 6em; color: var(--ink-tertiary); }
+.upcoming__label { color: var(--ink); font-weight: 500; }

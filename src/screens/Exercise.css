@@ -1,87 +1,50 @@
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--accent);
-  font-size: var(--text-small);
-  margin-bottom: var(--space-6);
-}
-
 .exercise__title {
-  font-size: var(--text-display);
-  font-weight: 500;
+  font-size: 1.875rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
 
-.exercise__meta {
-  margin-top: var(--space-2);
-  font-size: var(--text-small);
-  color: var(--ink-secondary);
-}
+.exercise__meta { margin-top: var(--space-2); font-size: var(--text-small); color: var(--ink-secondary); }
+.exercise__notes { margin-top: var(--space-2); font-size: var(--text-small); color: var(--ink-tertiary); max-width: 34em; }
+.exercise__empty { margin-top: var(--space-5); color: var(--ink-secondary); max-width: 34em; }
 
-.exercise__notes {
-  margin-top: var(--space-2);
-  font-size: var(--text-small);
-  color: var(--ink-tertiary);
-  max-width: 34em;
-}
-
-/* Eén groot getal per scherm: waar sta je nu. */
+/* Eén groot getal per scherm, in een uitgelichte kaart. */
 .hero {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  margin: var(--space-6) 0 var(--space-7);
+  margin: var(--space-5) 0;
+  padding: var(--space-5);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
 }
 
-.hero__value {
-  font-size: 56px;
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  /* Bewust géén tabular-nums: op deze grootte staan de cijfers dan los. */
+.hero__value { font-size: 56px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--accent); }
+
+.hero__unit { font-size: 22px; font-weight: 500; color: var(--ink-tertiary); margin-left: 6px; letter-spacing: 0; }
+
+.hero__label { font-size: var(--text-small); color: var(--ink-secondary); }
+.hero__delta { display: block; color: var(--ink-tertiary); margin-top: 2px; }
+.hero__delta--up { color: var(--accent); font-weight: 600; }
+
+.log {
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
 }
 
-.hero__unit {
-  font-size: 24px;
-  font-weight: 400;
-  color: var(--ink-tertiary);
-  margin-left: 6px;
-  letter-spacing: 0;
-}
+.log__heading { font-size: var(--text-small); font-weight: 600; color: var(--ink); margin-bottom: var(--space-3); }
 
-.hero__label {
-  font-size: var(--text-small);
-  color: var(--ink-secondary);
-}
-
-.hero__delta {
-  display: block;
-  color: var(--ink-tertiary);
-  margin-top: 2px;
-}
-
-.hero__delta--up { color: var(--accent); }
-
-.log { margin-top: var(--space-6); }
-
-.log__heading {
-  font-size: var(--text-small);
-  font-weight: 400;
-  color: var(--ink-tertiary);
-  margin-bottom: var(--space-3);
-}
-
-.log__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-small);
-}
+.log__table { width: 100%; border-collapse: collapse; font-size: var(--text-small); }
 
 .log__table th {
   text-align: left;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--ink-tertiary);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--hairline);
@@ -94,18 +57,12 @@
   vertical-align: top;
 }
 
-.log__table td:first-child { color: var(--ink); white-space: nowrap; }
+.log__table tr:last-child td { border-bottom: 0; }
+.log__table td:first-child { color: var(--ink); white-space: nowrap; font-weight: 500; }
 .log__table td:last-child { text-align: right; white-space: nowrap; padding-right: 0; }
 .log__table th:last-child { text-align: right; }
 
-.exercise__targets {
-  margin-top: var(--space-5);
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
-}
+.log__pick { color: inherit; text-align: left; font-weight: inherit; }
+.log__pick:hover { color: var(--accent); }
 
-.exercise__empty {
-  margin-top: var(--space-6);
-  color: var(--ink-secondary);
-  max-width: 34em;
-}
+.exercise__targets { margin-top: var(--space-4); font-size: var(--text-micro); color: var(--ink-tertiary); }

@@ -23,7 +23,7 @@ const METRICS = [
   { id: 'volume', label: 'Volume', unit: 'kg' },
 ];
 
-export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoToday, onBack }) {
+export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
   const today = useMemo(() => todayISO(), []);
   const [range, setRange] = useState('30');
   const [metric, setMetric] = useState('sets');
@@ -142,18 +142,6 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoT
 
   return (
     <main className="page">
-      <div className="progress__bar">
-      <button type="button" className="back" onClick={onBack}>
-        <svg width="10" height="14" viewBox="0 0 10 14" fill="none" aria-hidden="true">
-          <path d="M7.5 1.5 2.5 7l5 5.5" stroke="currentColor" strokeWidth="1.5"
-            strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        Terug
-      </button>
-        <button type="button" className="today__link" onClick={onGoToday}>
-          Vandaag
-        </button>
-      </div>
 
       <h1 className="exercise__title">Voortgang</h1>
       {error && <p className="exercise__meta">{error}</p>}
@@ -188,7 +176,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise, onGoT
         </p>
       ) : (
         <>
-          <div id="lichaam" ref={bodyRef}>
+          <div id="lichaam" ref={bodyRef} className="card body-card">
             <BodyMap intensity={intensity} selected={selected}
               onSelect={select} valueLabel={valueOf} />
             <RampLegend

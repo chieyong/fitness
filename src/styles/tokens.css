@@ -1,49 +1,57 @@
+/*
+ * Repz-kleuren. Stijl: navy kaarten met zachte schaduw en blauwe gradients, met
+ * een lichte variant in dezelfde taal. Alle tekst-, accent- en datakleuren zijn
+ * nagemeten: tekst minstens 4,5:1 op hun vlak, witte knoptekst op beide
+ * uiteinden van de gradient, sparklines minstens 3:1 op de kaart, en per thema
+ * een silhouetschaal die monotoon verloopt en een onbelaste spier duidelijk
+ * onderscheidt.
+ */
+
 :root {
   color-scheme: light dark;
 
-  /* Apple's eigen grijzen; near-black in plaats van puur zwart. */
-  --bg: #F5F5F7;
+  --bg: #EDF0F6;
   --surface: #FFFFFF;
-  --ink: #1D1D1F;
-  --ink-secondary: #6E6E73;
-  --ink-tertiary: #A1A1A6;
-  --accent: #0071E3;
+  --inset: #E4E8F0;
+  --ink: #1B2130;
+  --ink-secondary: #566074;
+  --ink-tertiary: #5F6878;
+  --accent: #2563D9;
+  --accent-gradient: linear-gradient(135deg, #2471D6 0%, #3D52D4 100%);
   --on-accent: #FFFFFF;
-  --danger: #B3261E;
-  --hairline: rgba(0, 0, 0, 0.10);
-  --hairline-strong: rgba(0, 0, 0, 0.18);
-
-  /* Vlakken voor bediening: segmenten, meldingen, tooltips. */
-  --fill: rgba(118, 118, 128, 0.12);
+  --danger: #C0352B;
+  --hairline: rgba(27, 33, 48, 0.08);
+  --hairline-strong: rgba(27, 33, 48, 0.16);
+  --fill: rgba(27, 33, 48, 0.06);
   --seg-on: #FFFFFF;
-  --banner-bg: #EDEDF0;
-  --tip-bg: #1D1D1F;
+  --banner-bg: #E4E8F0;
+  --tip-bg: #1B2130;
   --tip-ink: #FFFFFF;
-  --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.12);
 
-  /* Data: het de-emfaselijntje van een sparkline en het lege lichaam. */
-  --spark: #9CC3F1;
-  --body-empty: #E8E8ED;
+  --shadow-card: 0 10px 24px rgba(31, 45, 90, 0.08), 0 2px 6px rgba(31, 45, 90, 0.05);
+  --shadow-raised: 0 14px 30px rgba(31, 45, 90, 0.14), 0 3px 8px rgba(31, 45, 90, 0.06);
+  --shadow-button: 0 8px 18px rgba(36, 94, 214, 0.35);
+  --shadow-inset: inset 0 2px 5px rgba(31, 45, 90, 0.10), inset 0 -1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-pop: 0 12px 32px rgba(31, 45, 90, 0.18);
 
-  /*
-   * Sequentiële schaal voor het silhouet: één tint, lichtheid dalend met
-   * de belasting. Nagemeten: monotoon, hue-spreiding 2,8 graden, en de laagste
-   * stap verschilt dE 9,2 van het lege lichaam (de oude schaal: 2,5).
-   */
-  --ramp-1: #B6D3F6;
-  --ramp-2: #8CBAF0;
-  --ramp-3: #5F9DE8;
-  --ramp-4: #337FDB;
+  --panel-gradient: linear-gradient(160deg, #6FB6FF 0%, #3D52D4 100%);
+  --panel-opacity: 0.06;  /* hoogste dekking waarbij grijze tekst erop 4,5:1 houdt */
+
+  --spark: #5B8BD6;
+  --body-empty: #DCE1EA;
+  --ramp-1: #A9CBF4;
+  --ramp-2: #80B2EF;
+  --ramp-3: #5796E6;
+  --ramp-4: #2F7ADA;
   --ramp-5: #0062C4;
 
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+  --font: 'Poppins', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-  /* Type-schaal: groot en licht bovenaan, rustig daaronder. */
   --text-display: 2rem;
   --text-title: 1.3125rem;
-  --text-body: 1rem;
+  --text-body: 0.9375rem;
   --text-small: 0.875rem;
-  --text-micro: 0.8125rem;
+  --text-micro: 0.78125rem;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -54,42 +62,91 @@
   --space-7: 48px;
   --space-8: 72px;
 
+  --radius-card: 22px;
+  --radius-control: 12px;
+  --radius-pill: 14px;
+  --tabbar-h: 64px;
+
   --measure: 640px;
 }
 
-/*
- * Donker volgt de instelling van de telefoon. Eigen waarden, geen omgekeerde
- * kopie: Apple's donkere systeemkleuren, en de tekst- en accentkleuren zijn
- * nagemeten op contrast tegen deze achtergronden.
- */
+/* Donker volgt de telefoon, tenzij je zelf kiest (data-theme, gezet door src/lib/theme.js). */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --surface: #1C1C1E;
-    --ink: #F5F5F7;
-    --ink-secondary: #A1A1A6;
-    --ink-tertiary: #8E8E93;
-    --accent: #0A84FF;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #242832;
+    --surface: #2D323E;
+    --inset: #1E222B;
+    --ink: #FFFFFF;
+    --ink-secondary: #A9AFBC;
+    --ink-tertiary: #9AA1AF;
+    --accent: #5AA2FF;
+    --accent-gradient: linear-gradient(135deg, #2471D6 0%, #3D52D4 100%);
     --on-accent: #FFFFFF;
-    --danger: #FF6961;
-    --hairline: rgba(255, 255, 255, 0.12);
-    --hairline-strong: rgba(255, 255, 255, 0.22);
+    --danger: #FF7A70;
+    --hairline: rgba(255, 255, 255, 0.07);
+    --hairline-strong: rgba(255, 255, 255, 0.16);
+    --fill: rgba(255, 255, 255, 0.06);
+    --seg-on: #353B48;
+    --banner-bg: #1E222B;
+    --tip-bg: #F5F7FB;
+    --tip-ink: #1B2130;
 
-    --fill: rgba(118, 118, 128, 0.24);
-    --seg-on: #3A3A3C;
-    --banner-bg: #1C1C1E;
-    --tip-bg: #F5F5F7;
-    --tip-ink: #000000;
-    --shadow-pop: 0 4px 20px rgba(0, 0, 0, 0.6);
+    --shadow-card: 10px 12px 24px rgba(0, 0, 0, 0.35), -4px -4px 12px rgba(255, 255, 255, 0.025);
+    --shadow-raised: 12px 14px 28px rgba(0, 0, 0, 0.45), -5px -5px 14px rgba(255, 255, 255, 0.035);
+    --shadow-button: 0 8px 20px rgba(45, 98, 230, 0.45);
+    --shadow-inset: inset 3px 3px 7px rgba(0, 0, 0, 0.45), inset -2px -2px 5px rgba(255, 255, 255, 0.03);
+    --shadow-pop: 0 16px 36px rgba(0, 0, 0, 0.55);
 
-    --spark: #3F6FA8;
-    --body-empty: #2C2C2E;
+    --panel-gradient: linear-gradient(160deg, #4AA3F5 0%, #3D52D4 100%);
+    --panel-opacity: 0.12;
 
-    /* Op donker betekent meer belasting juist lichter. Monotoon, dE 9,8 van leeg. */
-    --ramp-1: #223F63;
-    --ramp-2: #265B96;
-    --ramp-3: #3079CA;
-    --ramp-4: #5A9FEE;
-    --ramp-5: #A3CFFA;
+    --spark: #6A90CC;
+    --body-empty: #40465A;
+    --ramp-1: #2E568C;
+    --ramp-2: #3569B2;
+    --ramp-3: #4284DA;
+    --ramp-4: #6BA8F3;
+    --ramp-5: #A9D3FC;
   }
 }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #242832;
+  --surface: #2D323E;
+  --inset: #1E222B;
+  --ink: #FFFFFF;
+  --ink-secondary: #A9AFBC;
+  --ink-tertiary: #9AA1AF;
+  --accent: #5AA2FF;
+  --accent-gradient: linear-gradient(135deg, #2471D6 0%, #3D52D4 100%);
+  --on-accent: #FFFFFF;
+  --danger: #FF7A70;
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  --fill: rgba(255, 255, 255, 0.06);
+  --seg-on: #353B48;
+  --banner-bg: #1E222B;
+  --tip-bg: #F5F7FB;
+  --tip-ink: #1B2130;
+
+  --shadow-card: 10px 12px 24px rgba(0, 0, 0, 0.35), -4px -4px 12px rgba(255, 255, 255, 0.025);
+  --shadow-raised: 12px 14px 28px rgba(0, 0, 0, 0.45), -5px -5px 14px rgba(255, 255, 255, 0.035);
+  --shadow-button: 0 8px 20px rgba(45, 98, 230, 0.45);
+  --shadow-inset: inset 3px 3px 7px rgba(0, 0, 0, 0.45), inset -2px -2px 5px rgba(255, 255, 255, 0.03);
+  --shadow-pop: 0 16px 36px rgba(0, 0, 0, 0.55);
+
+  --panel-gradient: linear-gradient(160deg, #4AA3F5 0%, #3D52D4 100%);
+  --panel-opacity: 0.12;
+
+  --spark: #6A90CC;
+  --body-empty: #40465A;
+  --ramp-1: #2E568C;
+  --ramp-2: #3569B2;
+  --ramp-3: #4284DA;
+  --ramp-4: #6BA8F3;
+  --ramp-5: #A9D3FC;
+}
+
+:root[data-theme="light"] { color-scheme: light; }

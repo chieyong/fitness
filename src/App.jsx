@@ -7,6 +7,7 @@ import ProgressIndex from './screens/Progress.jsx';
 import Schema from './screens/Schema.jsx';
 import AddExercise from './screens/AddExercise.jsx';
 import AccessBanner from './components/AccessBanner.jsx';
+import TabBar from './components/TabBar.jsx';
 
 /** Welk scherm staat er in de URL? Leeg = het scherm van vandaag. */
 function routeFromUrl() {
@@ -109,8 +110,11 @@ function Router() {
   };
 
   const openExercise = (id) => go({ oefening: id });
-  const openProgress = () => go({ voortgang: '1' });
-  const openSchema = () => go({ schema: '1' });
+  const navigate = (tab) => {
+    if (tab === 'voortgang') go({ voortgang: '1' });
+    else if (tab === 'schema') go({ schema: '1' });
+    else go({});
+  };
   const openAddExercise = (templateId) => go({ toevoegen: templateId });
   // Kom je hier via een gedeelde link, dan is er geen geschiedenis om naar
   // terug te gaan; val dan terug op het scherm van vandaag.
@@ -119,26 +123,35 @@ function Router() {
     else go({});
   };
 
-  if (route.screen === 'oefening') {
-    return <Exercise exerciseId={route.exercise} onBack={back} />;
+  // Het toevoegformulier is een zijstap: daar geen tabbalk, alleen terug.
+  if (route.screen === 'toevoegen') {
+    return <AddExercise templateId={route.template} onDone={back} onBack={back} />;
   }
-  if (route.screen === 'voortgang') {
-    return (
+
+  let screen;
+  if (route.screen === 'oefening') {
+    screen = <Exercise exerciseId={route.exercise} onBack={back} />;
+  } else if (route.screen === 'voortgang') {
+    screen = (
       <ProgressIndex
         muscle={route.muscle}
         onSelectMuscle={(m) => go({ voortgang: m ?? '1' }, { inPlace: true })}
         onOpenExercise={openExercise}
-        onGoToday={() => go({})}
-        onBack={back}
       />
     );
+  } else if (route.screen === 'schema') {
+    screen = <Schema onAddExercise={openAddExercise} />;
+  } else {
+    screen = <Today onOpenExercise={openExercise} />;
   }
-  if (route.screen === 'schema') {
-    return <Schema onAddExercise={openAddExercise} onGoToday={() => go({})} onBack={back} />;
-  }
-  if (route.screen === 'toevoegen') {
-    // Terug of klaar: naar het schema. Het toevoegscherm opent altijd vanuit daar.
-    return <AddExercise templateId={route.template} onDone={back} onBack={back} />;
-  }
-  return <Today onOpenExercise={openExercise} onOpenProgress={openProgress} onOpenSchema={openSchema} />;
+
+  // Een oefening hoort bij Voortgang: die tab blijft dan aan.
+  const activeTab = route.screen === 'oefening' ? 'voortgang' : route.screen;
+
+  return (
+    <>
+      {screen}
+      <TabBar active={activeTab} onNavigate={navigate} />
+    </>
+  );
 }

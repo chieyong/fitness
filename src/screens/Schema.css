@@ -1,152 +1,111 @@
-.progress__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-6);
-}
+/* Workouts als kaarten. */
+.wk { margin-top: var(--space-5); padding: var(--space-4) var(--space-5) var(--space-4); }
 
-.progress__bar .back { margin-bottom: 0; }
-
-.today__link { color: var(--accent); font-size: var(--text-small); }
-
-.wk { margin-top: var(--space-7); }
-
+/* Past de naam niet naast de acties, dan schuiven de acties eronder in plaats van
+   dat de naam midden in een woord afbreekt ("Workout / A"). */
 .wk__head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-1) var(--space-4);
   padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--hairline);
 }
 
-.wk__title {
-  font-size: var(--text-title);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
+.wk__title { font-size: 1.1875rem; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
 
-.wk__actions { display: flex; gap: var(--space-4); }
+.wk__actions { display: flex; gap: var(--space-4); margin-left: auto; }
 
-.wk__rename {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  width: 100%;
-}
+.wk__rename { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); width: 100%; }
 
 .wk__rename input {
   font: inherit;
-  font-size: var(--text-title);
-  font-weight: 500;
+  font-size: 1.1875rem;
+  font-weight: 600;
   color: var(--ink);
   flex: 1;
   min-width: 10em;
-  padding: var(--space-1) var(--space-2);
-  background: var(--surface);
+  padding: var(--space-2) var(--space-3);
+  background: var(--inset);
   border: 1px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-inset);
 }
 
 .wk__rename input:focus { outline: none; }
 
 .wk__list { list-style: none; margin: 0; padding: 0; }
 
-.item { border-bottom: 1px solid var(--hairline); }
+.item { border-top: 1px solid var(--hairline); }
 
-.item__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-}
+.item__row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; }
 
 .item__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-
-.item__name { font-weight: 500; letter-spacing: -0.01em; }
-
-.item__meta {
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
-  font-variant-numeric: tabular-nums;
-}
+.item__name { font-weight: 600; letter-spacing: -0.01em; }
+.item__meta { font-size: var(--text-micro); color: var(--ink-tertiary); font-variant-numeric: tabular-nums; }
 
 .item__tools { display: flex; align-items: center; gap: var(--space-2); }
 
+/* Pijltjes als kleine verzonken knoppen. */
 .icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--ink-secondary);
+  background: var(--inset);
+  box-shadow: var(--shadow-inset);
 }
 
-.icon:hover:not(:disabled) { background: var(--surface); color: var(--ink); }
+.icon:hover:not(:disabled) { color: var(--accent); }
 .icon:disabled { opacity: 0.3; cursor: default; }
 
-.item__edit {
-  padding: 0 0 var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  animation: unfold 160ms ease;
-}
+.item__edit { padding: 0 0 var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); animation: unfold 160ms ease; }
 
 .item__buttons { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
 
 .confirm {
-  margin-top: var(--space-3);
-  padding: var(--space-3) 0 var(--space-4);
-  border-bottom: 1px solid var(--hairline);
+  margin: var(--space-2) 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
   font-size: var(--text-small);
   color: var(--ink-secondary);
+  background: var(--inset);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-inset);
 }
 
 .confirm__buttons { display: flex; gap: var(--space-4); margin-top: var(--space-3); }
 
-.schema__link { color: var(--accent); font-size: var(--text-small); white-space: nowrap; }
+.schema__link { color: var(--accent); font-size: var(--text-small); font-weight: 500; white-space: nowrap; }
 .schema__link--quiet { color: var(--ink-tertiary); }
 .schema__link--danger { color: var(--danger); margin-left: auto; }
 .schema__link:disabled { opacity: 0.5; }
 
 .schema__primary {
-  background: var(--accent);
   color: var(--on-accent);
-  padding: var(--space-2) var(--space-4);
-  border-radius: 980px;
+  background: var(--accent-gradient);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-button);
   font-size: var(--text-small);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .schema__primary:disabled { opacity: 0.5; }
 
 .schema__danger {
-  background: var(--danger);
   color: var(--on-accent);
-  padding: var(--space-2) var(--space-4);
-  border-radius: 980px;
+  background: var(--danger);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-control);
   font-size: var(--text-small);
-  font-weight: 500;
+  font-weight: 600;
 }
 
-.schema__add {
-  margin-top: var(--space-3);
-  color: var(--accent);
-  font-size: var(--text-small);
-  font-weight: 500;
-}
+.schema__add { margin-top: var(--space-3); color: var(--accent); font-size: var(--text-small); font-weight: 600; }
 
 .schema__error { color: var(--danger); font-size: var(--text-small); margin-top: var(--space-2); }
 
-.schema__footer {
-  margin-top: var(--space-7);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--hairline);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
+.schema__footer { margin-top: var(--space-6); display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }

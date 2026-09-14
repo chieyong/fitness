@@ -8,15 +8,6 @@
   stroke-linejoin: round;
 }
 
-/* Waar je nu staat krijgt de volle toon; de ring houdt het punt leesbaar. */
-.miniline__end {
-  fill: var(--accent);
-  stroke: var(--bg);
-  stroke-width: 1.5;
-}
+.miniline__end { fill: var(--accent); stroke: var(--surface); stroke-width: 1.5; }
 
-.miniline--empty {
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
-  flex: 0 0 auto;
-}
+.miniline--empty { font-size: var(--text-micro); color: var(--ink-tertiary); flex: 0 0 auto; }

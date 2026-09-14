@@ -1,27 +1,24 @@
-.block { border-bottom: 1px solid var(--hairline); }
+.block {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 160ms ease;
+}
 
-/* Ingeklapte regel: status, naam, wat er staat of gelogd is. */
+.block--open { box-shadow: var(--shadow-raised); }
+
 .row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-3) 0;
+  padding: var(--space-4);
   text-align: left;
 }
 
-.row__main {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  flex: 1;
-}
+.row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 
-.row__name {
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
+.row__name { font-weight: 600; letter-spacing: -0.01em; }
 
 .row__summary {
   font-size: var(--text-micro);
@@ -30,109 +27,61 @@
 }
 
 .row__target {
-  color: var(--ink-tertiary);
+  color: var(--accent);
   font-size: var(--text-small);
+  font-weight: 600;
   white-space: nowrap;
 }
 
-/* Bij een gedane oefening draagt de samenvatting de cijfers, niet het target. */
-.block--klaar .row__target { opacity: 0.5; }
 .block--klaar .row__summary { color: var(--ink-secondary); }
+.block--klaar .row__target { opacity: 0.6; }
 .block--overgeslagen .row__name { color: var(--ink-secondary); }
 
 .status { display: flex; flex: 0 0 auto; }
-.status--open { color: var(--ink-tertiary); }
-.status--bezig { color: var(--accent); }
-.status--klaar { color: var(--accent); }
-.status--overgeslagen { color: var(--ink-tertiary); }
+.status--open, .status--overgeslagen { color: var(--ink-tertiary); }
+.status--bezig, .status--klaar { color: var(--accent); }
 
 /* Uitgeklapt */
 .block__body {
-  padding: 0 0 var(--space-5) calc(20px + var(--space-3));
+  padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 20px + var(--space-3));
   animation: unfold 160ms ease;
 }
 
-.block__previous {
-  margin-bottom: var(--space-3);
-  font-size: var(--text-small);
-  color: var(--ink-secondary);
-}
+.block__previous { margin-bottom: var(--space-3); font-size: var(--text-small); color: var(--ink-secondary); }
+.block__previous-note { display: block; color: var(--ink-tertiary); font-style: italic; }
+.block__skipped-label { font-size: var(--text-small); color: var(--ink-tertiary); }
 
-.block__previous-note {
-  display: block;
-  color: var(--ink-tertiary);
-  font-style: italic;
-}
+.block__actions { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-3); }
 
-.block__skipped-label {
-  font-size: var(--text-small);
-  color: var(--ink-tertiary);
-}
-
-.block__actions {
-  display: flex;
-  gap: var(--space-5);
-  margin-top: var(--space-3);
-}
-
-.block__link {
-  font-size: var(--text-small);
-  color: var(--accent);
-  margin-left: var(--space-3);
-}
-
+.block__link { font-size: var(--text-small); font-weight: 500; color: var(--accent); margin-left: var(--space-3); }
 .block__actions .block__link { margin-left: 0; }
+.block__progress { display: block; margin: var(--space-4) 0 0; }
 
-.block__progress {
-  display: block;
-  margin: var(--space-4) 0 0;
-  margin-left: 0;
-}
+.sets { display: flex; flex-direction: column; gap: var(--space-2); }
 
-/* Sets */
-.sets {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
+.set { display: flex; align-items: center; gap: var(--space-3); }
 
-.set {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
+.set__number { width: 1.25em; font-size: var(--text-small); color: var(--ink-tertiary); }
 
-.set__number {
-  width: 1.25em;
-  font-size: var(--text-small);
-  color: var(--ink-tertiary);
-}
+.set__field { position: relative; display: inline-flex; align-items: center; }
 
-.set__field {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
+/* Invoer verzonken in de kaart. */
 .set__field input {
   font: inherit;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   width: 5.5em;
   padding: var(--space-2) 2.6em var(--space-2) var(--space-3);
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  border-radius: 8px;
+  background: var(--inset);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-inset);
   transition: border-color 120ms ease;
 }
 
 .set__field input:focus { outline: none; border-color: var(--accent); }
 
-.set__field input:read-only {
-  background: transparent;
-  border-color: transparent;
-  padding-left: 0;
-}
+.set__field input:read-only { background: transparent; box-shadow: none; padding-left: 0; }
 
 .set__unit {
   position: absolute;
@@ -153,5 +102,5 @@
 
 @media (max-width: 480px) {
   .set__field input { width: 5em; }
-  .block__body { padding-left: 0; }
+  .block__body { padding-left: var(--space-4); }
 }

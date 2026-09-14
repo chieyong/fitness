@@ -109,15 +109,33 @@ Project Settings → API). Die sleutel omzeilt alle toegangsregels: nooit met `V
 nooit in Netlify, nooit committen. De app zelf gebruikt hem niet; Vite geeft alleen
 `VITE_`-variabelen door aan de browser.
 
-## Licht en donker
+## Stijl, licht en donker
 
-De app volgt de instelling van je telefoon. Alle kleuren staan als tokens in
-`src/styles/tokens.css`, met een eigen donkere reeks in `@media (prefers-color-scheme: dark)`
-— geen omgekeerde kopie, maar Apple's donkere systeemkleuren, nagemeten op contrast.
+De app gebruikt een navy kaartenstijl: zwevende afgeronde kaarten met zachte schaduw,
+blauwe gradient-knoppen, een diagonaal blauw vlak op de achtergrond en Poppins als
+lettertype. Onderaan zit een tabbalk met Vandaag, Voortgang en Schema; de actieve tab
+staat verhoogd in blauw. Zijschermen (een oefening, oefening toevoegen) hebben een
+blauwe terugknop linksboven.
 
-Het silhouet heeft per modus een eigen kleurschaal: op licht betekent meer belasting
-donkerder, op donker juist lichter. Beide reeksen zijn gecontroleerd op monotone
-lichtheid, één tint, en genoeg afstand tussen de laagste stap en een onbelaste spier.
+Dit is een bewuste breuk met de oorspronkelijke ontwerpbrief in `FITNESS-APP-SPEC.md`, die
+kaarten met schaduw, gradients en een geladen font juist uitsloot.
+
+**Thema.** Standaard volgt de app de telefoon. Met de knop in de balk bovenaan kies je zelf:
+Systeem, Licht of Donker. De keuze staat in `localStorage` (`repz.theme`) en wordt vóór de
+eerste weergave toegepast, zodat er geen ander thema in beeld flitst. Beide thema's spreken
+dezelfde ontwerptaal; alleen de kleuren verschillen.
+
+**Kleuren.** Alles staat als token in `src/styles/tokens.css`: een lichte reeks op `:root`,
+een donkere onder `prefers-color-scheme: dark` en onder `[data-theme="dark"]`. De waarden
+zijn nagemeten, niet op het oog gekozen:
+
+- tekst minstens 4,5:1 op het vlak waar hij staat
+- witte knoptekst minstens 4,5:1 op beide uiteinden van de blauwe gradient
+- sparklines minstens 3:1 op de kaart
+- per thema een silhouetschaal die monotoon in lichtheid verloopt, en waarvan de laagste
+  stap duidelijk verschilt van een onbelaste spier (ΔE ≥ 8,6); op donker betekent meer
+  belasting lichter, op licht donkerder
+
 Nieuwe kleuren horen als token in `tokens.css`, niet hardgecodeerd in een component.
 
 ## Deploy (Netlify)
@@ -154,7 +172,7 @@ naar de volgende training.
 
 ## Schema aanpassen
 
-Via "Schema" op het scherm van vandaag. Per workout kun je oefeningen verplaatsen, hun
+Via de tab Schema onderaan. Per workout kun je oefeningen verplaatsen, hun
 target aanpassen (sets plus reps of seconden, met een optionele bovengrens) en ze uit de
 workout halen. Workouts kun je toevoegen, hernoemen en verwijderen.
 

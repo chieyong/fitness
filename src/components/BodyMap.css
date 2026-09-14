@@ -1,35 +1,30 @@
 .body {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-3);
   align-items: flex-start;
-  margin: var(--space-5) 0 var(--space-4);
+  justify-content: center;
+  margin: 0 0 var(--space-3);
 }
 
-.body__figure {
-  margin: 0;
-  flex: 1 1 0;
-  max-width: 220px;
-}
+.body__figure { margin: 0; flex: 1 1 0; max-width: 220px; }
 
 .body__caption {
   margin-top: var(--space-2);
   font-size: var(--text-micro);
+  font-weight: 500;
   color: var(--ink-tertiary);
   text-align: center;
 }
 
-/* De component tekent zijn eigen polygonen; wij zorgen alleen dat ze reageren
-   en dat de randen niet als extra data-inkt gaan meedoen. */
 .body__figure svg polygon {
   cursor: pointer;
   transition: fill 160ms ease;
-  stroke: var(--bg);
+  stroke: var(--surface);
   stroke-width: 0.6;
 }
 
-.body__figure svg polygon:hover { stroke: var(--ink-tertiary); stroke-width: 1; }
+.body__figure svg polygon:hover { stroke: var(--accent); stroke-width: 1; }
 
-/* Alleen voor schermlezers: dezelfde cijfers zonder het plaatje. */
 .body__sr {
   position: absolute;
   width: 1px; height: 1px;
@@ -40,23 +35,8 @@
   border: 0;
 }
 
-/* Legenda */
-.ramp {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: var(--text-micro);
-  color: var(--ink-tertiary);
-}
+.ramp { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-micro); color: var(--ink-tertiary); }
 
-.ramp__bar {
-  display: flex;
-  height: 8px;
-  width: 120px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
+.ramp__bar { display: flex; height: 8px; width: 120px; border-radius: 4px; overflow: hidden; }
 .ramp__bar i { flex: 1; }
-
 .ramp__end { white-space: nowrap; }
