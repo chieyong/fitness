@@ -80,3 +80,6 @@
   .appbar__action-long { display: none; }
   .appbar__action-short { display: inline; }
 }
+
+/* Als geïnstalleerde app loopt de pagina onder de statusbalk door: ruimte vrijhouden. */
+.appbar__inner { padding-top: calc(var(--space-4) + env(safe-area-inset-top)); }

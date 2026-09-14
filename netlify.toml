@@ -8,3 +8,14 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Service worker en manifest altijd vers ophalen; anders blijft een oude versie hangen.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"

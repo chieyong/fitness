@@ -5,13 +5,16 @@ import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises,
   fetchFeedbackForExercises, saveFeedback,
   ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
-  closeSession, reopenSession,
+  closeSession, reopenSession, dataMode,
 } from '../lib/queries.js';
 import SessionHeader from '../components/SessionHeader.jsx';
 import ExerciseBlock from '../components/ExerciseBlock.jsx';
 import SessionActions from '../components/SessionActions.jsx';
 import DateStepper from '../components/DateStepper.jsx';
 import VideoModal from '../components/VideoModal.jsx';
+import Tour from '../components/Tour.jsx';
+import { tourSteps } from '../data/tourSteps.js';
+import { hasSeenTour, markTourSeen } from '../lib/tour.js';
 import '../components/ExerciseBlock.css';
 import '../components/SessionActions.css';
 import './Today.css';
@@ -34,6 +37,11 @@ export default function Today({ onOpenExercise }) {
   const [feedback, setFeedback] = useState([]);
   const [video, setVideo] = useState(null);
   const closeVideo = useCallback(() => setVideo(null), []);
+
+  // Rondleiding: vanzelf bij het eerste bezoek, daarna via "Uitleg bekijken".
+  const [tourOpen, setTourOpen] = useState(false);
+  const steps = useMemo(() => tourSteps({ demo: dataMode() === 'demo' }), []);
+  const closeTour = useCallback(() => { markTourSeen(window.localStorage); setTourOpen(false); }, []);
   // Eén oefening tegelijk open houdt het scherm compact in de gym.
   const [openId, setOpenId] = useState(null);
   const [status, setStatus] = useState('laden');
@@ -151,6 +159,13 @@ export default function Today({ onOpenExercise }) {
     } catch (e) { setError(e.message); }
   }, [session?.id]);
 
+  // Pas starten als het scherm staat en het laadscherm weg is.
+  useEffect(() => {
+    if (status !== 'klaar' || hasSeenTour(window.localStorage)) return undefined;
+    const t = setTimeout(() => setTourOpen(true), 1500);
+    return () => clearTimeout(t);
+  }, [status]);
+
   if (status === 'laden') return <main className="page" />;
 
   if (status === 'fout') {
@@ -235,6 +250,10 @@ export default function Today({ onOpenExercise }) {
           </ul>
         </section>
       )}
+      <button type="button" className="today__help" onClick={() => setTourOpen(true)}>
+        Uitleg bekijken
+      </button>
+      <Tour steps={steps} open={tourOpen} onClose={closeTour} />
       <VideoModal video={video} onClose={closeVideo} />
     </main>
   );

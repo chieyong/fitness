@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { resolveAccess, onAuthChange, signInWithGoogle, signOut } from './lib/auth.js';
 import { setDataSource } from './lib/queries.js';
+import { hideSplash } from './lib/splash.js';
 import Today from './screens/Today.jsx';
 import Exercise from './screens/Exercise.jsx';
 import ProgressIndex from './screens/Progress.jsx';
@@ -63,6 +64,9 @@ export default function App() {
   };
 
   const logout = () => signOut();
+
+  // Het laadscherm verdwijnt zodra bekend is wat je te zien krijgt.
+  useEffect(() => { if (access) hideSplash(); }, [access]);
 
   if (!access) return <main className="page" />;
 

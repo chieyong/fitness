@@ -58,3 +58,13 @@
 .upcoming__item + .upcoming__item { border-top: 1px solid var(--hairline); }
 .upcoming__item span:first-child { min-width: 6em; color: var(--ink-tertiary); }
 .upcoming__label { color: var(--ink); font-weight: 500; }
+
+.today__help {
+  display: block;
+  margin: var(--space-6) auto 0;
+  font-size: var(--text-small);
+  font-weight: 500;
+  color: var(--ink-tertiary);
+}
+
+.today__help:hover { color: var(--accent); }

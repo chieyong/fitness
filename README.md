@@ -144,6 +144,36 @@ zijn nagemeten, niet op het oog gekozen:
 
 Nieuwe kleuren horen als token in `tokens.css`, niet hardgecodeerd in een component.
 
+## Eerste gebruik, laadscherm en installeren
+
+**Rondleiding.** Bij het eerste bezoek start op het scherm van vandaag een korte
+rondleiding: welkom, een oefeningkaart, een videoknop, de tabs Voortgang en Schema, en de
+themaknop. Elke stap licht het echte onderdeel uit met een uitlegkaartje erbij. Staat een
+onderdeel er niet (geen videoknop, of een rustdag zonder oefeningen), dan wordt die stap
+overgeslagen. Overslaan kan altijd, ook met Escape; met de pijltjestoetsen blader je. Of je
+hem gezien hebt staat in `localStorage` (`repz.tour.v1`). Onderaan Vandaag staat
+"Uitleg bekijken" om hem opnieuw te doorlopen. De stappen staan in `src/data/tourSteps.js`,
+de plaatsing van het kaartje in `src/lib/tour.js` (getest).
+
+**Laadscherm.** Het logo springt in beeld, de halter pompt en de letters van Repz schuiven
+in. Het staat inline in `index.html`, zodat het er is vóór de app geladen is, en verdwijnt
+zodra de app weet wat hij moet tonen — maar niet eerder dan na 0,9 seconde, anders flitst
+het voorbij. Met "minder beweging" aan staat alles stil.
+
+**Installeren als app (PWA).** Repz is te installeren via "Zet op beginscherm" (iPhone,
+Safari) of de installatieknop (Android, Chrome). Het manifest, de service worker en de
+iconen komen van `vite-plugin-pwa` (zie `vite.config.js`); de iconen staan in
+`public/icons/`, met een maskable-variant voor Android.
+
+De service worker bewaart alleen de app zelf offline: code, stijlen, iconen en het
+lettertype. **Trainingsgegevens van Supabase gaan altijd over het netwerk en komen nooit
+in de cache.** De demo werkt daardoor volledig offline; eigen gegevens hebben verbinding
+nodig. Een nieuwe versie wordt op de achtergrond opgehaald en geldt bij de volgende start.
+
+Let op bij inloggen vanuit de geïnstalleerde app op een iPhone: Google-login opent in een
+aparte browser, en iOS geeft de sessie niet altijd terug aan de app op het beginscherm.
+Lukt dat niet, log dan eerst in via Safari.
+
 ## Deploy (Netlify)
 
 `netlify.toml` legt build (`npm run build`) en publicatiemap (`dist`) vast. De twee
