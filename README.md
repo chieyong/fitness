@@ -154,8 +154,8 @@ hem gezien hebt staat in `localStorage` (`repz.tour.v1`). Onderaan Vandaag staat
 "Uitleg bekijken" om hem opnieuw te doorlopen. De stappen staan in `src/data/tourSteps.js`,
 de plaatsing van het kaartje in `src/lib/tour.js` (getest).
 
-**Laadscherm.** Het logo springt in beeld, de halter pompt en de letters van Repz schuiven
-in. Het staat inline in `index.html`, zodat het er is vóór de app geladen is, en verdwijnt
+**Laadscherm.** Het logo — een vette, schuine R met een bliksemsnede — knalt in beeld, het
+scherm schokt, er gaat een schokgolf door, REPZ schuift cursief in en het logo gloeit na. Het staat inline in `index.html`, zodat het er is vóór de app geladen is, en verdwijnt
 zodra de app weet wat hij moet tonen — maar niet eerder dan na 2,4 seconden, zodat de animatie helemaal te zien is. De
 rondleiding wacht tot het laadscherm weg is. Met "minder beweging" aan staat alles stil.
 

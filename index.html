@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&display=swap" />
     <title>Repz</title>
     <script>
       // Eigen themakeuze vóór de eerste weergave toepassen, anders flitst het andere thema.
@@ -27,77 +27,76 @@
     <style>
       /* Laadscherm: staat hier inline, zodat het verschijnt vóór de app geladen is. */
       .splash {
-        position: fixed; inset: 0; z-index: 100;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+        position: fixed; inset: 0; z-index: 100; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
         background: #EDF0F6;
         transition: opacity 380ms ease, transform 380ms ease;
       }
       :root[data-theme="dark"] .splash { background: #242832; }
       @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .splash { background: #242832; } }
 
-      .splash__mark {
-        width: 96px; height: 96px;
-        filter: drop-shadow(0 14px 24px rgba(45, 98, 230, 0.45));
-        animation: splash-pop 620ms cubic-bezier(0.2, 1.3, 0.3, 1) both;
-      }
-      .splash__mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
-      .splash__lift { animation: splash-lift 900ms ease-in-out 560ms infinite; }
+      .splash__inner { display: flex; flex-direction: column; align-items: center; gap: 22px; animation: splash-shake 380ms ease-out 360ms both; }
+
+      /* De R knalt in beeld en gloeit daarna na. */
+      .splash__mark { position: relative; width: 104px; height: 104px; animation: splash-slam 640ms cubic-bezier(0.2, 0.9, 0.2, 1) both, splash-glow 1600ms ease-in-out 900ms infinite; }
+      .splash__mark svg { position: relative; width: 100%; height: 100%; display: block; }
+      .splash__ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid #5AA2FF; opacity: 0; animation: splash-ring 700ms ease-out 360ms both; }
 
       .splash__word {
         display: flex;
-        font: 700 34px/1 'Poppins', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-        letter-spacing: -0.02em; color: #1B2130;
+        font: italic 800 34px/1 'Poppins', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        letter-spacing: 0.01em; color: #1B2130;
       }
       :root[data-theme="dark"] .splash__word { color: #FFFFFF; }
       @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .splash__word { color: #FFFFFF; } }
-      .splash__word span { display: inline-block; opacity: 0; transform: translateY(10px); animation: splash-letter 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-      .splash__word span:nth-child(1) { animation-delay: 260ms; }
-      .splash__word span:nth-child(2) { animation-delay: 320ms; }
-      .splash__word span:nth-child(3) { animation-delay: 380ms; }
-      .splash__word span:nth-child(4) { animation-delay: 440ms; }
+      .splash__word span { display: inline-block; opacity: 0; animation: splash-letter 380ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards; }
+      .splash__word span:nth-child(1) { animation-delay: 520ms; }
+      .splash__word span:nth-child(2) { animation-delay: 580ms; }
+      .splash__word span:nth-child(3) { animation-delay: 640ms; }
+      .splash__word span:nth-child(4) { animation-delay: 700ms; }
 
-      .splash__bar { width: 120px; height: 4px; border-radius: 2px; overflow: hidden; background: rgba(61, 82, 212, 0.16); opacity: 0; animation: splash-fade 300ms ease 700ms forwards; }
+      .splash__bar { width: 120px; height: 4px; border-radius: 2px; overflow: hidden; background: rgba(61, 82, 212, 0.16); opacity: 0; animation: splash-fade 300ms ease 900ms forwards; }
       .splash__bar i { display: block; width: 40%; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #2471D6, #3D52D4); animation: splash-slide 1100ms ease-in-out infinite; }
 
       .splash--done { opacity: 0; transform: scale(1.04); pointer-events: none; }
 
-      @keyframes splash-pop { from { opacity: 0; transform: scale(0.55) rotate(-24deg); } to { opacity: 1; transform: scale(1) rotate(-6deg); } }
-      @keyframes splash-lift { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-26px); } }
-      @keyframes splash-letter { to { opacity: 1; transform: none; } }
+      @keyframes splash-slam { 0% { opacity: 0; transform: scale(2.6) rotate(-10deg); filter: blur(8px); } 55% { opacity: 1; transform: scale(0.9) rotate(0); filter: blur(0); } 72% { transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+      @keyframes splash-glow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(90, 162, 255, 0)); } 50% { filter: drop-shadow(0 0 18px rgba(90, 162, 255, 0.55)); } }
+      @keyframes splash-ring { 0% { opacity: 0.8; transform: scale(0.5); } 100% { opacity: 0; transform: scale(2.4); } }
+      @keyframes splash-letter { 0% { opacity: 0; transform: translateX(40px) skewX(-20deg); } 100% { opacity: 1; transform: none; } }
+      @keyframes splash-shake { 0%, 100% { transform: none; } 20% { transform: translate(-7px, 3px); } 40% { transform: translate(6px, -3px); } 60% { transform: translate(-4px, 2px); } 80% { transform: translate(2px, -1px); } }
       @keyframes splash-fade { to { opacity: 1; } }
       @keyframes splash-slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
 
       @media (prefers-reduced-motion: reduce) {
         .splash, .splash * { animation: none !important; transition: none !important; }
         .splash__word span, .splash__bar { opacity: 1; transform: none; }
-        .splash__mark { transform: rotate(-6deg); }
+        .splash__ring { display: none; }
       }
     </style>
   </head>
   <body>
     <div id="splash" class="splash" aria-hidden="true">
-      <div class="splash__mark">
-        <svg viewBox="0 0 512 512" aria-hidden="true">
-          <defs>
-            <linearGradient id="splash-g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#2471D6" />
-              <stop offset="1" stop-color="#3D52D4" />
-            </linearGradient>
-          </defs>
-          <rect width="512" height="512" rx="116" fill="url(#splash-g)" />
-          <g class="splash__lift">
-            <g transform="rotate(-18 256 256)" fill="#FFFFFF">
-              <rect x="150" y="238" width="212" height="36" rx="18" />
-              <rect x="104" y="170" width="58" height="172" rx="24" />
-              <rect x="350" y="170" width="58" height="172" rx="24" />
-              <rect x="66" y="208" width="40" height="96" rx="18" />
-              <rect x="406" y="208" width="40" height="96" rx="18" />
+      <div class="splash__inner">
+        <div class="splash__mark">
+          <span class="splash__ring"></span>
+          <svg viewBox="0 0 512 512" aria-hidden="true">
+            <defs>
+              <linearGradient id="splash-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2471D6" /><stop offset="1" stop-color="#3D52D4" /></linearGradient>
+              <linearGradient id="splash-gh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5AB0FF" /><stop offset="1" stop-color="#3D52D4" /></linearGradient>
+            </defs>
+            <rect width="512" height="512" rx="116" fill="#151821" />
+            <rect x="8" y="8" width="496" height="496" rx="108" fill="none" stroke="url(#splash-g)" stroke-width="16" />
+            <g transform="translate(46 0) skewX(-12)" fill="url(#splash-gh)">
+              <path fill-rule="evenodd" d="M148 112 H302 A96 96 0 0 1 302 304 H226 V400 H148 Z M226 172 H292 A36 36 0 0 1 292 244 H226 Z" />
+              <polygon points="248,292 334,292 408,400 320,400" />
             </g>
-          </g>
-        </svg>
+            <polygon points="92,318 440,196 440,216 92,338" fill="#151821" />
+          </svg>
+        </div>
+        <div class="splash__word"><span>R</span><span>E</span><span>P</span><span>Z</span></div>
+        <div class="splash__bar"><i></i></div>
       </div>
-      <div class="splash__word"><span>R</span><span>e</span><span>p</span><span>z</span></div>
-      <div class="splash__bar"><i></i></div>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
