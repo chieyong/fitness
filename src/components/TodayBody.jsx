@@ -52,6 +52,7 @@ export default function TodayBody({ states }) {
         </p>
         <ul className="todaybody__legend" aria-hidden="true">
           <li><i style={{ background: COLORS[0] }} />{t('muscles.planned')}</li>
+          <li><i style={{ background: COLORS[1] }} />{t('muscles.partly')}</li>
           <li><i style={{ background: COLORS[2] }} />{t('muscles.trained')}</li>
         </ul>
       </div>

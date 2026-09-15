@@ -253,8 +253,8 @@ Ingelogd worden wijzigingen bewaard. In de demo pas je alleen targets en video's
 ## Spieren van vandaag
 
 Boven de oefeningen staat een klein silhouet (voor- en achterkant) met de spiergroepen die
-de training van die dag raakt. Nog niet getraind is subtiel lichtblauw; zodra je oefeningen
-afvinkt kleurt de spier in, en ernaast loopt de teller "3 van 12 getraind" op, met de
+de training van die dag raakt. Nog niet getraind is subtiel amber; deels gedaan lichtblauw; zodra
+alle oefeningen voor een spier klaar zijn kleurt hij blauw, en ernaast loopt de teller "3 van 12 getraind" op, met de
 spiergroepen die nog te gaan zijn.
 
 Een spiergroep telt als getraind als álle oefeningen voor die spier klaar zijn (alle

@@ -39,8 +39,8 @@
 
   --spark: #5B8BD6;
   --body-empty: #DCE1EA;
-  --today-planned: #B3CCF0;
-  --today-busy: #7FAEEA;
+  --today-planned: #F2CC8F;
+  --today-busy: #8DB6EE;
   --today-done: #2563D9;
   --ramp-1: #A9CBF4;
   --ramp-2: #80B2EF;
@@ -106,7 +106,7 @@
 
     --spark: #6A90CC;
     --body-empty: #40465A;
-    --today-planned: #45587A;
+    --today-planned: #8C6B33;
     --today-busy: #3F75BD;
     --today-done: #5AA2FF;
     --ramp-1: #2E568C;
@@ -148,7 +148,7 @@
 
   --spark: #6A90CC;
   --body-empty: #40465A;
-  --today-planned: #45587A;
+  --today-planned: #8C6B33;
   --today-busy: #3F75BD;
   --today-done: #5AA2FF;
   --ramp-1: #2E568C;

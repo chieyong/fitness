@@ -45,6 +45,7 @@ export default {
     'muscles.allDone': 'All muscle groups trained. Nice work!',
     'muscles.more': '+{count} more',
     'muscles.planned': 'To train',
+    'muscles.partly': 'Partly',
     'muscles.trained': 'Trained',
   },
   nl: {
@@ -92,6 +93,7 @@ export default {
     'muscles.allDone': 'Alle spiergroepen getraind. Goed bezig!',
     'muscles.more': '+{count} meer',
     'muscles.planned': 'Te trainen',
+    'muscles.partly': 'Deels',
     'muscles.trained': 'Getraind',
   },
 };
