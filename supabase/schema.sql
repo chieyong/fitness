@@ -13,6 +13,8 @@ create table if not exists exercises (
   equipment text check (equipment is null or equipment in ('losse-gewichten', 'machine', 'zonder')),
   measure text check (measure is null or measure in ('gewicht', 'reps', 'tijd')),
   catalog_key text,
+  -- vergelijkbare oefening om in een sessie naar te wisselen; paren zijn symmetrisch
+  alternative_id uuid references exercises(id) on delete set null,
   created_at timestamptz default now()
 );
 

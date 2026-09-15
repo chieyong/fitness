@@ -212,3 +212,9 @@
 .autosave--bezig { color: var(--ink-secondary); }
 .autosave--bewaard { color: var(--accent); font-weight: 600; }
 .autosave--bewaard::before { content: '✓ '; }
+
+/* Alternatief kiezen: huidige keuze, suggesties als chips, en zoeken. */
+.alt { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
+.alt__current { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); }
+.alt__name { font-weight: 600; color: var(--ink); }
+.alt .chip:disabled { opacity: 0.5; }

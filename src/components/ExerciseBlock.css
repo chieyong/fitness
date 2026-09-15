@@ -181,3 +181,8 @@
   .set__field input { width: 5em; }
   .block__body { padding-left: var(--space-4); }
 }
+
+/* Alternatief: een stil teken bij de naam, en wisselen bovenaan de uitgeklapte oefening. */
+.row__alt { color: var(--ink-tertiary); font-weight: 500; }
+.block__swap { display: inline-block; margin-bottom: var(--space-3); }
+.block__swap-note { font-size: var(--text-micro); color: var(--ink-tertiary); margin-bottom: var(--space-2); }

@@ -26,6 +26,7 @@ export default function ExerciseBlock({
   item, logged, previous, readOnly, skipped,
   open, onToggleOpen, onSaveSet, onDeleteSet, onToggleSkip, onOpen,
   feedback, previousFeedback, onSaveFeedback, onPlayVideo,
+  alternative, swapped, canSwap, onSwap,
 }) {
   const exercise = item.exercise;
   const { t, locale } = useI18n();
@@ -98,7 +99,7 @@ export default function ExerciseBlock({
           aria-expanded={open}>
           <Status status={status} />
           <span className="row__main">
-            <span className="row__name">{exercise.name}</span>
+            <span className="row__name">{exercise.name}{alternative && <span className="row__alt" aria-hidden="true"> ⇄</span>}</span>
             {/* Uitgeklapt staat dezelfde informatie eronder, mét datum. */}
             {summary && !open && <span className="row__summary">{summary}</span>}
             {!open && feedback?.rating ? <Stars value={feedback.rating} size={11} /> : null}
@@ -125,6 +126,17 @@ export default function ExerciseBlock({
 
       {!open ? null : (
       <div className="block__body">
+      {alternative && canSwap && (
+        <button type="button" className="block__link block__swap" onClick={onSwap}>
+          ⇄ {t('block.swapTo', { name: alternative.name })}
+        </button>
+      )}
+      {alternative && !canSwap && swapped && (
+        <p className="block__swap-note">{t('block.swappedFrom', { name: alternative.name })}</p>
+      )}
+      {alternative && !canSwap && !readOnly && (
+        <p className="block__swap-note">{t('block.swapLocked')}</p>
+      )}
       {previous && (
         <p className="block__previous">
           {previous.skipped

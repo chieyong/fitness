@@ -3,10 +3,11 @@ import { resolveToday, todayISO, formatDateShort } from '../lib/schedule.js';
 import { lastPerformance, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
 import { todayMuscles } from '../lib/todayMuscles.js';
 import { muscleWeights } from '../lib/muscleWeights.js';
+import { exerciseIdsWithAlternatives, resolveSessionItem } from '../lib/alternatives.js';
 import { scheduleOptions } from '../lib/scheduleSettings.js';
 import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises, fetchScheduleSettings,
-  fetchFeedbackForExercises, saveFeedback,
+  fetchFeedbackForExercises, saveFeedback, fetchAllExercises,
   ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
   closeSession, reopenSession, dataMode,
 } from '../lib/queries.js';
@@ -43,6 +44,9 @@ export default function Today({ onOpenExercise }) {
   const [exercises, setExercises] = useState([]);
   const [logs, setLogs] = useState([]);
   const [feedback, setFeedback] = useState([]);
+  const [allExercises, setAllExercises] = useState(new Map());
+  // Gekozen alternatief per oefening in deze sessie, zolang er nog niets gelogd is.
+  const [choices, setChoices] = useState(new Map());
   const [video, setVideo] = useState(null);
   const closeVideo = useCallback(() => setVideo(null), []);
 
@@ -98,11 +102,21 @@ export default function Today({ onOpenExercise }) {
   const template = session ? templates.find((t) => t.id === session.template_id) : null;
   const readOnly = session ? session.status !== 'gepland' : true;
 
+  // Andere sessie: eerdere wisselkeuzes gelden niet meer.
+  useEffect(() => { setChoices(new Map()); }, [session?.id]);
+
+  // De oefeningen zoals deze sessie ze toont: met het gekozen alternatief, als dat er is.
+  const items = useMemo(() => (session
+    ? exercises.map((item) => resolveSessionItem(item, {
+      exercisesById: allExercises, session, date, logs, sessions, choice: choices.get(item.id),
+    }))
+    : exercises), [session, exercises, allExercises, date, logs, sessions, choices]);
+
   // Welke spiergroepen deze training raakt, met nadruk per rol (primair,
   // secundair, tertiair), en hoe ver je bent: elke gelogde set kleurt mee.
   const muscleStates = useMemo(() => {
     if (!session) return new Map();
-    return todayMuscles(exercises.map((item) => {
+    return todayMuscles(items.map((item) => {
       const logged = setsFor(logs, session.id, item.exercise_id);
       return {
         weights: muscleWeights(item.exercise),
@@ -111,7 +125,7 @@ export default function Today({ onOpenExercise }) {
         skipped: logged.length > 0 && logged.every((l) => l.skipped),
       };
     }));
-  }, [session?.id, exercises, logs]);
+  }, [session?.id, items, logs]);
 
   // Oefeningen van de getoonde sessie, plus alle logs van die oefeningen --
   // die laatste voeden zowel de invoervelden als "vorige keer".
@@ -121,10 +135,12 @@ export default function Today({ onOpenExercise }) {
 
     (async () => {
       try {
-        const rows = await fetchTemplateExercises(template.id);
+        const [rows, all] = await Promise.all([fetchTemplateExercises(template.id), fetchAllExercises()]);
         if (cancelled) return;
+        const byId = new Map(all.map((e) => [e.id, e]));
+        setAllExercises(byId);
         setExercises(rows);
-        const ids = rows.map((r) => r.exercise_id);
+        const ids = exerciseIdsWithAlternatives(rows, byId);
         const [loaded, fb] = await Promise.all([fetchLogsForExercises(ids), fetchFeedbackForExercises(ids)]);
         if (!cancelled) { setLogs(loaded); setFeedback(fb); }
       } catch (e) {
@@ -137,8 +153,8 @@ export default function Today({ onOpenExercise }) {
 
   const reloadLogs = useCallback(async () => {
     if (exercises.length === 0) return;
-    setLogs(await fetchLogsForExercises(exercises.map((r) => r.exercise_id)));
-  }, [exercises]);
+    setLogs(await fetchLogsForExercises(exerciseIdsWithAlternatives(exercises, allExercises)));
+  }, [exercises, allExercises]);
 
   const handleSaveSet = useCallback(async (row) => {
     try {
@@ -226,7 +242,7 @@ export default function Today({ onOpenExercise }) {
         <>
           <TodayBody states={muscleStates} />
           <ol className="blocks">
-            {exercises.map((item) => {
+            {items.map((item) => {
               const logged = setsFor(logs, session.id, item.exercise_id);
               return (
                 <ExerciseBlock
@@ -246,6 +262,10 @@ export default function Today({ onOpenExercise }) {
                   previousFeedback={lastFeedback(feedback, sessions, item.exercise_id, date, session.id)}
                   onSaveFeedback={(fields) => handleSaveFeedback(item.exercise_id, fields)}
                   onPlayVideo={setVideo}
+                  alternative={item.alternative}
+                  swapped={item.swapped}
+                  canSwap={!readOnly && logged.length === 0}
+                  onSwap={() => item.alternative && setChoices((prev) => new Map(prev).set(item.id, item.alternative.id))}
                 />
               );
             })}

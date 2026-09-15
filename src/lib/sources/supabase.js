@@ -255,8 +255,12 @@ async function saveFeedback({ session_id, exercise_id, rating, comment }) {
 
 /** Een oefening zelf aanpassen, bijvoorbeeld haar video's. */
 async function updateExercise(id, changes) {
-  const data = await unwrap(supabase.from('exercises').update(changes).eq('id', id).select());
-  return data[0];
+  const { data, error } = await supabase.from('exercises').update(changes).eq('id', id).select();
+  if (error && 'alternative_id' in changes && isMissingColumn(error, 'alternative_id')) {
+    throw new Error('Alternatieven kunnen nog niet worden bewaard: draai migratie 007 in Supabase.');
+  }
+  if (error) throw new Error(error.message);
+  return data?.[0];
 }
 
 /** Trainingsdagen en volgorde; de standaard als migratie 006 nog niet gedraaid is. */

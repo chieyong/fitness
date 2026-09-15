@@ -74,12 +74,21 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913, locale = 
         measure: e.measure ?? null,
         catalog_key: null,
         video_urls: null,
+        alternative_id: null,
         notes: lang === 'en' ? (e.notesEn ?? e.notes ?? null) : (e.notes ?? null),
       };
       exercises.push(row);
       byName.set(e.name, row);
     }
   }
+
+  // Eén vast alternatief in de demo, zodat je het wisselen kunt uitproberen.
+  const pair = (a, b) => {
+    const x = byName.get(a);
+    const y = byName.get(b);
+    if (x && y) { x.alternative_id = y.id; y.alternative_id = x.id; }
+  };
+  pair('Triceps pushdown of dips', 'Skull crushers of overhead triceps extension');
 
   const templates = program.map((t) => ({
     id: `demo-tpl-${t.position}`, label: t.label, position: t.position, active: true,

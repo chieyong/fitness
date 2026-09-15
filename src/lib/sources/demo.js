@@ -186,7 +186,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
         .map((e) => ({
           id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes ?? null,
           equipment: e.equipment ?? null, measure: e.measure ?? null, catalog_key: e.catalog_key ?? null,
-          video_urls: e.video_urls ?? null,
+          video_urls: e.video_urls ?? null, alternative_id: e.alternative_id ?? null,
         }))
         .sort((a, b) => a.name.localeCompare(b.name, 'nl')));
     },

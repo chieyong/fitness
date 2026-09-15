@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   fetchTemplates, fetchTemplateExercises, fetchSessions, fetchAllExercises,
   updateTemplateExercise, deleteTemplateExercise, updateTemplateExercisePositions,
-  createTemplate, renameTemplate, archiveTemplate, updateExercise, dataMode,
+  createTemplate, renameTemplate, archiveTemplate, updateExercise, createExercise, dataMode,
   fetchScheduleSettings, saveScheduleSettings, replanUpcoming, ensureUpcomingSessions,
 } from '../lib/queries.js';
 import { formatTarget, todayISO } from '../lib/schedule.js';
@@ -13,8 +13,10 @@ import {
 import {
   moveRow, removeRow, validateTarget, targetColumns, formFromColumns, measureOf,
   nextTemplateLabel, archiveImpact, validateTemplateLabel,
-  groupByExercise, targetsDiffer, sameTarget,
+  groupByExercise, targetsDiffer, sameTarget, catalogName,
 } from '../lib/editor.js';
+import { suggestAlternatives, pairUpdates } from '../lib/alternatives.js';
+import { CATALOG } from '../data/catalog.js';
 import { equipmentLabel } from '../data/equipment.js';
 import { MAX_VIDEOS, validateVideoUrls, cleanVideoUrls } from '../lib/youtube.js';
 import TargetFields from '../components/TargetFields.jsx';
@@ -63,6 +65,9 @@ export default function Schema({ onAddExercise }) {
   // Automatisch bewaren: wat het laatst bewaard (of geopend) is, en of dat nu bezig is.
   const lastSaved = useRef(null);
   const [saveState, setSaveState] = useState(null);
+  // Alternatief kiezen: zoekterm, en of de keuzelijst open staat.
+  const [altQuery, setAltQuery] = useState('');
+  const [altPicking, setAltPicking] = useState(false);
 
   // Planning: wat er bewaard is, en wat je aan het aanpassen bent.
   const [settings, setSettings] = useState(() => normalizeScheduleSettings(null));
@@ -108,7 +113,10 @@ export default function Schema({ onAddExercise }) {
     }
   };
 
-  const close = () => { setEditing(null); setForm({}); setFormErrors([]); setSaveState(null); lastSaved.current = null; };
+  const close = () => {
+    setEditing(null); setForm({}); setFormErrors([]); setSaveState(null); lastSaved.current = null;
+    setAltQuery(''); setAltPicking(false);
+  };
 
   const switchView = (next) => {
     if (next === view) return;
@@ -178,6 +186,27 @@ export default function Schema({ onAddExercise }) {
       setSaveState(null);
     }
   };
+
+  /**
+   * Alternatief instellen of weghalen (null). Een bibliotheekoefening die je nog niet
+   * hebt, wordt eerst aangemaakt. Het paar blijft symmetrisch.
+   */
+  const setAlternative = (group, candidate) => run(async () => {
+    let alternativeId = null;
+    if (candidate?.kind === 'existing') alternativeId = candidate.exercise.id;
+    if (candidate?.kind === 'catalog') {
+      const e = candidate.entry;
+      const created = await createExercise({
+        name: catalogName(e, locale), muscle_groups: e.muscles, equipment: e.equipment, measure: e.measure, catalog_key: e.key,
+      });
+      alternativeId = created.id;
+    }
+    for (const change of pairUpdates([...exercises.values()], group.exerciseId, alternativeId)) {
+      await updateExercise(change.id, { alternative_id: change.alternative_id });
+    }
+    setAltPicking(false);
+    setAltQuery('');
+  });
 
   /** Uit alle workouts halen; de oefening en haar logs blijven bestaan. */
   const removeEverywhere = (group) => run(async () => {
@@ -297,6 +326,9 @@ export default function Schema({ onAddExercise }) {
                         {differ ? tx('ex.differsShort') : formatTarget(first, locale)}
                       </span>
                       <span className="item__meta">{tx('ex.in', { list: labels(group) })}</span>
+                      {exercises.get(exercise?.alternative_id) && (
+                        <span className="item__meta">⇄ {tx('ex.alternative', { name: exercises.get(exercise.alternative_id).name })}</span>
+                      )}
                       {exercise?.video_urls?.length > 0 && (
                         <span className="item__meta item__meta--video">
                           {tx('item.videos', { count: exercise.video_urls.length })}
@@ -354,6 +386,21 @@ export default function Schema({ onAddExercise }) {
                           <span className="videos__hint">{tx('videos.hint', { max: MAX_VIDEOS })}</span>
                         )}
                       </div>
+                      <AlternativePicker
+                        exercise={exercise ?? { id: group.exerciseId, name, muscle_groups: [] }}
+                        name={name}
+                        alternative={exercises.get(exercise?.alternative_id) ?? null}
+                        candidates={suggestAlternatives(exercise ?? { id: group.exerciseId, name }, {
+                          exercises: [...exercises.values()],
+                          catalog: demo ? [] : CATALOG,
+                          query: altQuery,
+                          limit: altQuery.trim() ? 12 : 6,
+                        })}
+                        query={altQuery} onQuery={setAltQuery}
+                        picking={altPicking} onPicking={setAltPicking}
+                        busy={busy} locale={locale} tx={tx}
+                        onChoose={(candidate) => setAlternative(group, candidate)}
+                      />
                       {formErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
                       <p className={`autosave${saveState ? ` autosave--${saveState}` : ''}`} role="status">
                         {saveState === 'bezig' ? tx('ex.saving') : saveState === 'bewaard' ? tx('ex.saved') : tx('ex.autosave')}
@@ -553,6 +600,51 @@ export default function Schema({ onAddExercise }) {
         </>
       )}
     </main>
+  );
+}
+
+/** Eén vergelijkbare oefening kiezen om in een sessie naar te wisselen. */
+function AlternativePicker({
+  name, alternative, candidates, query, onQuery, picking, onPicking, busy, locale, tx, onChoose,
+}) {
+  const showList = !alternative || picking;
+  return (
+    <div className="alt">
+      <span className="videos__label">{tx('alt.label')}</span>
+      {alternative ? (
+        <span className="alt__current">
+          <span className="alt__name">⇄ {alternative.name}</span>
+          <button type="button" className="schema__link" onClick={() => onPicking(!picking)}>
+            {tx(picking ? 'common.cancel' : 'alt.change')}
+          </button>
+          <button type="button" className="schema__link schema__link--quiet" disabled={busy} onClick={() => onChoose(null)}>
+            {tx('alt.remove')}
+          </button>
+        </span>
+      ) : (
+        <span className="videos__hint">{tx('alt.none')}</span>
+      )}
+      {showList && (
+        <>
+          {candidates.length > 0 ? (
+            <div className="chips" role="group" aria-label={tx('alt.suggestions')}>
+              {candidates.map((c) => (
+                <button key={c.kind === 'existing' ? c.exercise.id : `cat-${c.entry.key}`} type="button"
+                  className="chip" disabled={busy} onClick={() => onChoose(c)}>
+                  {c.kind === 'existing' ? c.exercise.name : catalogName(c.entry, locale)}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="videos__hint">{tx('alt.noResults')}</span>
+          )}
+          <input className="videos__input" type="search" value={query}
+            placeholder={tx('alt.search')} aria-label={tx('alt.search')}
+            onChange={(e) => onQuery(e.target.value)} />
+        </>
+      )}
+      {alternative && <span className="videos__hint">{tx('alt.hint', { a: name, b: alternative.name })}</span>}
+    </div>
   );
 }
 

@@ -249,6 +249,17 @@ workout halen. Workouts kun je toevoegen, hernoemen en verwijderen.
   trekt de eerste wijziging het gelijk. Een oefening die al in een andere workout staat, neemt bij
   toevoegen dat target over.
 
+**Alternatieven.** Bij *Oefeningen* kies je per oefening één vergelijkbare oefening
+(bijvoorbeeld Beenpers ↔ Squat). Suggesties zijn oefeningen die dezelfde primaire spier
+trainen, meest vergelijkbaar eerst; zoeken kan in alle eigen en bibliotheekoefeningen (een
+bibliotheekoefening die je nog niet hebt wordt dan aangemaakt). Paren zijn symmetrisch. In
+een sessie staat bij zo'n oefening "⇄ Wissel naar …"; wisselen kan zolang je voor die
+oefening nog niets gelogd hebt, en sets gaan naar de oefening die je echt deed, zodat de
+voortgang per oefening klopt. Standaard staat de keuze van de vorige keer in die workout
+klaar. Vereist **migratie 007** (`alternative_id` op `exercises`); zonder die migratie
+werkt de app gewoon, maar kun je nog geen alternatief bewaren. Logica in
+`src/lib/alternatives.js`. In de demo zijn Triceps pushdown en Skull crushers een paar.
+
 **Oefening toevoegen** gaat via keuzelijsten: kies een spiergroep, filter op materiaal
 (losse gewichten, machine of kabel, zonder hulpmiddelen) en kies uit de bibliotheek van
 zo'n 90 oefeningen in `src/data/catalog.js`. Of zoek op naam. Staat je oefening er niet
