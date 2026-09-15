@@ -236,6 +236,17 @@ Via de tab Schema onderaan. Per workout kun je oefeningen verplaatsen, hun
 target aanpassen (sets plus reps of seconden, met een optionele bovengrens) en ze uit de
 workout halen. Workouts kun je toevoegen, hernoemen en verwijderen.
 
+**Twee weergaven.** Bovenaan Schema kies je *Workouts* of *Oefeningen*.
+
+- *Workouts*: planning, workouts hernoemen of toevoegen, en per workout welke oefeningen
+  erin staan en in welke volgorde. Een oefening haal je eruit met het kruisje (met
+  bevestiging); het potloodje brengt je naar die oefening bij Oefeningen.
+- *Oefeningen*: elke oefening één keer, met **één target en de video's**, die gelden voor
+  elke workout waarin ze staat. Opslaan schrijft het target naar al die workouts. Verschilt
+  het target nu nog per workout (bijvoorbeeld 4×8 in A en 3×10 in C), dan staat dat erbij en
+  trekt opslaan het gelijk. Een oefening die al in een andere workout staat, neemt bij
+  toevoegen dat target over.
+
 **Oefening toevoegen** gaat via keuzelijsten: kies een spiergroep, filter op materiaal
 (losse gewichten, machine of kabel, zonder hulpmiddelen) en kies uit de bibliotheek van
 zo'n 90 oefeningen in `src/data/catalog.js`. Of zoek op naam. Staat je oefening er niet

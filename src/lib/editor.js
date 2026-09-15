@@ -202,3 +202,36 @@ export function validateTemplateLabel(label, templates, ownId = null, locale = '
   if (templates.some((t) => t.id !== ownId && norm(t.label) === norm(label))) return msg(locale, 'workoutExists');
   return null;
 }
+
+const TARGET_KEYS = ['target_sets', 'target_reps_min', 'target_reps_max', 'target_seconds', 'target_seconds_max'];
+
+/** Twee koppelingen hebben hetzelfde target (lege waarden gelijk aan null). */
+export function sameTarget(a, b) {
+  return TARGET_KEYS.every((k) => (a?.[k] ?? null) === (b?.[k] ?? null));
+}
+
+/** Verschillen de targets tussen deze koppelingen? */
+export function targetsDiffer(rows) {
+  return rows.some((r) => !sameTarget(r, rows[0]));
+}
+
+/**
+ * Elke oefening één keer, met de workouts waarin ze staat. Volgorde: zoals je
+ * ze het eerst tegenkomt, workout voor workout.
+ *
+ * @param templates      workouts, in hun volgorde
+ * @param rowsByTemplate Map workout-id -> koppelingen (template_exercises), op positie
+ * @returns [{ exerciseId, name, rows: [{ row, template }] }]
+ */
+export function groupByExercise(templates, rowsByTemplate) {
+  const groups = new Map();
+  for (const template of [...templates].sort((a, b) => a.position - b.position)) {
+    for (const row of rowsByTemplate.get(template.id) ?? []) {
+      if (!groups.has(row.exercise_id)) {
+        groups.set(row.exercise_id, { exerciseId: row.exercise_id, name: row.exercise?.name ?? '', rows: [] });
+      }
+      groups.get(row.exercise_id).rows.push({ row, template });
+    }
+  }
+  return [...groups.values()];
+}

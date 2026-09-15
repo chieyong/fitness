@@ -186,3 +186,20 @@
 
 /* Aanpassen: rustig icoon, net als de pijltjes; open in accentkleur. */
 .icon--active { color: var(--accent); }
+
+/* Weergave kiezen: Workouts of Oefeningen. */
+.schema__tabs { margin-top: var(--space-4); }
+
+/* Oefeningen: elke oefening één keer. */
+.exlist__intro { margin-bottom: var(--space-2); }
+
+.item__meta--differ { color: var(--ink-secondary); font-weight: 600; }
+
+.exlist__differ {
+  font-size: var(--text-small);
+  color: var(--ink-secondary);
+  padding: var(--space-2) var(--space-3);
+  background: var(--inset);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-inset);
+}

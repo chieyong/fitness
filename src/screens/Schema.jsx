@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   fetchTemplates, fetchTemplateExercises, fetchSessions, fetchAllExercises,
   updateTemplateExercise, deleteTemplateExercise, updateTemplateExercisePositions,
@@ -13,6 +13,7 @@ import {
 import {
   moveRow, removeRow, validateTarget, targetColumns, formFromColumns, measureOf,
   nextTemplateLabel, archiveImpact, validateTemplateLabel,
+  groupByExercise, targetsDiffer, sameTarget,
 } from '../lib/editor.js';
 import { equipmentLabel } from '../data/equipment.js';
 import { MAX_VIDEOS, validateVideoUrls, cleanVideoUrls } from '../lib/youtube.js';
@@ -30,11 +31,22 @@ const visibleVideoFields = (videos = []) => {
   return Math.min(MAX_VIDEOS, last + 2);
 };
 
-/** Je workouts en hun oefeningen aanpassen. */
+const VIEWS = ['workouts', 'oefeningen'];
+
+/** De weergave staat in de URL (?schema=oefeningen), zodat terugkomen en herladen werken. */
+const viewFromUrl = () => (new URLSearchParams(window.location.search).get('schema') === 'oefeningen' ? 'oefeningen' : 'workouts');
+
+/**
+ * Je schema aanpassen, in twee weergaven:
+ * - Workouts: planning, workouts en welke oefeningen erin staan, in welke volgorde
+ * - Oefeningen: elke oefening één keer, met één target en de video's; dat geldt
+ *   voor elke workout waarin ze staat
+ */
 export default function Schema({ onAddExercise }) {
   // In de demo pas je bestaande oefeningen aan, maar bouw je het schema niet om.
   const demo = dataMode() === 'demo';
   const { t: tx, locale } = useI18n();
+  const [view, setView] = useState(viewFromUrl);
   const [templates, setTemplates] = useState([]);
   const [rows, setRows] = useState(new Map());
   const [exercises, setExercises] = useState(new Map());
@@ -47,6 +59,7 @@ export default function Schema({ onAddExercise }) {
   const [form, setForm] = useState({});
   const [formErrors, setFormErrors] = useState([]);
   const [busy, setBusy] = useState(false);
+  const scrollTo = useRef(null);
 
   // Planning: wat er bewaard is, en wat je aan het aanpassen bent.
   const [settings, setSettings] = useState(() => normalizeScheduleSettings(null));
@@ -69,6 +82,16 @@ export default function Schema({ onAddExercise }) {
     load().then(() => setStatus('klaar')).catch((e) => { setError(e.message); setStatus('fout'); });
   }, []);
 
+  // Via het potloodje in een workout: de oefening in beeld brengen zodra ze open staat.
+  useEffect(() => {
+    if (!scrollTo.current) return;
+    const el = document.getElementById(scrollTo.current);
+    scrollTo.current = null;
+    if (!el) return;
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+  }, [view, editing]);
+
   const run = async (fn) => {
     setBusy(true);
     setError(null);
@@ -84,23 +107,51 @@ export default function Schema({ onAddExercise }) {
 
   const close = () => { setEditing(null); setForm({}); setFormErrors([]); };
 
-  const startTarget = (row) => {
-    setEditing({ type: 'target', id: row.id });
-    setForm({ ...formFromColumns(row), videos: videoFields(exercises.get(row.exercise_id)?.video_urls ?? row.exercise?.video_urls) });
+  const switchView = (next) => {
+    if (next === view) return;
+    close();
+    setView(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set('schema', next === 'oefeningen' ? 'oefeningen' : '1');
+    window.history.replaceState(null, '', url);
+    window.scrollTo(0, 0);
+  };
+
+  const groups = groupByExercise(templates, rows);
+
+  const startExercise = (group) => {
+    const first = group.rows[0].row;
+    setEditing({ type: 'exercise', id: group.exerciseId });
+    setForm({ ...formFromColumns(first), videos: videoFields(exercises.get(group.exerciseId)?.video_urls ?? first.exercise?.video_urls) });
     setFormErrors([]);
   };
 
-  const saveTarget = (row) => {
-    const measure = measureOf(row, exercises.get(row.exercise_id));
+  /** Vanuit een workout naar dezelfde oefening in de lijst, meteen open. */
+  const openInExercises = (exerciseId) => {
+    const group = groups.find((g) => g.exerciseId === exerciseId);
+    if (!group) return;
+    switchView('oefeningen');
+    scrollTo.current = `oef-${exerciseId}`;
+    startExercise(group);
+  };
+
+  const saveExercise = (group) => {
+    const first = group.rows[0].row;
+    const exercise = exercises.get(group.exerciseId);
+    const measure = measureOf(first, exercise);
     const errs = [...validateTarget(measure, form, locale), ...validateVideoUrls(form.videos, locale)];
     if (errs.length) { setFormErrors(errs); return; }
     run(async () => {
-      await updateTemplateExercise(row.id, targetColumns(measure, form));
+      // Eén target voor elke workout met deze oefening; alleen wegschrijven wat verschilt.
+      const columns = targetColumns(measure, form);
+      for (const { row } of group.rows) {
+        if (!sameTarget(row, columns)) await updateTemplateExercise(row.id, columns);
+      }
       // Video's horen bij de oefening zelf: alleen wegschrijven als ze veranderd zijn.
-      const before = exercises.get(row.exercise_id)?.video_urls ?? null;
+      const before = exercise?.video_urls ?? null;
       const after = cleanVideoUrls(form.videos);
       if (JSON.stringify(before) !== JSON.stringify(after)) {
-        await updateExercise(row.exercise_id, { video_urls: after });
+        await updateExercise(group.exerciseId, { video_urls: after });
       }
       close();
     });
@@ -172,6 +223,8 @@ export default function Schema({ onAddExercise }) {
 
   if (status === 'laden') return <main className="page" />;
 
+  const labels = (group) => group.rows.map((r) => r.template.label).join(', ');
+
   return (
     <main className="page">
 
@@ -181,202 +234,273 @@ export default function Schema({ onAddExercise }) {
       </p>
       {error && <p className="schema__error" role="alert">{error}</p>}
 
-      <section className="plan card" aria-labelledby="plan-title">
-        <h2 id="plan-title" className="wk__title">{tx('plan.title')}</h2>
-        <p className="plan__summary">{describeSchedule(settings, templates.length, locale)}</p>
+      <div className="schema__tabs segmented" role="tablist" aria-label={tx('schema.tabsAria')}>
+        {VIEWS.map((v) => (
+          <button key={v} type="button" role="tab" aria-selected={view === v}
+            className={`segmented__item${view === v ? ' segmented__item--on' : ''}`}
+            onClick={() => switchView(v)}>
+            {tx(v === 'workouts' ? 'schema.tabWorkouts' : 'schema.tabExercises')}
+          </button>
+        ))}
+      </div>
 
-        {demo ? (
-          <p className="plan__hint">{tx('plan.demoHint')}</p>
-        ) : (
-          <>
-          <span className="plan__label" id="plan-days">{tx('plan.days')}</span>
-          <div className="plan__days" role="group" aria-labelledby="plan-days">
-            {weekdays(locale).map((w) => {
-              const on = draft.training_days.includes(w.day);
+      {view === 'oefeningen' ? (
+        <section className="wk card exlist" aria-label={tx('schema.tabExercises')}>
+          <p className="exercise__meta exlist__intro">{tx('ex.intro')}</p>
+          {groups.length === 0 && <p className="exercise__meta">{tx('ex.empty')}</p>}
+          <ol className="wk__list">
+            {groups.map((group) => {
+              const exercise = exercises.get(group.exerciseId);
+              const first = group.rows[0].row;
+              const differ = targetsDiffer(group.rows.map((r) => r.row));
+              const open = editing?.type === 'exercise' && editing.id === group.exerciseId;
+              const name = group.name || exercise?.name;
               return (
-                <button key={w.day} type="button" aria-pressed={on} aria-label={w.label}
-                  className={`plan__day${on ? ' plan__day--on' : ''}`} onClick={() => toggleDay(w.day)}>
-                  {w.short}
-                </button>
-              );
-            })}
-          </div>
-
-          <span className="plan__label" id="plan-order">{tx('plan.order')}</span>
-          <div className="plan__options" role="radiogroup" aria-labelledby="plan-order">
-            {ROTATIONS.map((r) => {
-              const on = draft.rotation === r.id;
-              return (
-                <button key={r.id} type="button" role="radio" aria-checked={on}
-                  className={`plan__option${on ? ' plan__option--on' : ''}`}
-                  onClick={() => { setPlanNote(null); setDraft((prev) => ({ ...prev, rotation: r.id })); }}>
-                  <span className="plan__option-title">{rotationLabel(r.id, locale)}</span>
-                  <span className="plan__option-text">
-                    {r.id === 'volgorde'
-                      ? tx('plan.inOrderText', { list: templates.map((x) => x.label.replace(/^Workout\s+/i, '')).join(' → ') })
-                      : tx('plan.randomText', { count: templates.length })}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {planErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
-          {planNote && <p className="plan__note" role="status">{planNote}</p>}
-
-          <div className="plan__footer">
-            <span className="plan__hint">{tx('plan.missed')}</span>
-            {planChanged && (
-              <button type="button" className="schema__primary" disabled={busy} onClick={savePlanning}>
-                {tx('plan.save')}
-              </button>
-            )}
-          </div>
-          </>
-        )}
-      </section>
-
-      {templates.map((t) => {
-        const list = rows.get(t.id) ?? [];
-        const renaming = editing?.type === 'rename' && editing.id === t.id;
-        const archiving = editing?.type === 'archive' && editing.id === t.id;
-        const impact = archiving ? archiveImpact(sessions, t.id) : null;
-
-        return (
-          <section key={t.id} className="wk card">
-            <div className="wk__head">
-              {renaming ? (
-                <form className="wk__rename" onSubmit={(e) => { e.preventDefault(); saveRename(t); }}>
-                  <input autoFocus value={form.label ?? ''} aria-label={tx('wk.nameAria')}
-                    onChange={(e) => setForm({ label: e.target.value })} />
-                  <button type="submit" className="schema__primary" disabled={busy}>{tx('common.save')}</button>
-                  <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
-                </form>
-              ) : (
-                <>
-                  <h2 className="wk__title">{t.label}</h2>
-                  {!demo && (
-                    <span className="wk__actions">
-                      <button type="button" className="schema__link" onClick={() => startRename(t)}>{tx('wk.rename')}</button>
-                      {templates.length > 1 && (
-                        <button type="button" className="schema__link schema__link--quiet"
-                          onClick={() => { setEditing({ type: 'archive', id: t.id }); setFormErrors([]); }}>
-                          {tx('wk.remove')}
-                        </button>
+                <li key={group.exerciseId} id={`oef-${group.exerciseId}`} className={`item${open ? ' item--open' : ''}`}>
+                  <div className="item__row">
+                    <span className="item__main">
+                      <span className="item__name">{name}</span>
+                      <span className={`item__meta${differ ? ' item__meta--differ' : ''}`}>
+                        {differ ? tx('ex.differsShort') : formatTarget(first, locale)}
+                      </span>
+                      <span className="item__meta">{tx('ex.in', { list: labels(group) })}</span>
+                      {exercise?.video_urls?.length > 0 && (
+                        <span className="item__meta item__meta--video">
+                          {tx('item.videos', { count: exercise.video_urls.length })}
+                        </span>
                       )}
                     </span>
-                  )}
-                </>
-              )}
-            </div>
-            {renaming && formErrors.length > 0 && <p className="schema__error">{formErrors[0]}</p>}
+                    <span className="item__tools">
+                      <IconButton label={tx(open ? 'item.close' : 'item.edit', { name })}
+                        active={open} onClick={() => (open ? close() : startExercise(group))}>
+                        {open ? <CloseIcon /> : <EditIcon />}
+                      </IconButton>
+                    </span>
+                  </div>
 
-            {archiving && (
-              <div className="confirm" role="alertdialog" aria-label={tx('wk.removeAria', { name: t.label })}>
-                <p>
-                  {tx('wk.removeQuestion', { name: t.label })}
-                  {impact.planned > 0 && ` ${tx('wk.plannedLost', { count: impact.planned })}`}
-                  {impact.history > 0 && ` ${tx('wk.historyKept', { count: impact.history })}`}
-                </p>
-                <span className="confirm__buttons">
-                  <button type="button" className="schema__danger" disabled={busy} onClick={() => archive(t)}>{tx('wk.remove')}</button>
-                  <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
-                </span>
-              </div>
-            )}
-
-            <ol className="wk__list">
-              {list.map((row, i) => {
-                const exercise = exercises.get(row.exercise_id);
-                const open = editing?.type === 'target' && editing.id === row.id;
-                const measure = measureOf(row, exercise);
-                return (
-                  <li key={row.id} className={`item${open ? ' item--open' : ''}`}>
-                    <div className="item__row">
-                      <span className="item__main">
-                        <span className="item__name">{row.exercise?.name ?? exercise?.name}</span>
-                        <span className="item__meta">{formatTarget(row, locale)}</span>
-                        {equipmentLabel(exercise?.equipment, locale) && (
-                          <span className="item__meta">{equipmentLabel(exercise.equipment, locale)}</span>
+                  {open && (
+                    <div className="item__edit">
+                      {differ && (
+                        <p className="exlist__differ">
+                          {tx('ex.differs', {
+                            list: group.rows.map((r) => `${r.template.label} ${formatTarget(r.row, locale)}`).join(' · '),
+                          })}
+                        </p>
+                      )}
+                      <TargetFields measure={measureOf(first, exercise)} value={form} onChange={setForm} />
+                      {group.rows.length > 1 && <span className="videos__hint">{tx('ex.targetHint', { list: labels(group) })}</span>}
+                      <div className="videos">
+                        <span className="videos__label">{tx('videos.label')}</span>
+                        {(form.videos ?? []).slice(0, visibleVideoFields(form.videos)).map((url, vi) => (
+                          <input key={vi} className="videos__input" type="url" inputMode="url"
+                            placeholder={tx(vi === 0 ? 'videos.first' : 'videos.more')} value={url}
+                            aria-label={tx('videos.aria', { n: vi + 1 })}
+                            onChange={(e) => setForm({
+                              ...form, videos: form.videos.map((u, j) => (j === vi ? e.target.value : u)),
+                            })} />
+                        ))}
+                        {(form.videos ?? []).some((u) => String(u ?? '').trim()) && (
+                          <span className="videos__hint">{tx('videos.hint', { max: MAX_VIDEOS })}</span>
                         )}
-                        {exercise?.video_urls?.length > 0 && (
-                          <span className="item__meta item__meta--video">
-                            {tx('item.videos', { count: exercise.video_urls.length })}
-                          </span>
-                        )}
-                      </span>
-                      <span className="item__tools">
-{!demo && (
-                          <>
-                        <IconButton label={tx('item.up', { name: row.exercise?.name })} disabled={busy || i === 0}
-                          onClick={() => move(t.id, row.id, -1)}><Chevron direction="up" /></IconButton>
-                        <IconButton label={tx('item.down', { name: row.exercise?.name })} disabled={busy || i === list.length - 1}
-                          onClick={() => move(t.id, row.id, +1)}><Chevron direction="down" /></IconButton>
-                          </>
-                        )}
-                        <IconButton label={tx(open ? 'item.close' : 'item.edit', { name: row.exercise?.name })}
-                          active={open} onClick={() => (open ? close() : startTarget(row))}>
-                          {open ? <CloseIcon /> : <EditIcon />}
-                        </IconButton>
+                      </div>
+                      {formErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
+                      <span className="item__buttons">
+                        <button type="button" className="schema__primary" disabled={busy} onClick={() => saveExercise(group)}>{tx('common.save')}</button>
+                        <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
                       </span>
                     </div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ) : (
+        <>
+          <section className="plan card" aria-labelledby="plan-title">
+            <h2 id="plan-title" className="wk__title">{tx('plan.title')}</h2>
+            <p className="plan__summary">{describeSchedule(settings, templates.length, locale)}</p>
 
-                    {open && (
-                      <div className="item__edit">
-                        <TargetFields measure={measure} value={form} onChange={setForm} />
-                        <div className="videos">
-                          <span className="videos__label">{tx('videos.label')}</span>
-                          {(form.videos ?? []).slice(0, visibleVideoFields(form.videos)).map((url, vi) => (
-                            <input key={vi} className="videos__input" type="url" inputMode="url"
-                              placeholder={tx(vi === 0 ? 'videos.first' : 'videos.more')} value={url}
-                              aria-label={tx('videos.aria', { n: vi + 1 })}
-                              onChange={(e) => setForm({
-                                ...form, videos: form.videos.map((u, j) => (j === vi ? e.target.value : u)),
-                              })} />
-                          ))}
-                          {(form.videos ?? []).some((u) => String(u ?? '').trim()) && (
-                            <span className="videos__hint">
-                              {tx('videos.hint', { max: MAX_VIDEOS })}
-                            </span>
-                          )}
-                        </div>
-                        {formErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
-                        <span className="item__buttons">
-                          <button type="button" className="schema__primary" disabled={busy} onClick={() => saveTarget(row)}>{tx('common.save')}</button>
-                          <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
-                          {!demo && (
-                                                    <button type="button" className="schema__link schema__link--danger" disabled={busy}
-                            onClick={() => remove(t.id, row)}>{tx('item.removeFromWorkout')}</button>
-                          )}
+            {demo ? (
+              <p className="plan__hint">{tx('plan.demoHint')}</p>
+            ) : (
+              <>
+                <span className="plan__label" id="plan-days">{tx('plan.days')}</span>
+                <div className="plan__days" role="group" aria-labelledby="plan-days">
+                  {weekdays(locale).map((w) => {
+                    const on = draft.training_days.includes(w.day);
+                    return (
+                      <button key={w.day} type="button" aria-pressed={on} aria-label={w.label}
+                        className={`plan__day${on ? ' plan__day--on' : ''}`} onClick={() => toggleDay(w.day)}>
+                        {w.short}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <span className="plan__label" id="plan-order">{tx('plan.order')}</span>
+                <div className="plan__options" role="radiogroup" aria-labelledby="plan-order">
+                  {ROTATIONS.map((r) => {
+                    const on = draft.rotation === r.id;
+                    return (
+                      <button key={r.id} type="button" role="radio" aria-checked={on}
+                        className={`plan__option${on ? ' plan__option--on' : ''}`}
+                        onClick={() => { setPlanNote(null); setDraft((prev) => ({ ...prev, rotation: r.id })); }}>
+                        <span className="plan__option-title">{rotationLabel(r.id, locale)}</span>
+                        <span className="plan__option-text">
+                          {r.id === 'volgorde'
+                            ? tx('plan.inOrderText', { list: templates.map((x) => x.label.replace(/^Workout\s+/i, '')).join(' → ') })
+                            : tx('plan.randomText', { count: templates.length })}
                         </span>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-            {list.length === 0 && <p className="exercise__meta">{tx('wk.empty')}</p>}
+                      </button>
+                    );
+                  })}
+                </div>
 
-            {!demo && (
+                {planErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
+                {planNote && <p className="plan__note" role="status">{planNote}</p>}
 
-                        <button type="button" className="schema__add" onClick={() => onAddExercise(t.id)}>
-              {tx('wk.addExercise')}
-            </button>
-
+                <div className="plan__footer">
+                  <span className="plan__hint">{tx('plan.missed')}</span>
+                  {planChanged && (
+                    <button type="button" className="schema__primary" disabled={busy} onClick={savePlanning}>
+                      {tx('plan.save')}
+                    </button>
+                  )}
+                </div>
+              </>
             )}
           </section>
-        );
-      })}
 
-      {!demo && (
-        <div className="schema__footer">
-          <button type="button" className="schema__primary" disabled={busy} onClick={addWorkout}>
-            {tx('wk.addWorkout')}
-          </button>
-          <p className="exercise__meta">
-            {tx('wk.addWorkoutHint')}
-          </p>
-        </div>
+          {templates.map((t) => {
+            const list = rows.get(t.id) ?? [];
+            const renaming = editing?.type === 'rename' && editing.id === t.id;
+            const archiving = editing?.type === 'archive' && editing.id === t.id;
+            const impact = archiving ? archiveImpact(sessions, t.id) : null;
+
+            return (
+              <section key={t.id} className="wk card">
+                <div className="wk__head">
+                  {renaming ? (
+                    <form className="wk__rename" onSubmit={(e) => { e.preventDefault(); saveRename(t); }}>
+                      <input autoFocus value={form.label ?? ''} aria-label={tx('wk.nameAria')}
+                        onChange={(e) => setForm({ label: e.target.value })} />
+                      <button type="submit" className="schema__primary" disabled={busy}>{tx('common.save')}</button>
+                      <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
+                    </form>
+                  ) : (
+                    <>
+                      <h2 className="wk__title">{t.label}</h2>
+                      {!demo && (
+                        <span className="wk__actions">
+                          <button type="button" className="schema__link" onClick={() => startRename(t)}>{tx('wk.rename')}</button>
+                          {templates.length > 1 && (
+                            <button type="button" className="schema__link schema__link--quiet"
+                              onClick={() => { setEditing({ type: 'archive', id: t.id }); setFormErrors([]); }}>
+                              {tx('wk.remove')}
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+                {renaming && formErrors.length > 0 && <p className="schema__error">{formErrors[0]}</p>}
+
+                {archiving && (
+                  <div className="confirm" role="alertdialog" aria-label={tx('wk.removeAria', { name: t.label })}>
+                    <p>
+                      {tx('wk.removeQuestion', { name: t.label })}
+                      {impact.planned > 0 && ` ${tx('wk.plannedLost', { count: impact.planned })}`}
+                      {impact.history > 0 && ` ${tx('wk.historyKept', { count: impact.history })}`}
+                    </p>
+                    <span className="confirm__buttons">
+                      <button type="button" className="schema__danger" disabled={busy} onClick={() => archive(t)}>{tx('wk.remove')}</button>
+                      <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
+                    </span>
+                  </div>
+                )}
+
+                <ol className="wk__list">
+                  {list.map((row, i) => {
+                    const exercise = exercises.get(row.exercise_id);
+                    const name = row.exercise?.name ?? exercise?.name;
+                    const removing = editing?.type === 'remove' && editing.id === row.id;
+                    const elsewhere = groups.find((g) => g.exerciseId === row.exercise_id)?.rows
+                      .filter((r) => r.template.id !== t.id).map((r) => r.template.label) ?? [];
+                    return (
+                      <li key={row.id} className="item">
+                        <div className="item__row">
+                          <span className="item__main">
+                            <span className="item__name">{name}</span>
+                            <span className="item__meta">{formatTarget(row, locale)}</span>
+                            {equipmentLabel(exercise?.equipment, locale) && (
+                              <span className="item__meta">{equipmentLabel(exercise.equipment, locale)}</span>
+                            )}
+                            {elsewhere.length > 0 && (
+                              <span className="item__meta">{tx('item.alsoIn', { list: elsewhere.join(', ') })}</span>
+                            )}
+                            {exercise?.video_urls?.length > 0 && (
+                              <span className="item__meta item__meta--video">
+                                {tx('item.videos', { count: exercise.video_urls.length })}
+                              </span>
+                            )}
+                          </span>
+                          <span className="item__tools">
+                            {!demo && (
+                              <>
+                                <IconButton label={tx('item.up', { name })} disabled={busy || i === 0}
+                                  onClick={() => move(t.id, row.id, -1)}><Chevron direction="up" /></IconButton>
+                                <IconButton label={tx('item.down', { name })} disabled={busy || i === list.length - 1}
+                                  onClick={() => move(t.id, row.id, +1)}><Chevron direction="down" /></IconButton>
+                                <IconButton label={tx('item.remove', { name })} disabled={busy}
+                                  onClick={() => { setEditing({ type: 'remove', id: row.id }); setFormErrors([]); }}>
+                                  <CloseIcon />
+                                </IconButton>
+                              </>
+                            )}
+                            <IconButton label={tx('item.editIn', { name })} onClick={() => openInExercises(row.exercise_id)}>
+                              <EditIcon />
+                            </IconButton>
+                          </span>
+                        </div>
+
+                        {removing && (
+                          <div className="confirm" role="alertdialog" aria-label={tx('item.remove', { name })}>
+                            <p>{tx('item.removeQuestion', { name, workout: t.label })}</p>
+                            <span className="confirm__buttons">
+                              <button type="button" className="schema__danger" disabled={busy}
+                                onClick={() => remove(t.id, row)}>{tx('item.removeFromWorkout')}</button>
+                              <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
+                            </span>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+                {list.length === 0 && <p className="exercise__meta">{tx('wk.empty')}</p>}
+
+                {!demo && (
+                  <button type="button" className="schema__add" onClick={() => onAddExercise(t.id)}>
+                    {tx('wk.addExercise')}
+                  </button>
+                )}
+              </section>
+            );
+          })}
+
+          {!demo && (
+            <div className="schema__footer">
+              <button type="button" className="schema__primary" disabled={busy} onClick={addWorkout}>
+                {tx('wk.addWorkout')}
+              </button>
+              <p className="exercise__meta">
+                {tx('wk.addWorkoutHint')}
+              </p>
+            </div>
+          )}
+        </>
       )}
     </main>
   );
@@ -416,7 +540,7 @@ function EditIcon() {
   );
 }
 
-/** Kruisje: sluiten. */
+/** Kruisje: sluiten of uit de workout halen. */
 function CloseIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">

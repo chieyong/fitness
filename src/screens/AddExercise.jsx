@@ -7,13 +7,14 @@ import { useI18n } from '../i18n/I18nProvider.jsx';
 import { muscleLabel } from '../lib/muscleLabels.js';
 import {
   filterCatalog, findExistingExercise, catalogName, nextPosition, defaultTarget,
-  validateTarget, targetColumns, validateOwnExercise,
+  validateTarget, targetColumns, validateOwnExercise, formFromColumns, measureOf,
 } from '../lib/editor.js';
 import {
   fetchTemplates, fetchTemplateExercises, fetchAllTemplateExercises, fetchAllExercises,
   createExercise, addTemplateExercise, dataMode,
 } from '../lib/queries.js';
 import TargetFields from '../components/TargetFields.jsx';
+import { formatTarget } from '../lib/schedule.js';
 import './AddExercise.css';
 import './Schema.css';
 import './Exercise.css';
@@ -44,6 +45,8 @@ export default function AddExercise({ templateId, onDone, onBack }) {
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState([]);
   const [busy, setBusy] = useState(false);
+  // Staat de gekozen oefening al in een andere workout, dan neemt ze dat target over.
+  const [linked, setLinked] = useState(null);
 
   const [ownOpen, setOwnOpen] = useState(false);
   const [own, setOwn] = useState({ name: '', muscles: [], equipment: null, measure: null });
@@ -81,12 +84,27 @@ export default function AddExercise({ templateId, onDone, onBack }) {
     };
   };
 
-  const choose = (entry) => {
+  const choose = async (entry) => {
     if (chosen?.key === entry.key) { setChosen(null); return; }
     const { existing } = whereIs(entry);
     setChosen(entry);
+    setLinked(null);
     setForm(defaultTarget(existing?.measure ?? entry.measure));
     setErrors([]);
+
+    // Eén target per oefening: overnemen uit de workout waar ze al staat.
+    const other = existing && links.find((l) => l.exercise_id === existing.id && l.template_id !== templateId);
+    if (!other) return;
+    try {
+      const row = (await fetchTemplateExercises(other.template_id)).find((r) => r.exercise_id === existing.id);
+      if (!row) return;
+      setForm(formFromColumns(row));
+      setLinked({
+        label: templates.find((x) => x.id === other.template_id)?.label ?? '',
+        measure: measureOf(row, existing),
+        key: entry.key,
+      });
+    } catch { /* dan gewoon zelf een target kiezen */ }
   };
 
   const link = async (exercise, measure) => {
@@ -101,7 +119,7 @@ export default function AddExercise({ templateId, onDone, onBack }) {
 
   const addFromCatalog = async (entry) => {
     const { existing } = whereIs(entry);
-    const measure = existing?.measure ?? entry.measure;
+    const measure = (linked?.key === entry.key && linked.measure) || existing?.measure || entry.measure;
     const errs = validateTarget(measure, form, locale);
     if (errs.length) { setErrors(errs); return; }
     setBusy(true);
@@ -233,7 +251,13 @@ export default function AddExercise({ templateId, onDone, onBack }) {
 
                   {open && (
                     <div className="item__edit">
-                      <TargetFields measure={where.existing?.measure ?? entry.measure} value={form} onChange={setForm} />
+                      {linked?.key === entry.key ? (
+                        <p className="exercise__meta">
+                          {formatTarget(targetColumns(linked.measure, form), locale)} · {tx('add.linkedTarget', { workout: linked.label })}
+                        </p>
+                      ) : (
+                        <TargetFields measure={where.existing?.measure ?? entry.measure} value={form} onChange={setForm} />
+                      )}
                       {errors.map((m) => <p key={m} className="schema__error">{m}</p>)}
                       <span className="item__buttons">
                         <button type="button" className="schema__primary" disabled={busy}

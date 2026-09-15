@@ -1,9 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  filterCatalog, findExistingExercise, nextPosition, renumber, moveRow, removeRow,
-  defaultTarget, validateTarget, targetColumns, formFromColumns, measureOf,
-  validateOwnExercise, nextTemplateLabel, archiveImpact, validateTemplateLabel,
+  filterCatalog, findExistingExercise, nextPosition, renumber, moveRow, removeRow, defaultTarget, validateTarget, targetColumns, formFromColumns, measureOf, validateOwnExercise, nextTemplateLabel, archiveImpact, validateTemplateLabel, groupByExercise, targetsDiffer, sameTarget,
 } from '../src/lib/editor.js';
 
 const catalog = [
@@ -99,4 +97,27 @@ test('meldingen in het Engels, en zoeken en herkennen in beide talen', () => {
   assert.equal(filterCatalog(cat, { query: 'bench', locale: 'en' }).length, 1);
   assert.equal(filterCatalog(cat, { query: 'bank', locale: 'en' }).length, 1);
   assert.equal(findExistingExercise([{ id: 1, name: 'Bench press' }], cat[0]).id, 1);
+});
+
+test('groupByExercise: elke oefening één keer, met haar workouts', () => {
+  const templates = [{ id: 'c', label: 'Workout C', position: 2 }, { id: 'a', label: 'Workout A', position: 0 }];
+  const rows = new Map([
+    ['a', [
+      { id: 'a1', exercise_id: 'bank', exercise: { name: 'Bankdrukken' }, target_sets: 4, target_reps_min: 10 },
+      { id: 'a2', exercise_id: 'rij', exercise: { name: 'Gebogen rij' }, target_sets: 4, target_reps_min: 8 },
+    ]],
+    ['c', [
+      { id: 'c1', exercise_id: 'rij', exercise: { name: 'Gebogen rij' }, target_sets: 3, target_reps_min: 10 },
+    ]],
+  ]);
+  const groups = groupByExercise(templates, rows);
+  assert.deepEqual(groups.map((g) => [g.name, g.rows.map((r) => r.template.label)]),
+    [['Bankdrukken', ['Workout A']], ['Gebogen rij', ['Workout A', 'Workout C']]]);
+  assert.equal(targetsDiffer(groups[1].rows.map((r) => r.row)), true);
+  assert.equal(targetsDiffer(groups[0].rows.map((r) => r.row)), false);
+});
+
+test('sameTarget behandelt leeg en null gelijk', () => {
+  assert.equal(sameTarget({ target_sets: 3, target_reps_min: 10 }, { target_sets: 3, target_reps_min: 10, target_reps_max: null }), true);
+  assert.equal(sameTarget({ target_sets: 3, target_seconds: 30 }, { target_sets: 3, target_seconds: 45 }), false);
 });
