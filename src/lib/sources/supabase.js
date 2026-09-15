@@ -1,4 +1,6 @@
 import { supabase } from '../supabase.js';
+import { isMissingTable, isMissingColumn } from '../dbErrors.js';
+import { normalizeScheduleSettings, scheduleOptions } from '../scheduleSettings.js';
 import { planNextSessions } from '../schedule.js';
 
 /** Hoeveel sessies er altijd vooruit klaar moeten staan. */
@@ -35,11 +37,16 @@ function fetchTemplateExercises(templateId) {
  * Zorgt dat er genoeg sessies vooruit gepland staan en geeft de volledige,
  * actuele lijst terug. Idempotent: staat het er al, dan schrijft dit niets.
  */
-async function ensureUpcomingSessions(templates, sessions, today) {
-  const toCreate = planNextSessions(templates, sessions, today, HORIZON);
+async function ensureUpcomingSessions(templates, sessions, today, settings) {
+  const toCreate = planNextSessions(templates, sessions, today, HORIZON, scheduleOptions(settings));
   if (toCreate.length === 0) return sessions;
 
-  await unwrap(supabase.from('sessions').insert(toCreate));
+  let { error } = await supabase.from('sessions').insert(toCreate);
+  if (error && isMissingColumn(error, 'cycle')) {
+    // Migratie 006 nog niet gedraaid: dan plannen zonder rondenummer.
+    ({ error } = await supabase.from('sessions').insert(toCreate.map(({ cycle, ...rest }) => rest)));
+  }
+  if (error) throw new Error(error.message);
   return fetchSessions();
 }
 
@@ -214,18 +221,25 @@ async function archiveTemplate(id) {
 }
 
 /** Sterren en opmerkingen bij een reeks oefeningen. */
-function fetchFeedbackForExercises(exerciseIds) {
-  if (exerciseIds.length === 0) return Promise.resolve([]);
-  return unwrap(
-    supabase.from('exercise_feedback')
-      .select('id, session_id, exercise_id, rating, comment')
-      .in('exercise_id', exerciseIds),
-  );
+async function fetchFeedbackForExercises(exerciseIds) {
+  if (exerciseIds.length === 0) return [];
+  const { data, error } = await supabase.from('exercise_feedback')
+    .select('id, session_id, exercise_id, rating, comment')
+    .in('exercise_id', exerciseIds);
+  // Is migratie 005 nog niet gedraaid, dan gewoon geen feedback: het scherm van
+  // vandaag hoort daar niet op vast te lopen.
+  if (error && isMissingTable(error, 'exercise_feedback')) return [];
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }
 
 /** Hoe het ging bij één oefening in één sessie; één rij per combinatie. */
 async function saveFeedback({ session_id, exercise_id, rating, comment }) {
   const text = String(comment ?? '').trim();
+  const probe = await supabase.from('exercise_feedback').select('id').limit(1);
+  if (probe.error && isMissingTable(probe.error, 'exercise_feedback')) {
+    throw new Error('Sterren en toelichting kunnen nog niet worden bewaard: draai migratie 005 in Supabase.');
+  }
   const data = await unwrap(
     supabase.from('exercise_feedback')
       .upsert({
@@ -245,8 +259,49 @@ async function updateExercise(id, changes) {
   return data[0];
 }
 
+/** Trainingsdagen en volgorde; de standaard als migratie 006 nog niet gedraaid is. */
+async function fetchScheduleSettings() {
+  const { data, error } = await supabase.from('schedule_settings')
+    .select('training_days, rotation').eq('id', 1).maybeSingle();
+  if (error && isMissingTable(error, 'schedule_settings')) return normalizeScheduleSettings(null);
+  if (error) throw new Error(error.message);
+  return normalizeScheduleSettings(data);
+}
+
+async function saveScheduleSettings(settings) {
+  const clean = normalizeScheduleSettings(settings);
+  const { data, error } = await supabase.from('schedule_settings')
+    .upsert({ id: 1, ...clean, updated_at: new Date().toISOString() })
+    .select('training_days, rotation').single();
+  if (error && isMissingTable(error, 'schedule_settings')) {
+    throw new Error('De planning kan nog niet worden bewaard: draai migratie 006 in Supabase.');
+  }
+  if (error) throw new Error(error.message);
+  return normalizeScheduleSettings(data);
+}
+
+/**
+ * Na een andere planning: geplande trainingen vanaf vandaag opnieuw indelen.
+ * Trainingen waarin al iets gelogd of beoordeeld is, blijven altijd staan.
+ */
+async function replanUpcoming(today) {
+  const open = await unwrap(supabase.from('sessions').select('id').eq('status', 'gepland').gte('planned_date', today));
+  if (open.length === 0) return 0;
+  const ids = open.map((x) => x.id);
+  const logged = await unwrap(supabase.from('exercise_logs').select('session_id').in('session_id', ids));
+  const rated = await supabase.from('exercise_feedback').select('session_id').in('session_id', ids);
+  if (rated.error && !isMissingTable(rated.error, 'exercise_feedback')) throw new Error(rated.error.message);
+  const keep = new Set([...logged, ...(rated.data ?? [])].map((x) => x.session_id));
+  const remove = ids.filter((id) => !keep.has(id));
+  if (remove.length) await unwrap(supabase.from('sessions').delete().in('id', remove).select('id'));
+  return remove.length;
+}
+
 /** Echte gegevens, voor de ingelogde eigenaar. */
 export const supabaseSource = {
+  fetchScheduleSettings,
+  saveScheduleSettings,
+  replanUpcoming,
   fetchFeedbackForExercises,
   saveFeedback,
   updateExercise,

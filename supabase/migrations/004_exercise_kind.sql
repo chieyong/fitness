@@ -51,3 +51,6 @@ from (values
   ('Plank met schouder taps', 'zonder', 'reps')
 ) as v(name, equipment, measure)
 where e.name = v.name;
+
+-- Laat de API de wijzigingen meteen zien (anders: 'not found in the schema cache').
+notify pgrst, 'reload schema';

@@ -157,7 +157,7 @@ export function resolveToday(sessions, today, options = {}) {
  * rijen terug; wegschrijven doet de aanroeper.
  */
 export function planNextSessions(templates, sessions, today, count = 6, options = {}) {
-  const { trainingDays = TRAINING_DAYS } = options;
+  const { trainingDays = TRAINING_DAYS, rotation = 'volgorde', random = Math.random } = options;
   const ordered = templates.slice().sort((a, b) => a.position - b.position);
   if (ordered.length === 0) return [];
 
@@ -170,27 +170,107 @@ export function planNextSessions(templates, sessions, today, count = 6, options 
     .sort((a, b) => (a.planned_date < b.planned_date ? -1 : 1));
   const last = all[all.length - 1];
 
-  let templateIndex = 0;
+  // Staat de laatste training vandaag of later, dan verder ná die training. Ligt
+  // hij in het verleden, dan telt vandaag zelf mee: anders valt een trainingsdag
+  // weg zodra de training van vandaag opnieuw is ingedeeld.
   let cursor = nextTrainingDay(today, { inclusive: true, trainingDays });
-
-  if (last) {
-    const lastIndex = ordered.findIndex((t) => t.id === last.template_id);
-    templateIndex = lastIndex === -1 ? 0 : (lastIndex + 1) % ordered.length;
-    const after = last.planned_date >= today ? last.planned_date : today;
-    cursor = nextTrainingDay(after, { trainingDays });
+  if (last && last.planned_date >= today) {
+    cursor = nextTrainingDay(last.planned_date, { trainingDays });
   }
+
+  const pick = rotation === 'willekeurig'
+    ? shuffledRounds(ordered, all, random)
+    : inOrder(ordered, last);
 
   const created = [];
   for (let i = 0; i < missing; i += 1) {
+    const { template, cycle } = pick();
     created.push({
-      template_id: ordered[templateIndex].id,
+      template_id: template.id,
       planned_date: cursor,
       status: OPEN_STATUS,
+      cycle,
     });
-    templateIndex = (templateIndex + 1) % ordered.length;
     cursor = nextTrainingDay(cursor, { trainingDays });
   }
   return created;
+}
+
+/** Op volgorde: A -> B -> C, verder na de laatst geplande workout. Geen rondenummer nodig. */
+function inOrder(ordered, last) {
+  let index = 0;
+  if (last) {
+    const lastIndex = ordered.findIndex((t) => t.id === last.template_id);
+    index = lastIndex === -1 ? 0 : (lastIndex + 1) % ordered.length;
+  }
+  return () => {
+    const template = ordered[index];
+    index = (index + 1) % ordered.length;
+    return { template, cycle: null };
+  };
+}
+
+/**
+ * Willekeurig per ronde: elke ronde bevat elke workout precies één keer, in een
+ * geschudde volgorde. Een halve ronde wordt eerst afgemaakt; een nieuwe ronde
+ * begint nooit met de workout waarmee de vorige eindigde, en heeft (vanaf drie
+ * workouts) altijd een andere volgorde dan de vorige ronde -- anders lijkt het
+ * alsof er niet geschud is.
+ *
+ * Het rondenummer (`cycle`) op de sessies maakt terugvinden betrouwbaar: zonder
+ * zou A B C | C A B niet te onderscheiden zijn van een willekeurige reeks.
+ */
+function shuffledRounds(ordered, all, random) {
+  const active = new Set(ordered.map((t) => t.id));
+  const numbered = all.filter((s) => s.cycle != null);
+  let cycle = numbered.length ? Math.max(...numbered.map((s) => s.cycle)) : 0;
+  const usedIds = new Set(
+    numbered.filter((s) => s.cycle === cycle).map((s) => s.template_id).filter((id) => active.has(id)),
+  );
+  let lastId = all.length ? all[all.length - 1].template_id : null;
+  let queue = [];
+  // De volgorde van de laatst afgeronde ronde, om een herhaling te voorkomen.
+  let previousRound = usedIds.size >= ordered.length
+    ? numbered.filter((s) => s.cycle === cycle).map((s) => s.template_id)
+    : [];
+  let currentRound = numbered.filter((s) => s.cycle === cycle).map((s) => s.template_id);
+
+  const shuffle = (list) => {
+    const out = list.slice();
+    for (let i = out.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    if (out.length > 1 && out[0].id === lastId) [out[0], out[1]] = [out[1], out[0]];
+    return out;
+  };
+
+  const startRound = () => {
+    if (currentRound.length) previousRound = currentRound;
+    currentRound = [];
+    cycle += 1;
+    queue = shuffle(ordered);
+    const same = (order) => ordered.length >= 3 && previousRound.length === order.length
+      && order.every((t, i) => t.id === previousRound[i]);
+    // Maximaal een paar keer opnieuw schudden; de start-regel blijft gelden.
+    for (let tries = 0; tries < 20 && same(queue); tries += 1) queue = shuffle(ordered);
+    if (same(queue)) {
+      // Nog steeds gelijk (zeer onwaarschijnlijk): wissel de laatste twee om.
+      const n = queue.length;
+      [queue[n - 1], queue[n - 2]] = [queue[n - 2], queue[n - 1]];
+    }
+  };
+
+  if (cycle === 0 || usedIds.size >= ordered.length) startRound();
+  else queue = shuffle(ordered.filter((t) => !usedIds.has(t.id)));
+
+  return () => {
+    if (queue.length === 0) startRound();
+    const template = queue.shift();
+    lastId = template.id;
+    currentRound.push(template.id);
+    return { template, cycle };
+  };
 }
 
 /** 'Zaterdag 13 september' — en 'Vandaag' / 'Morgen' waar dat duidelijker is. */

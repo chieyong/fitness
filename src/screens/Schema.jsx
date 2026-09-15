@@ -3,8 +3,12 @@ import {
   fetchTemplates, fetchTemplateExercises, fetchSessions, fetchAllExercises,
   updateTemplateExercise, deleteTemplateExercise, updateTemplateExercisePositions,
   createTemplate, renameTemplate, archiveTemplate, updateExercise, dataMode,
+  fetchScheduleSettings, saveScheduleSettings, replanUpcoming, ensureUpcomingSessions,
 } from '../lib/queries.js';
-import { formatTarget } from '../lib/schedule.js';
+import { formatTarget, todayISO } from '../lib/schedule.js';
+import {
+  WEEKDAYS, ROTATIONS, normalizeScheduleSettings, validateScheduleSettings, describeSchedule,
+} from '../lib/scheduleSettings.js';
 import {
   moveRow, removeRow, validateTarget, targetColumns, formFromColumns, measureOf,
   nextTemplateLabel, archiveImpact, validateTemplateLabel,
@@ -44,13 +48,21 @@ export default function Schema({ onAddExercise }) {
   const [formErrors, setFormErrors] = useState([]);
   const [busy, setBusy] = useState(false);
 
+  // Planning: wat er bewaard is, en wat je aan het aanpassen bent.
+  const [settings, setSettings] = useState(() => normalizeScheduleSettings(null));
+  const [draft, setDraft] = useState(() => normalizeScheduleSettings(null));
+  const [planErrors, setPlanErrors] = useState([]);
+  const [planNote, setPlanNote] = useState(null);
+
   const load = async () => {
-    const [t, ses, ex] = await Promise.all([fetchTemplates(), fetchSessions(), fetchAllExercises()]);
+    const [t, ses, ex, plan] = await Promise.all([fetchTemplates(), fetchSessions(), fetchAllExercises(), fetchScheduleSettings()]);
     const perTemplate = await Promise.all(t.map((x) => fetchTemplateExercises(x.id)));
     setTemplates(t);
     setRows(new Map(t.map((x, i) => [x.id, perTemplate[i]])));
     setExercises(new Map(ex.map((e) => [e.id, e])));
     setSessions(ses);
+    setSettings(plan);
+    setDraft(plan);
   };
 
   useEffect(() => {
@@ -127,6 +139,39 @@ export default function Schema({ onAddExercise }) {
 
   const archive = (t) => run(async () => { await archiveTemplate(t.id); close(); });
 
+  // Altijd voortbouwen op de vorige stand: bij snel tikken is `draft` in deze
+  // functie anders nog de oude waarde, en gaat een eerdere tik verloren.
+  const toggleDay = (day) => {
+    setPlanNote(null);
+    setPlanErrors([]);
+    setDraft((prev) => ({
+      ...prev,
+      training_days: prev.training_days.includes(day)
+        ? prev.training_days.filter((d) => d !== day)
+        : [...prev.training_days, day],
+    }));
+  };
+
+  const planChanged = JSON.stringify(normalizeScheduleSettings(draft)) !== JSON.stringify(settings)
+    || draft.training_days.length === 0;
+
+  const savePlanning = () => {
+    const errs = validateScheduleSettings(draft);
+    if (errs.length) { setPlanErrors(errs); return; }
+    run(async () => {
+      const saved = await saveScheduleSettings(draft);
+      // Geplande trainingen opnieuw indelen volgens de nieuwe planning; wat al
+      // gelogd of beoordeeld is blijft staan.
+      const today = todayISO();
+      const moved = await replanUpcoming(today);
+      const [t, ses] = await Promise.all([fetchTemplates(), fetchSessions()]);
+      await ensureUpcomingSessions(t, ses, today, saved);
+      setPlanNote(moved > 0
+        ? `Planning opgeslagen. ${moved} geplande ${moved === 1 ? 'training is' : 'trainingen zijn'} opnieuw ingedeeld.`
+        : 'Planning opgeslagen.');
+    });
+  };
+
   if (status === 'laden') return <main className="page" />;
 
   return (
@@ -135,10 +180,59 @@ export default function Schema({ onAddExercise }) {
       <h1 className="exercise__title">Schema</h1>
       <p className="exercise__meta">
         {demo
-          ? "In de demo pas je targets en video's van bestaande oefeningen aan; dat blijft bewaard tot je de browser sluit. Log in om workouts en oefeningen toe te voegen."
+          ? "In de demo pas je de planning en de targets en video's van bestaande oefeningen aan; dat blijft bewaard tot je de browser sluit. Log in om workouts en oefeningen toe te voegen."
           : 'Pas je workouts aan. Je trainingsgeschiedenis blijft bewaard, ook als je een oefening of workout weghaalt.'}
       </p>
       {error && <p className="schema__error" role="alert">{error}</p>}
+
+      <section className="plan card" aria-labelledby="plan-title">
+        <h2 id="plan-title" className="wk__title">Planning</h2>
+        <p className="plan__summary">{describeSchedule(settings, templates.length)}</p>
+
+        <span className="plan__label" id="plan-days">Trainingsdagen</span>
+        <div className="plan__days" role="group" aria-labelledby="plan-days">
+          {WEEKDAYS.map((w) => {
+            const on = draft.training_days.includes(w.day);
+            return (
+              <button key={w.day} type="button" aria-pressed={on} aria-label={w.label}
+                className={`plan__day${on ? ' plan__day--on' : ''}`} onClick={() => toggleDay(w.day)}>
+                {w.short}
+              </button>
+            );
+          })}
+        </div>
+
+        <span className="plan__label" id="plan-order">Volgorde van de workouts</span>
+        <div className="plan__options" role="radiogroup" aria-labelledby="plan-order">
+          {ROTATIONS.map((r) => {
+            const on = draft.rotation === r.id;
+            return (
+              <button key={r.id} type="button" role="radio" aria-checked={on}
+                className={`plan__option${on ? ' plan__option--on' : ''}`}
+                onClick={() => { setPlanNote(null); setDraft((prev) => ({ ...prev, rotation: r.id })); }}>
+                <span className="plan__option-title">{r.label}</span>
+                <span className="plan__option-text">
+                  {r.id === 'volgorde'
+                    ? `Steeds ${templates.map((t) => t.label.replace(/^Workout\s+/i, '')).join(' → ')}`
+                    : `Na elke ronde van ${templates.length} workouts een nieuwe volgorde`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {planErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
+        {planNote && <p className="plan__note" role="status">{planNote}</p>}
+
+        <div className="plan__footer">
+          <span className="plan__hint">Een gemiste training schuift door naar de volgende trainingsdag.</span>
+          {planChanged && (
+            <button type="button" className="schema__primary" disabled={busy} onClick={savePlanning}>
+              Planning opslaan
+            </button>
+          )}
+        </div>
+      </section>
 
       {templates.map((t) => {
         const list = rows.get(t.id) ?? [];

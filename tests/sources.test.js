@@ -236,3 +236,44 @@ test('met de structuur op slot mogen targets wel, workouts en oefeningen niet', 
   assert.equal((await src.updateTemplateExercise(row.id, { target_sets: 2 })).target_sets, 2);
   assert.ok(await src.updateExercise(row.exercise_id, { video_urls: null }));
 });
+
+test('planning: standaard, opslaan en opschonen', async () => {
+  const src = fresh();
+  assert.deepEqual(await src.fetchScheduleSettings(), { training_days: [2, 4, 6], rotation: 'volgorde' });
+  const saved = await src.saveScheduleSettings({ training_days: [5, 1, 1, 9], rotation: 'willekeurig' });
+  assert.deepEqual(saved, { training_days: [1, 5], rotation: 'willekeurig' });
+  assert.deepEqual(await src.fetchScheduleSettings(), saved);
+});
+
+test('vooruit plannen volgt de gekozen trainingsdagen', async () => {
+  const src = fresh();
+  const all = await src.ensureUpcomingSessions(await src.fetchTemplates(), await src.fetchSessions(), today,
+    { training_days: [1, 3, 5], rotation: 'volgorde' });
+  const open = all.filter((x) => x.status === 'gepland');
+  assert.equal(open.length, 6);
+  for (const x of open) {
+    assert.ok([1, 3, 5].includes(new Date(`${x.planned_date}T00:00:00Z`).getUTCDay()), x.planned_date);
+  }
+});
+
+test('opnieuw indelen wist alleen toekomstige geplande trainingen zonder logs', async () => {
+  const src = fresh();
+  const all = await src.ensureUpcomingSessions(await src.fetchTemplates(), await src.fetchSessions(), today);
+  const open = all.filter((x) => x.status === 'gepland');
+  const [first, second] = open;
+  const [ex] = await src.fetchAllExercises();
+  await src.saveSet({ session_id: first.id, exercise_id: ex.id, set_number: 1, reps: 5 });
+  const removed = await src.replanUpcoming(today);
+  const after = await src.fetchSessions();
+  assert.equal(removed, open.length - 1);
+  assert.ok(after.some((x) => x.id === first.id));
+  assert.ok(!after.some((x) => x.id === second.id));
+});
+
+test('de planning mag in de demo en blijft bewaard tot de browser sluit', async () => {
+  const storage = memoryStorage();
+  const a = createDemoSource({ today, storage, lockStructure: true });
+  await a.saveScheduleSettings({ training_days: [1], rotation: 'willekeurig' });
+  const b = createDemoSource({ today, storage });
+  assert.deepEqual(await b.fetchScheduleSettings(), { training_days: [1], rotation: 'willekeurig' });
+});

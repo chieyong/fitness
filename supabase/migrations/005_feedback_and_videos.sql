@@ -36,3 +36,6 @@ begin
       check (video_urls is null or cardinality(video_urls) <= 3);
   end if;
 end $$;
+
+-- Laat de API de wijzigingen meteen zien (anders: 'not found in the schema cache').
+notify pgrst, 'reload schema';

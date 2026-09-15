@@ -31,7 +31,18 @@ Zonder `.env` draait de app ook: dan alleen met demo-gegevens.
 
 ## De planningsregel
 
-Trainingsdagen zijn **dinsdag, donderdag en zaterdag**, in vaste rotatie A → B → C.
+Op welke weekdagen je traint stel je in bij **Schema → Planning**; standaard dinsdag,
+donderdag en zaterdag. Daar kies je ook hoe de workouts rouleren:
+
+- **Op volgorde**: A → B → C, steeds verder na de laatst geplande workout.
+- **Willekeurig per ronde**: elke ronde bevat elke workout precies één keer in een geschudde
+  volgorde; na elke volledige ronde (drie sessies bij drie workouts, vier bij vier) wordt
+  opnieuw geschud. Een halve ronde wordt eerst afgemaakt, en een ronde begint nooit met de
+  workout waarmee de vorige eindigde. Elke sessie krijgt daarvoor een rondenummer (`cycle`).
+
+Wijzig je de planning, dan worden de geplande trainingen vanaf vandaag opnieuw ingedeeld;
+trainingen waarin al iets gelogd of beoordeeld is blijven staan. De instelling staat in
+`schedule_settings`, de logica in `src/lib/schedule.js` en `src/lib/scheduleSettings.js`.
 
 Mis je een sessie, dan **schuift alles op**: de gemiste sessie wordt je eerstvolgende
 training en de rest schuift mee. De volgorde blijft dus altijd intact en je raakt nooit een
@@ -105,7 +116,10 @@ precies dezelfde functies hebben.
    oefening, nodig voor het aanpassen van je schema.
 5. `supabase/migrations/005_feedback_and_videos.sql` draaien: sterren en toelichting per
    oefening, en de grens van drie video's.
-6. Inloggen.
+6. `supabase/migrations/006_schedule_settings.sql` draaien: trainingsdagen en volgorde.
+7. Inloggen.
+
+Alle migraties zijn veilig opnieuw te draaien: ze controleren zelf wat er al is.
 
 ### Beheerscripts
 

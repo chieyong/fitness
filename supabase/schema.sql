@@ -44,6 +44,7 @@ create table if not exists sessions (
   template_id uuid references workout_templates(id) on delete cascade,
   planned_date date not null,
   actual_date date,
+  cycle int,                               -- rondenummer bij willekeurige volgorde
   notes text,                              -- opmerking bij de hele sessie
   status text not null default 'gepland',  -- 'gepland' | 'voltooid' | 'overgeslagen' | 'verzet'
   constraint sessions_status_check
@@ -75,6 +76,16 @@ create table if not exists exercise_feedback (
   unique (session_id, exercise_id)
 );
 
+-- Planning: trainingsdagen (zondag = 0 ... zaterdag = 6) en hoe de workouts rouleren.
+create table if not exists schedule_settings (
+  id int primary key default 1 check (id = 1),
+  training_days int[] not null default '{2,4,6}',
+  rotation text not null default 'volgorde' check (rotation in ('volgorde', 'willekeurig')),
+  updated_at timestamptz default now(),
+  constraint schedule_settings_days_valid
+    check (cardinality(training_days) between 1 and 7 and training_days <@ array[0,1,2,3,4,5,6])
+);
+
 create unique index if not exists exercises_catalog_key_idx
   on exercises (catalog_key) where catalog_key is not null;
 create index if not exists template_exercises_template_idx on template_exercises (template_id, position);
@@ -94,6 +105,7 @@ alter table template_exercises enable row level security;
 alter table sessions enable row level security;
 alter table exercise_logs enable row level security;
 alter table exercise_feedback enable row level security;
+alter table schedule_settings enable row level security;
 
 create table if not exists public.app_owners (
   email text primary key
@@ -122,7 +134,7 @@ grant execute on function public.is_owner() to anon, authenticated;
 do $$
 declare t text;
 begin
-  foreach t in array array['exercises','workout_templates','template_exercises','sessions','exercise_logs','exercise_feedback']
+  foreach t in array array['exercises','workout_templates','template_exercises','sessions','exercise_logs','exercise_feedback','schedule_settings']
   loop
     execute format('drop policy if exists %I on %I', t || '_anon_all', t);
     execute format('drop policy if exists %I on %I', t || '_owner_all', t);
@@ -132,6 +144,8 @@ begin
     );
   end loop;
 end $$;
+
+insert into schedule_settings (id) values (1) on conflict (id) do nothing;
 
 -- Daarna, met je eigen Google-adres (niet committen):
 --   insert into public.app_owners (email) values ('jouw-adres@gmail.com');

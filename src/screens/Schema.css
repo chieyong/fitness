@@ -133,3 +133,53 @@
 .videos__hint { font-size: var(--text-micro); color: var(--ink-tertiary); }
 
 .item__meta--video { color: var(--accent); font-weight: 500; }
+
+/* Planning: trainingsdagen en volgorde, bovenaan het schema. */
+.plan { margin-top: var(--space-5); padding: var(--space-4) var(--space-5) var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+
+.plan__summary { font-size: var(--text-small); color: var(--ink-secondary); }
+
+.plan__label { margin-top: var(--space-3); font-size: var(--text-micro); font-weight: 600; color: var(--ink-tertiary); }
+
+.plan__days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+
+.plan__day {
+  height: 40px;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--ink-secondary);
+  border-radius: var(--radius-control);
+  background: var(--inset);
+  box-shadow: var(--shadow-inset);
+  transition: color 120ms ease, transform 120ms ease;
+}
+
+.plan__day:active { transform: scale(0.95); }
+.plan__day--on { color: var(--on-accent); background: var(--accent-gradient); box-shadow: var(--shadow-button); }
+
+.plan__options { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--space-2); }
+
+.plan__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-3);
+  text-align: left;
+  border-radius: var(--radius-control);
+  background: var(--inset);
+  box-shadow: var(--shadow-inset);
+  border: 1.5px solid transparent;
+}
+
+.plan__option--on { background: var(--seg-on); box-shadow: var(--shadow-raised); border-color: var(--accent); }
+
+.plan__option-title { font-size: var(--text-small); font-weight: 600; color: var(--ink); }
+.plan__option--on .plan__option-title { color: var(--accent); }
+.plan__option-text { font-size: var(--text-micro); color: var(--ink-tertiary); }
+
+.plan__note { font-size: var(--text-small); font-weight: 500; color: var(--accent); }
+
+.plan__footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-2); }
+
+.plan__hint { font-size: var(--text-micro); color: var(--ink-tertiary); }

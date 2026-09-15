@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveToday, todayISO, formatDateShort } from '../lib/schedule.js';
 import { lastPerformance, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
+import { scheduleOptions } from '../lib/scheduleSettings.js';
 import {
-  fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises,
+  fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises, fetchScheduleSettings,
   fetchFeedbackForExercises, saveFeedback,
   ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
   closeSession, reopenSession, dataMode,
@@ -32,6 +33,7 @@ export default function Today({ onOpenExercise }) {
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
 
   const [templates, setTemplates] = useState([]);
+  const [settings, setSettings] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -62,11 +64,12 @@ export default function Today({ onOpenExercise }) {
 
     (async () => {
       try {
-        const [loadedTemplates, loadedSessions] = await Promise.all([
-          fetchTemplates(), fetchSessions(),
+        const [loadedTemplates, loadedSessions, loadedSettings] = await Promise.all([
+          fetchTemplates(), fetchSessions(), fetchScheduleSettings(),
         ]);
-        const filled = await ensureUpcomingSessions(loadedTemplates, loadedSessions, today);
+        const filled = await ensureUpcomingSessions(loadedTemplates, loadedSessions, today, loadedSettings);
         if (cancelled) return;
+        setSettings(loadedSettings);
         setTemplates(loadedTemplates);
         setSessions(filled);
         setStatus('klaar');
@@ -78,9 +81,10 @@ export default function Today({ onOpenExercise }) {
     return () => { cancelled = true; };
   }, [today]);
 
+  // Rustdag of trainingsdag hangt af van de gekozen trainingsdagen.
   const view = useMemo(
-    () => (sessions.length ? resolveToday(sessions, date) : null),
-    [sessions, date],
+    () => (sessions.length ? resolveToday(sessions, date, scheduleOptions(settings)) : null),
+    [sessions, date, settings],
   );
 
   // De sessie die het scherm toont: wat er te doen staat, of -- als die dag al

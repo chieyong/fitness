@@ -5,6 +5,7 @@
  */
 import { generateDemoData } from '../demo/generate.js';
 import { planNextSessions } from '../schedule.js';
+import { normalizeScheduleSettings, scheduleOptions } from '../scheduleSettings.js';
 
 const HORIZON = 6;
 const STORAGE_KEY = 'repz.demo.v1';
@@ -19,7 +20,7 @@ const STRUCTURE = [
 const MUTATORS = [
   ...STRUCTURE, 'ensureUpcomingSessions', 'saveSet', 'deleteSet', 'setExerciseSkipped',
   'closeSession', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
-  'saveFeedback', 'updateExercise',
+  'saveFeedback', 'updateExercise', 'saveScheduleSettings', 'replanUpcoming',
 ];
 
 /** Een bewaarde demo, maar alleen als hij voor vandaag is gemaakt en leesbaar is. */
@@ -46,6 +47,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
   const saved = !data && storage ? readSnapshot(storage, today) : null;
   const db = saved?.db ?? copy(data ?? generateDemoData({ today }));
   db.exercise_feedback ??= [];
+  db.schedule_settings = normalizeScheduleSettings(db.schedule_settings);
   // De teller voor nieuwe id's reist mee, anders botsen id's na herladen.
   let counter = saved?.counter ?? 0;
 
@@ -92,8 +94,8 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
         }));
     },
 
-    async ensureUpcomingSessions(templates, sessions, today) {
-      const toCreate = planNextSessions(templates, sessions, today, HORIZON);
+    async ensureUpcomingSessions(templates, sessions, today, settings) {
+      const toCreate = planNextSessions(templates, sessions, today, HORIZON, scheduleOptions(settings));
       for (const row of toCreate) {
         db.sessions.push({ id: newId('s'), actual_date: null, notes: null, ...row });
       }
@@ -263,6 +265,24 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
       if (!e) throw new Error('Oefening niet gevonden');
       Object.assign(e, changes);
       return copy(e);
+    },
+
+    async fetchScheduleSettings() {
+      return copy(db.schedule_settings);
+    },
+
+    async saveScheduleSettings(settings) {
+      db.schedule_settings = normalizeScheduleSettings(settings);
+      return copy(db.schedule_settings);
+    },
+
+    async replanUpcoming(today) {
+      const busy = new Set([...db.exercise_logs, ...db.exercise_feedback].map((x) => x.session_id));
+      const before = db.sessions.length;
+      db.sessions = db.sessions.filter(
+        (x) => !(x.status === 'gepland' && x.planned_date >= today && !busy.has(x.id)),
+      );
+      return before - db.sessions.length;
     },
 
     async fetchAllLogs() {

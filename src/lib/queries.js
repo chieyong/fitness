@@ -63,3 +63,6 @@ export const archiveTemplate = (...args) => active.archiveTemplate(...args);
 export const fetchFeedbackForExercises = (...args) => active.fetchFeedbackForExercises(...args);
 export const saveFeedback = (...args) => active.saveFeedback(...args);
 export const updateExercise = (...args) => active.updateExercise(...args);
+export const fetchScheduleSettings = (...args) => active.fetchScheduleSettings(...args);
+export const saveScheduleSettings = (...args) => active.saveScheduleSettings(...args);
+export const replanUpcoming = (...args) => active.replanUpcoming(...args);
