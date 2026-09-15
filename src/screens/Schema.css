@@ -203,3 +203,12 @@
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-inset);
 }
+
+/* Verwijderen: rustig tot je eraan komt. */
+.icon--danger:hover:not(:disabled) { color: var(--danger); }
+
+/* Automatisch bewaren: een stille regel, geen knop. */
+.autosave { font-size: var(--text-micro); color: var(--ink-tertiary); min-height: 1.2em; }
+.autosave--bezig { color: var(--ink-secondary); }
+.autosave--bewaard { color: var(--accent); font-weight: 600; }
+.autosave--bewaard::before { content: '✓ '; }

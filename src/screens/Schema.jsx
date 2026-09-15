@@ -60,6 +60,9 @@ export default function Schema({ onAddExercise }) {
   const [formErrors, setFormErrors] = useState([]);
   const [busy, setBusy] = useState(false);
   const scrollTo = useRef(null);
+  // Automatisch bewaren: wat het laatst bewaard (of geopend) is, en of dat nu bezig is.
+  const lastSaved = useRef(null);
+  const [saveState, setSaveState] = useState(null);
 
   // Planning: wat er bewaard is, en wat je aan het aanpassen bent.
   const [settings, setSettings] = useState(() => normalizeScheduleSettings(null));
@@ -105,7 +108,7 @@ export default function Schema({ onAddExercise }) {
     }
   };
 
-  const close = () => { setEditing(null); setForm({}); setFormErrors([]); };
+  const close = () => { setEditing(null); setForm({}); setFormErrors([]); setSaveState(null); lastSaved.current = null; };
 
   const switchView = (next) => {
     if (next === view) return;
@@ -121,9 +124,12 @@ export default function Schema({ onAddExercise }) {
 
   const startExercise = (group) => {
     const first = group.rows[0].row;
+    const initial = { ...formFromColumns(first), videos: videoFields(exercises.get(group.exerciseId)?.video_urls ?? first.exercise?.video_urls) };
     setEditing({ type: 'exercise', id: group.exerciseId });
-    setForm({ ...formFromColumns(first), videos: videoFields(exercises.get(group.exerciseId)?.video_urls ?? first.exercise?.video_urls) });
+    setForm(initial);
     setFormErrors([]);
+    setSaveState(null);
+    lastSaved.current = JSON.stringify(initial);
   };
 
   /** Vanuit een workout naar dezelfde oefening in de lijst, meteen open. */
@@ -135,13 +141,24 @@ export default function Schema({ onAddExercise }) {
     startExercise(group);
   };
 
-  const saveExercise = (group) => {
+  /**
+   * Automatisch bewaren bij het verlaten van een veld. Alleen als je echt iets
+   * veranderd hebt: openklappen of door de velden tabben trekt een verschillend
+   * target dus niet gelijk. Klopt de invoer niet, dan eerst de melding.
+   */
+  const autosave = async (group) => {
+    const snapshot = JSON.stringify(form);
+    if (snapshot === lastSaved.current) return;
     const first = group.rows[0].row;
     const exercise = exercises.get(group.exerciseId);
     const measure = measureOf(first, exercise);
     const errs = [...validateTarget(measure, form, locale), ...validateVideoUrls(form.videos, locale)];
-    if (errs.length) { setFormErrors(errs); return; }
-    run(async () => {
+    setFormErrors(errs);
+    if (errs.length) { setSaveState(null); return; }
+
+    setSaveState('bezig');
+    setError(null);
+    try {
       // Eén target voor elke workout met deze oefening; alleen wegschrijven wat verschilt.
       const columns = targetColumns(measure, form);
       for (const { row } of group.rows) {
@@ -153,9 +170,24 @@ export default function Schema({ onAddExercise }) {
       if (JSON.stringify(before) !== JSON.stringify(after)) {
         await updateExercise(group.exerciseId, { video_urls: after });
       }
-      close();
-    });
+      lastSaved.current = snapshot;
+      await load();
+      setSaveState('bewaard');
+    } catch (e) {
+      setError(e.message);
+      setSaveState(null);
+    }
   };
+
+  /** Uit alle workouts halen; de oefening en haar logs blijven bestaan. */
+  const removeEverywhere = (group) => run(async () => {
+    for (const { row, template } of group.rows) {
+      const list = (await fetchTemplateExercises(template.id)) ?? [];
+      await deleteTemplateExercise(row.id);
+      await updateTemplateExercisePositions(removeRow(list, row.id));
+    }
+    close();
+  });
 
   const remove = (templateId, row) => run(async () => {
     const list = rows.get(templateId) ?? [];
@@ -254,6 +286,7 @@ export default function Schema({ onAddExercise }) {
               const first = group.rows[0].row;
               const differ = targetsDiffer(group.rows.map((r) => r.row));
               const open = editing?.type === 'exercise' && editing.id === group.exerciseId;
+              const deleting = editing?.type === 'delete' && editing.id === group.exerciseId;
               const name = group.name || exercise?.name;
               return (
                 <li key={group.exerciseId} id={`oef-${group.exerciseId}`} className={`item${open ? ' item--open' : ''}`}>
@@ -271,15 +304,32 @@ export default function Schema({ onAddExercise }) {
                       )}
                     </span>
                     <span className="item__tools">
+                      {!demo && (
+                        <IconButton danger label={tx('ex.delete', { name })} disabled={busy}
+                          onClick={() => { close(); setEditing({ type: 'delete', id: group.exerciseId }); }}>
+                          <TrashIcon />
+                        </IconButton>
+                      )}
                       <IconButton label={tx(open ? 'item.close' : 'item.edit', { name })}
                         active={open} onClick={() => (open ? close() : startExercise(group))}>
-                        {open ? <CloseIcon /> : <EditIcon />}
+                        {open ? <Chevron direction="up" /> : <EditIcon />}
                       </IconButton>
                     </span>
                   </div>
 
+                  {deleting && (
+                    <div className="confirm" role="alertdialog" aria-label={tx('ex.delete', { name })}>
+                      <p>{tx('ex.deleteQuestion', { name, list: labels(group) })}</p>
+                      <span className="confirm__buttons">
+                        <button type="button" className="schema__danger" disabled={busy}
+                          onClick={() => removeEverywhere(group)}>{tx('ex.deleteButton')}</button>
+                        <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
+                      </span>
+                    </div>
+                  )}
+
                   {open && (
-                    <div className="item__edit">
+                    <div className="item__edit" onBlur={() => autosave(group)}>
                       {differ && (
                         <p className="exlist__differ">
                           {tx('ex.differs', {
@@ -304,10 +354,9 @@ export default function Schema({ onAddExercise }) {
                         )}
                       </div>
                       {formErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
-                      <span className="item__buttons">
-                        <button type="button" className="schema__primary" disabled={busy} onClick={() => saveExercise(group)}>{tx('common.save')}</button>
-                        <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
-                      </span>
+                      <p className={`autosave${saveState ? ` autosave--${saveState}` : ''}`} role="status">
+                        {saveState === 'bezig' ? tx('ex.saving') : saveState === 'bewaard' ? tx('ex.saved') : tx('ex.autosave')}
+                      </p>
                     </div>
                   )}
                 </li>
@@ -453,9 +502,9 @@ export default function Schema({ onAddExercise }) {
                                   onClick={() => move(t.id, row.id, -1)}><Chevron direction="up" /></IconButton>
                                 <IconButton label={tx('item.down', { name })} disabled={busy || i === list.length - 1}
                                   onClick={() => move(t.id, row.id, +1)}><Chevron direction="down" /></IconButton>
-                                <IconButton label={tx('item.remove', { name })} disabled={busy}
+                                <IconButton danger label={tx('item.remove', { name })} disabled={busy}
                                   onClick={() => { setEditing({ type: 'remove', id: row.id }); setFormErrors([]); }}>
-                                  <CloseIcon />
+                                  <TrashIcon />
                                 </IconButton>
                               </>
                             )}
@@ -506,9 +555,9 @@ export default function Schema({ onAddExercise }) {
   );
 }
 
-function IconButton({ label, onClick, disabled, active, children }) {
+function IconButton({ label, onClick, disabled, active, danger, children }) {
   return (
-    <button type="button" className={`icon${active ? ' icon--active' : ''}`} aria-label={label}
+    <button type="button" className={`icon${active ? ' icon--active' : ''}${danger ? ' icon--danger' : ''}`} aria-label={label}
       aria-expanded={active === undefined ? undefined : active} onClick={onClick} disabled={disabled}>
       {children}
     </button>
@@ -540,11 +589,12 @@ function EditIcon() {
   );
 }
 
-/** Kruisje: sluiten of uit de workout halen. */
-function CloseIcon() {
+/** Prullenbak: uit de workout of uit alle workouts halen. */
+function TrashIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-      <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M2.5 3.8h9M5.6 3.8V2.6h2.8v1.2M3.7 3.8l.6 7.6h5.4l.6-7.6M5.9 6v3.6M8.1 6v3.6"
+        stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

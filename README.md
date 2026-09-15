@@ -242,9 +242,11 @@ workout halen. Workouts kun je toevoegen, hernoemen en verwijderen.
   erin staan en in welke volgorde. Een oefening haal je eruit met het kruisje (met
   bevestiging); het potloodje brengt je naar die oefening bij Oefeningen.
 - *Oefeningen*: elke oefening één keer, met **één target en de video's**, die gelden voor
-  elke workout waarin ze staat. Opslaan schrijft het target naar al die workouts. Verschilt
+  elke workout waarin ze staat. Wijzigingen worden **automatisch bewaard** zodra je een veld
+  verlaat (alleen als er echt iets veranderd is), en gaan naar al die workouts. Met het
+  prullenbakje haal je een oefening uit álle workouts; de oefening en haar logs blijven. Verschilt
   het target nu nog per workout (bijvoorbeeld 4×8 in A en 3×10 in C), dan staat dat erbij en
-  trekt opslaan het gelijk. Een oefening die al in een andere workout staat, neemt bij
+  trekt de eerste wijziging het gelijk. Een oefening die al in een andere workout staat, neemt bij
   toevoegen dat target over.
 
 **Oefening toevoegen** gaat via keuzelijsten: kies een spiergroep, filter op materiaal
