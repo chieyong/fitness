@@ -9,7 +9,7 @@ import './BodyMap.css';
  * geeft een gelijkmatig verloop en blijft thema-bewust, want de component zet
  * de kleur als inline fill en daarin werkt var() gewoon.
  */
-export const LOW = 'var(--ramp-1)';
+export const LOW = 'var(--ramp-start)';
 export const HIGH = 'var(--ramp-5)';
 export const EMPTY = 'var(--body-empty)';
 

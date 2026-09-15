@@ -40,8 +40,10 @@
   --spark: #5B8BD6;
   --body-empty: #DCE1EA;
   --today-planned: #F2CC8F;
-  --today-busy: #8DB6EE;
+  --today-busy: #CCE0FA;
   --today-done: #2563D9;
+  /* Begin van het doorlopende verloop: lichter (licht) of rustiger (donker) dan ramp-1. */
+  --ramp-start: #CCE0FA;
   --ramp-1: #A9CBF4;
   --ramp-2: #80B2EF;
   --ramp-3: #5796E6;
@@ -107,8 +109,10 @@
     --spark: #6A90CC;
     --body-empty: #40465A;
     --today-planned: #8C6B33;
-    --today-busy: #3F75BD;
+    --today-busy: #304A75;
     --today-done: #5AA2FF;
+    /* Begin van het doorlopende verloop: lichter (licht) of rustiger (donker) dan ramp-1. */
+    --ramp-start: #304A75;
     --ramp-1: #2E568C;
     --ramp-2: #3569B2;
     --ramp-3: #4284DA;
@@ -149,8 +153,10 @@
   --spark: #6A90CC;
   --body-empty: #40465A;
   --today-planned: #8C6B33;
-  --today-busy: #3F75BD;
+  --today-busy: #304A75;
   --today-done: #5AA2FF;
+  /* Begin van het doorlopende verloop: lichter (licht) of rustiger (donker) dan ramp-1. */
+  --ramp-start: #304A75;
   --ramp-1: #2E568C;
   --ramp-2: #3569B2;
   --ramp-3: #4284DA;
