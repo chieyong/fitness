@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, muscleSeries, roundSets,
+  muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, muscleWeeklySeries, roundSets,
 } from '../lib/muscles.js';
 import { roleOf } from '../lib/muscleWeights.js';
 import { seriesFor, trend, chartPoints, preferredMetric } from '../lib/progress.js';
@@ -200,7 +200,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
             <RampLegend
               maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle, locale)})` : ''} />
             <p className="body__hint">
-              {t('progress.hint')} {t('progress.weighting')}
+              {t('progress.hint')} {t('progress.weighting')} {t('progress.weekly')}
             </p>
           </div>
 
@@ -212,7 +212,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
               open={t.muscle === selected}
               dimmed={selected != null && t.muscle !== selected}
               onToggle={() => select(t.muscle)}
-              series={muscleSeries(logs, sessions, exercises, t.muscle, from ? { from } : {})}
+              series={muscleWeeklySeries(logs, sessions, exercises, t.muscle, { from, today })}
               logs={logs}
               sessions={sessions}
               onOpenExercise={onOpenExercise}

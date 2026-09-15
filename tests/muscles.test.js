@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, intensityBucket, muscleSeries, roundSets } from '../src/lib/muscles.js';
+import { muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, intensityBucket, muscleSeries, roundSets, weekStartISO, muscleWeeklySeries } from '../src/lib/muscles.js';
 
 const sessions = [
   { id: 's1', planned_date: '2026-09-05', actual_date: '2026-09-05', status: 'voltooid' },
@@ -172,4 +172,44 @@ test('roundSets rondt af op één decimaal', () => {
   assert.equal(roundSets(12.25), 12.3);
   assert.equal(roundSets(0.1 + 0.2), 0.3);
   assert.equal(roundSets(undefined), 0);
+});
+
+test('weekStartISO geeft de maandag', () => {
+  assert.equal(weekStartISO('2026-09-15'), '2026-09-14'); // dinsdag
+  assert.equal(weekStartISO('2026-09-14'), '2026-09-14'); // maandag
+  assert.equal(weekStartISO('2026-09-20'), '2026-09-14'); // zondag
+});
+
+test('per week: rotatie middelt uit, lopende week telt niet, lege week is 0', () => {
+  const ses = [
+    { id: 'a1', planned_date: '2026-08-25', actual_date: '2026-08-25', status: 'voltooid' }, // di wk 24/8
+    { id: 'b1', planned_date: '2026-08-27', actual_date: '2026-08-27', status: 'voltooid' }, // do wk 24/8
+    { id: 'a2', planned_date: '2026-09-08', actual_date: '2026-09-08', status: 'voltooid' }, // wk 7/9
+    { id: 'nu', planned_date: '2026-09-15', actual_date: '2026-09-15', status: 'voltooid' }, // lopende week
+  ];
+  const ex = [
+    { id: 'push', name: 'P', muscle_roles: { triceps: 'primair' } },
+    { id: 'bank', name: 'B', muscle_roles: { triceps: 'secundair' } },
+  ];
+  const l = [
+    log('a1', 'push', 1, 10, 20), log('a1', 'push', 2, 10, 20),
+    log('b1', 'bank', 1, 10, 40), log('b1', 'bank', 2, 10, 40),
+    log('a2', 'push', 1, 10, 20),
+    log('nu', 'push', 1, 10, 20),
+  ];
+  const r = muscleWeeklySeries(l, ses, ex, 'triceps', { today: '2026-09-15' });
+  assert.deepEqual(r.map((p) => [p.date, p.sets]), [['2026-08-24', 3], ['2026-08-31', 0], ['2026-09-07', 1]]);
+  assert.equal(r[0].volume, 400 + 400);
+});
+
+test('per week met periode: begint bij de eerste volledige week', () => {
+  const ses = [
+    { id: 'x', planned_date: '2026-08-13', actual_date: '2026-08-13', status: 'voltooid' }, // halve week na 'from'
+    { id: 'y', planned_date: '2026-08-25', actual_date: '2026-08-25', status: 'voltooid' },
+  ];
+  const ex = [{ id: 'push', name: 'P', muscle_roles: { triceps: 'primair' } }];
+  const l = [log('x', 'push', 1, 10, 20), log('y', 'push', 1, 10, 20)];
+  const r = muscleWeeklySeries(l, ses, ex, 'triceps', { from: '2026-08-12', today: '2026-09-02' });
+  assert.deepEqual(r.map((p) => [p.date, p.sets]), [['2026-08-17', 0], ['2026-08-24', 1]]);
+  assert.deepEqual(muscleWeeklySeries(l, ses, ex, 'biceps', { today: '2026-09-02' }), []);
 });

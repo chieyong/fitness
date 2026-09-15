@@ -14,6 +14,7 @@
  */
 import { sessionDate, volume as setsVolume } from './progress.js';
 import { muscleWeights } from './muscleWeights.js';
+import { addDays, dayOfWeek } from './schedule.js';
 
 /** Gewogen sets op één decimaal, voor weergave. */
 export function roundSets(value) {
@@ -150,4 +151,45 @@ export function muscleSeries(logs, sessions, exercises, muscle, range = {}) {
   }
 
   return [...perSession.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+/** Maandag van de week waarin een datum valt. */
+export function weekStartISO(iso) {
+  return addDays(iso, -((dayOfWeek(iso) + 6) % 7));
+}
+
+/**
+ * Gewogen sets en volume per week voor één spiergroep: het lijntje naast een
+ * spiergroep. Per training schommelt het door de rotatie (workout A geeft je
+ * triceps meer sets dan B); per week middelt dat uit.
+ *
+ * - alleen afgeronde weken: de lopende week zou de lijn omlaag trekken
+ * - weken zonder training tellen als 0
+ * - met `from` begint de reeks bij de eerste volledige week vanaf die datum
+ */
+export function muscleWeeklySeries(logs, sessions, exercises, muscle, { from = null, today }) {
+  const current = weekStartISO(today);
+  let start = null;
+  if (from) {
+    start = weekStartISO(from);
+    if (start !== from) start = addDays(start, 7);
+  }
+
+  const weeks = new Map();
+  for (const p of muscleSeries(logs, sessions, exercises, muscle, start ? { from: start } : {})) {
+    const week = weekStartISO(p.date);
+    if (week >= current) continue;
+    const entry = weeks.get(week) ?? { date: week, sets: 0, volume: 0 };
+    entry.sets += p.sets;
+    entry.volume += p.volume;
+    weeks.set(week, entry);
+  }
+  if (weeks.size === 0) return [];
+
+  const first = start ?? [...weeks.keys()].sort()[0];
+  const out = [];
+  for (let week = first; week < current; week = addDays(week, 7)) {
+    out.push(weeks.get(week) ?? { date: week, sets: 0, volume: 0 });
+  }
+  return out;
 }

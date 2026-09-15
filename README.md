@@ -279,6 +279,12 @@ beide talen; anders geldt de eerste spiergroep als primair en de rest als secund
 geldt dus voor eigen oefeningen. Tests bewaken dat elke bibliotheek- en programmaoefening
 een verdeling heeft die haar spiergroepen dekt.
 
+Het lijntje naast een spiergroep toont gewogen sets **per afgeronde week** (maandag tot en
+met zondag), niet per training: door de rotatie krijgt een spier op de ene workout veel
+meer sets dan op de andere, waardoor een lijn per training schommelt zonder dat er iets
+verandert. De lopende week telt niet mee; weken zonder training tellen als 0
+(`muscleWeeklySeries` in `src/lib/muscles.js`).
+
 Het silhouet in Voortgang kleurt doorlopend (geen vijf stappen meer) tussen `--ramp-1` en
 `--ramp-5`.
 
