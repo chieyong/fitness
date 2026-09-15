@@ -3,6 +3,7 @@ import { seriesFor, trend, formatSets } from '../lib/progress.js';
 import { formatDateShort, formatTarget } from '../lib/schedule.js';
 import { formatNumber } from '../lib/input.js';
 import { muscleLabel } from '../lib/muscleLabels.js';
+import { musclesByRole } from '../lib/muscleWeights.js';
 import {
   fetchExercise, fetchExerciseTemplates, fetchSessions, fetchLogsForExercises,
 } from '../lib/queries.js';
@@ -81,9 +82,16 @@ export default function Exercise({ exerciseId, onBack }) {
 
       <h1 className="exercise__title">{exercise.name}</h1>
       <p className="exercise__meta">
-        {exercise.muscle_groups.map((m) => muscleLabel(m, locale)).join(', ')}
-        {inTemplates.length > 0 && ` · ${inTemplates.map((t) => t.template.label).join(', ')}`}
+        {inTemplates.map((row) => row.template.label).join(', ')}
       </p>
+      <dl className="roles">
+        {Object.entries(musclesByRole(exercise)).filter(([, ms]) => ms.length > 0).map(([role, ms]) => (
+          <div key={role} className={`roles__row roles__row--${role}`}>
+            <dt>{t(`roles.${role}`)}</dt>
+            <dd>{ms.map((m) => muscleLabel(m, locale)).join(', ')}</dd>
+          </div>
+        ))}
+      </dl>
       {exercise.notes && <p className="exercise__notes">{exercise.notes}</p>}
 
       {series.length === 0 ? (

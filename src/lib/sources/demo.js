@@ -98,7 +98,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
         .sort((a, b) => a.position - b.position)
         .map((te) => {
           const e = exerciseById(te.exercise_id);
-          return { ...te, exercise: { id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes, video_urls: e.video_urls ?? null } };
+          return { ...te, exercise: { id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes, video_urls: e.video_urls ?? null, catalog_key: e.catalog_key ?? null } };
         }));
     },
 

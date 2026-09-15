@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, intensityBucket, muscleSeries } from '../src/lib/muscles.js';
+import { muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, intensityBucket, muscleSeries, roundSets } from '../src/lib/muscles.js';
 
 const sessions = [
   { id: 's1', planned_date: '2026-09-05', actual_date: '2026-09-05', status: 'voltooid' },
@@ -8,9 +8,10 @@ const sessions = [
 ];
 
 const exercises = [
-  { id: 'bank', name: 'Bankdrukken', muscle_groups: ['borst', 'triceps'] },
-  { id: 'curl', name: 'Bicepscurls', muscle_groups: ['biceps'] },
-  { id: 'plank', name: 'Plank', muscle_groups: ['core'] },
+  // Expliciete rollen: deze tests gaan over het optellen, niet over de verdeling.
+  { id: 'bank', name: 'Bank', muscle_roles: { borst: 'primair', triceps: 'primair' } },
+  { id: 'curl', name: 'Curl', muscle_roles: { biceps: 'primair' } },
+  { id: 'plank', name: 'Plankje', muscle_roles: { core: 'primair' } },
 ];
 
 const log = (session_id, exercise_id, set_number, reps, weight_kg, extra = {}) =>
@@ -50,7 +51,7 @@ test('het datumbereik filtert sessies', () => {
 test('per spiergroep staat welke oefeningen bijdroegen', () => {
   const borst = findMuscle(muscleTotals(logs, sessions, exercises), 'borst');
   assert.equal(borst.byExercise.length, 1);
-  assert.equal(borst.byExercise[0].name, 'Bankdrukken');
+  assert.equal(borst.byExercise[0].name, 'Bank');
   assert.equal(borst.byExercise[0].sets, 3);
 });
 
@@ -76,8 +77,8 @@ test('sets en volume kunnen een andere rangorde geven', () => {
   // Precies het probleem met kg tussen spiergroepen: één zware set beenwerk
   // weegt zwaarder dan drie sets armwerk.
   const ex = [
-    { id: 'been', name: 'Beenpers', muscle_groups: ['benen'] },
-    { id: 'curl', name: 'Curls', muscle_groups: ['biceps'] },
+    { id: 'been', name: 'Been', muscle_roles: { benen: 'primair' } },
+    { id: 'curl', name: 'Krul', muscle_roles: { biceps: 'primair' } },
   ];
   const l = [
     log('s1', 'been', 1, 10, 80),
@@ -92,8 +93,8 @@ test('sets en volume kunnen een andere rangorde geven', () => {
 
 test('de drukste groep volgt de gekozen maat', () => {
   const ex = [
-    { id: 'been', name: 'Beenpers', muscle_groups: ['benen'] },
-    { id: 'curl', name: 'Curls', muscle_groups: ['biceps'] },
+    { id: 'been', name: 'Been', muscle_roles: { benen: 'primair' } },
+    { id: 'curl', name: 'Krul', muscle_roles: { biceps: 'primair' } },
   ];
   const l = [
     log('s1', 'been', 1, 10, 80),
@@ -128,8 +129,8 @@ test('muscleSeries geeft één punt per training voor die spiergroep', () => {
 
 test('muscleSeries telt meerdere oefeningen binnen dezelfde training op', () => {
   const ex = [
-    { id: 'a', name: 'A', muscle_groups: ['triceps'] },
-    { id: 'b', name: 'B', muscle_groups: ['triceps'] },
+    { id: 'a', name: 'A', muscle_roles: { triceps: 'primair' } },
+    { id: 'b', name: 'B', muscle_roles: { triceps: 'primair' } },
   ];
   const l = [
     log('s1', 'a', 1, 10, 10),
@@ -145,4 +146,30 @@ test('muscleSeries telt meerdere oefeningen binnen dezelfde training op', () => 
 test('muscleSeries respecteert het datumbereik en slaat overgeslagen over', () => {
   assert.equal(muscleSeries(logs, sessions, exercises, 'borst', { from: '2026-09-10' }).length, 1);
   assert.deepEqual(muscleSeries(logs, sessions, exercises, 'core'), []);
+});
+
+test('secundair telt half en tertiair een kwart, in totalen en reeks', () => {
+  const ex = [{ id: 'bank', name: 'Bank', muscle_roles: { chest: 'primair', triceps: 'secundair', abs: 'tertiair' } }];
+  const l = [log('s1', 'bank', 1, 10, 20), log('s1', 'bank', 2, 10, 20), log('s1', 'bank', 3, 10, 20), log('s1', 'bank', 4, 10, 20)];
+  const t = muscleTotals(l, sessions, ex);
+  assert.equal(findMuscle(t, 'chest').sets, 4);
+  assert.equal(findMuscle(t, 'triceps').sets, 2);
+  assert.equal(findMuscle(t, 'abs').sets, 1);
+  assert.equal(findMuscle(t, 'triceps').volume, 400);
+  // per oefening de echte sets, met het gewicht erbij
+  assert.deepEqual(findMuscle(t, 'triceps').byExercise[0], { exerciseId: 'bank', name: 'Bank', weight: 0.5, sets: 4, volume: 800 });
+  assert.equal(muscleSeries(l, sessions, ex, 'abs')[0].sets, 1);
+});
+
+test('echte namen krijgen hun verdeling uit de bibliotheek', () => {
+  const ex = [{ id: 'bp', name: 'Bankdrukken', muscle_groups: ['chest', 'triceps', 'front-deltoids'] }];
+  const t = muscleTotals([log('s1', 'bp', 1, 10, 20), log('s1', 'bp', 2, 10, 20)], sessions, ex);
+  assert.equal(findMuscle(t, 'chest').sets, 2);
+  assert.equal(findMuscle(t, 'triceps').sets, 1);
+});
+
+test('roundSets rondt af op één decimaal', () => {
+  assert.equal(roundSets(12.25), 12.3);
+  assert.equal(roundSets(0.1 + 0.2), 0.3);
+  assert.equal(roundSets(undefined), 0);
 });

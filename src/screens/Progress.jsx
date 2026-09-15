@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, muscleSeries,
+  muscleTotals, findMuscle, intensities, sortByMetric, busiestBy, muscleSeries, roundSets,
 } from '../lib/muscles.js';
+import { roleOf } from '../lib/muscleWeights.js';
 import { seriesFor, trend, chartPoints, preferredMetric } from '../lib/progress.js';
 import { muscleLabel, KNOWN_MUSCLES } from '../lib/muscleLabels.js';
 import { addDays, todayISO, formatDateShort } from '../lib/schedule.js';
@@ -119,7 +120,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
 
   const valueOf = (m) => {
     const found = findMuscle(totals, m);
-    const n = found ? (metric === 'sets' ? found.sets : Math.round(found.volume)) : 0;
+    const n = found ? (metric === 'sets' ? roundSets(found.sets) : Math.round(found.volume)) : 0;
     return unit ? `${formatNumber(n)} ${unit}` : t('progress.setsValue', { count: n });
   };
 
@@ -199,7 +200,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
             <RampLegend
               maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle, locale)})` : ''} />
             <p className="body__hint">
-              {t('progress.hint')}
+              {t('progress.hint')} {t('progress.weighting')}
             </p>
           </div>
 
@@ -261,7 +262,7 @@ function MuscleSection({
   }, [open]);
 
   const value = metric === 'sets'
-    ? t('progress.setsValue', { count: total.sets })
+    ? t('progress.setsValue', { count: roundSets(total.sets) })
     : `${formatNumber(Math.round(total.volume))} kg`;
 
   const points = series.map((p) => ({ date: p.date, value: p[metric] }));
@@ -273,7 +274,7 @@ function MuscleSection({
       <button type="button" className="muscle__head" onClick={onToggle}
         aria-expanded={open}>
         <span className="muscle__name">{muscleLabel(total.muscle, locale)}</span>
-        <MiniLine points={points} formatValue={(v) => `${formatNumber(v)} ${suffix}`} />
+        <MiniLine points={points} formatValue={(v) => `${formatNumber(metric === 'sets' ? roundSets(v) : Math.round(v))} ${suffix}`} />
         <span className="muscle__value">{value}</span>
       </button>
 
@@ -294,6 +295,7 @@ function MuscleSection({
 }
 
 function ExerciseLine({ entry, logs, sessions, onOpen }) {
+  const { t } = useI18n();
   const series = useMemo(
     () => seriesFor(logs, sessions, entry.exerciseId),
     [logs, sessions, entry.exerciseId],
@@ -309,7 +311,8 @@ function ExerciseLine({ entry, logs, sessions, onOpen }) {
         <span className="line__main">
           <span className="line__name">{entry.name}</span>
           <span className="line__meta">
-            {entry.sets} sets · {formatNumber(Math.round(entry.volume))} kg
+            <span className={`line__role line__role--${roleOf(entry.weight)}`}>{t(`roles.${roleOf(entry.weight)}`)}</span>
+            {' · '}{entry.sets} sets · {formatNumber(Math.round(entry.volume))} kg
           </span>
         </span>
 

@@ -66,3 +66,10 @@
 .log__pick:hover { color: var(--accent); }
 
 .exercise__targets { margin-top: var(--space-4); font-size: var(--text-micro); color: var(--ink-tertiary); }
+
+/* Welke spieren deze oefening traint, per rol. */
+.roles { display: grid; gap: 2px; margin: var(--space-2) 0 var(--space-3); font-size: var(--text-small); }
+.roles__row { display: flex; gap: var(--space-2); }
+.roles__row dt { min-width: 6.5em; color: var(--ink-tertiary); }
+.roles__row dd { margin: 0; color: var(--ink-secondary); }
+.roles__row--primair dd { color: var(--ink); font-weight: 600; }

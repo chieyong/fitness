@@ -162,3 +162,7 @@
   .line { gap: var(--space-3); }
   .line__now { min-width: 3.8em; }
 }
+
+/* Rol van een oefening voor deze spiergroep: primair valt het meest op. */
+.line__role { font-weight: 600; color: var(--ink-secondary); }
+.line__role--primair { color: var(--accent); }

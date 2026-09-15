@@ -27,7 +27,7 @@ function fetchTemplateExercises(templateId) {
   return unwrap(
     supabase
       .from('template_exercises')
-      .select('*, exercise:exercises(id, name, muscle_groups, notes, video_urls)')
+      .select('*, exercise:exercises(id, name, muscle_groups, notes, video_urls, catalog_key)')
       .eq('template_id', templateId)
       .order('position'),
   );
@@ -127,7 +127,7 @@ async function saveSessionNote(sessionId, notes) {
 /** Eén oefening uit de bibliotheek. */
 async function fetchExercise(id) {
   const data = await unwrap(
-    supabase.from('exercises').select('id, name, muscle_groups, notes').eq('id', id).limit(1),
+    supabase.from('exercises').select('id, name, muscle_groups, notes, catalog_key').eq('id', id).limit(1),
   );
   return data[0] ?? null;
 }
@@ -147,7 +147,7 @@ function fetchAllTemplateExercises() {
   return unwrap(
     supabase
       .from('template_exercises')
-      .select('exercise_id, position, template_id, exercise:exercises(id, name, muscle_groups)')
+      .select('exercise_id, position, template_id, exercise:exercises(id, name, muscle_groups, catalog_key)')
       .order('position'),
   );
 }

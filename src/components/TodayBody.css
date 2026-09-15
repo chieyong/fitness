@@ -59,19 +59,20 @@
 
 .todaybody--done .todaybody__rest { color: var(--accent); font-weight: 600; }
 
+/* Legenda: twee doorlopende verlopen met hun naam ervoor. */
 .todaybody__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 4px var(--space-2);
   margin: var(--space-2) 0 0;
-  padding: 0;
-  list-style: none;
   font-size: var(--text-micro);
   color: var(--ink-tertiary);
 }
 
-.todaybody__legend li { display: flex; align-items: center; gap: 5px; }
-.todaybody__legend i { width: 9px; height: 9px; border-radius: 50%; }
+.todaybody__legend dt { white-space: nowrap; }
+.todaybody__legend dd { margin: 0; }
+.todaybody__legend i { display: block; height: 6px; max-width: 72px; border-radius: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   .todaybody__figures svg polygon, .todaybody__bar i { transition: none; }

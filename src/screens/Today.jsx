@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveToday, todayISO, formatDateShort } from '../lib/schedule.js';
-import { lastPerformance, setsFor, feedbackFor, lastFeedback, exerciseStatus } from '../lib/progress.js';
+import { lastPerformance, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
 import { todayMuscles } from '../lib/todayMuscles.js';
+import { muscleWeights } from '../lib/muscleWeights.js';
 import { scheduleOptions } from '../lib/scheduleSettings.js';
 import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises, fetchScheduleSettings,
@@ -97,19 +98,17 @@ export default function Today({ onOpenExercise }) {
   const template = session ? templates.find((t) => t.id === session.template_id) : null;
   const readOnly = session ? session.status !== 'gepland' : true;
 
-  // Welke spiergroepen deze training raakt, en hoe ver je bent: zelfde status
-  // als het rondje bij elke oefening, dus afvinken kleurt het lichaam meteen in.
+  // Welke spiergroepen deze training raakt, met nadruk per rol (primair,
+  // secundair, tertiair), en hoe ver je bent: elke gelogde set kleurt mee.
   const muscleStates = useMemo(() => {
     if (!session) return new Map();
     return todayMuscles(exercises.map((item) => {
       const logged = setsFor(logs, session.id, item.exercise_id);
       return {
-        muscles: item.exercise?.muscle_groups ?? [],
-        status: exerciseStatus({
-          logged: logged.filter((l) => !l.skipped),
-          targetSets: item.target_sets,
-          skipped: logged.length > 0 && logged.every((l) => l.skipped),
-        }),
+        weights: muscleWeights(item.exercise),
+        targetSets: item.target_sets,
+        doneSets: logged.filter((l) => !l.skipped).length,
+        skipped: logged.length > 0 && logged.every((l) => l.skipped),
       };
     }));
   }, [session?.id, exercises, logs]);

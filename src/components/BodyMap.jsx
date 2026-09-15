@@ -1,40 +1,38 @@
 import Model from 'react-body-highlighter';
-import { intensityBucket } from '../lib/muscles.js';
 import { muscleLabel } from '../lib/muscleLabels.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 import './BodyMap.css';
 
 /**
- * Sequentiële schaal: één tint, monotoon in lichtheid, zodat de volgorde af te
- * lezen is zonder de kleuren te kennen. De waarden staan als tokens in
- * tokens.css, met een eigen reeks voor donker. De component zet de kleur als
- * inline fill, en daarin werkt var() gewoon: het silhouet wisselt dus mee met
- * het thema zonder dat hier iets hoeft te luisteren.
+ * Doorlopende schaal tussen de laagste en hoogste stap uit tokens.css (één
+ * tint, monotoon in lichtheid, per thema gecontroleerd). color-mix in oklab
+ * geeft een gelijkmatig verloop en blijft thema-bewust, want de component zet
+ * de kleur als inline fill en daarin werkt var() gewoon.
  */
-export const RAMP = [1, 2, 3, 4, 5].map((n) => `var(--ramp-${n})`);
+export const LOW = 'var(--ramp-1)';
+export const HIGH = 'var(--ramp-5)';
 export const EMPTY = 'var(--body-empty)';
 
+export const rampColor = (intensity) =>
+  `color-mix(in oklab, ${HIGH} ${Math.round(Math.max(0, Math.min(1, intensity)) * 100)}%, ${LOW})`;
+
 /**
- * Het silhouet komt van react-body-highlighter: echte spierregio's in plaats
- * van een eigen abstractie. De aggregatie blijft van ons -- de component kleurt
- * op `frequency`, en daar voeren we de stap van onze eigen schaal in.
+ * Het silhouet komt van react-body-highlighter. Die kiest een kleur per
+ * `frequency`; elke spier krijgt daarom zijn eigen plek in de kleurenlijst, met
+ * precies de kleur die bij zijn intensiteit hoort.
  */
 export default function BodyMap({ intensity, selected, onSelect, valueLabel }) {
   const { t, locale } = useI18n();
-  const data = [...intensity.entries()]
-    .map(([muscle, value]) => ({
-      name: muscleLabel(muscle, locale),
-      muscles: [muscle],
-      frequency: intensityBucket(value, RAMP.length),
-    }))
-    .filter((d) => d.frequency > 0);
+  const shown = [...intensity.entries()].filter(([, value]) => value > 0);
+  const colors = shown.map(([, value]) => rampColor(value));
+  const data = shown.map(([muscle], i) => ({ name: muscleLabel(muscle, locale), muscles: [muscle], frequency: i + 1 }));
 
   const handle = ({ muscle }) => onSelect(muscle === selected ? null : muscle);
 
   return (
     <div className="body">
-      <Figure type="anterior" label={t('progress.front')} data={data} onClick={handle} />
-      <Figure type="posterior" label={t('progress.backSide')} data={data} onClick={handle} />
+      <Figure type="anterior" label={t('progress.front')} data={data} colors={colors} onClick={handle} />
+      <Figure type="posterior" label={t('progress.backSide')} data={data} colors={colors} onClick={handle} />
       <p className="body__sr">
         {[...intensity.keys()].map((m) => `${muscleLabel(m, locale)}: ${valueLabel(m)}`).join('. ')}
       </p>
@@ -42,7 +40,7 @@ export default function BodyMap({ intensity, selected, onSelect, valueLabel }) {
   );
 }
 
-function Figure({ type, label, data, onClick }) {
+function Figure({ type, label, data, colors, onClick }) {
   return (
     <figure className="body__figure">
       <Model
@@ -50,7 +48,7 @@ function Figure({ type, label, data, onClick }) {
         data={data}
         onClick={onClick}
         bodyColor={EMPTY}
-        highlightedColors={RAMP}
+        highlightedColors={colors}
         style={{ width: '100%' }}
         svgStyle={{ width: '100%', height: 'auto' }}
       />
@@ -59,15 +57,13 @@ function Figure({ type, label, data, onClick }) {
   );
 }
 
-/** Schaallegenda: zonder deze is een kleurverloop niet af te lezen. */
+/** Schaallegenda: een doorlopend verloop van weinig naar de drukste spiergroep. */
 export function RampLegend({ maxLabel }) {
   const { t } = useI18n();
   return (
     <div className="ramp">
       <span className="ramp__end">{t('progress.none')}</span>
-      <span className="ramp__bar" aria-hidden="true">
-        {RAMP.map((c) => <i key={c} style={{ background: c }} />)}
-      </span>
+      <span className="ramp__bar" aria-hidden="true" style={{ background: `linear-gradient(90deg, ${EMPTY} 0 8%, ${LOW} 8%, ${HIGH})` }} />
       <span className="ramp__end">{maxLabel}</span>
     </div>
   );

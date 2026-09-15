@@ -37,6 +37,5 @@
 
 .ramp { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-micro); color: var(--ink-tertiary); }
 
-.ramp__bar { display: flex; height: 8px; width: 120px; border-radius: 4px; overflow: hidden; }
-.ramp__bar i { flex: 1; }
+.ramp__bar { display: block; height: 8px; width: 120px; border-radius: 4px; flex: 0 0 auto; }
 .ramp__end { white-space: nowrap; }

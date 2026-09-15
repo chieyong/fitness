@@ -8,11 +8,17 @@
  *   vooruitgang, maar tussen spiergroepen niet: een beenpers verplaatst meer
  *   gewicht dan een curl door anatomie, niet door inspanning.
  *
- * Een oefening telt volledig mee voor elke spiergroep die eraan meedoet. Het
- * totaal over alle groepen is daarom hoger dan het werkelijke werk; de
- * vergelijking tússen groepen is wat deze cijfers moeten dragen, niet de som.
+ * Een oefening telt per spiergroep naar rol: primair volledig, secundair half,
+ * tertiair een kwart (zie muscleWeights.js). Sets en volume per spiergroep zijn
+ * dus gewogen. De vergelijking tússen groepen is wat deze cijfers dragen.
  */
 import { sessionDate, volume as setsVolume } from './progress.js';
+import { muscleWeights } from './muscleWeights.js';
+
+/** Gewogen sets op één decimaal, voor weergave. */
+export function roundSets(value) {
+  return Math.round((Number(value) || 0) * 10) / 10;
+}
 
 /**
  * @param logs      alle exercise_logs
@@ -46,16 +52,17 @@ export function muscleTotals(logs, sessions, exercises, range = {}) {
     const sets = rows.length;
     const vol = setsVolume(rows);
 
-    for (const muscle of exercise.muscle_groups ?? []) {
+    for (const [muscle, weight] of muscleWeights(exercise)) {
       if (!perMuscle.has(muscle)) {
         perMuscle.set(muscle, { muscle, sets: 0, volume: 0, byExercise: new Map() });
       }
       const entry = perMuscle.get(muscle);
-      entry.sets += sets;
-      entry.volume += vol;
+      entry.sets += sets * weight;
+      entry.volume += vol * weight;
 
+      // Per oefening de echte sets en kilo's, plus de rol voor deze spiergroep.
       const prev = entry.byExercise.get(exerciseId)
-        ?? { exerciseId, name: exercise.name, sets: 0, volume: 0 };
+        ?? { exerciseId, name: exercise.name, weight, sets: 0, volume: 0 };
       prev.sets += sets;
       prev.volume += vol;
       entry.byExercise.set(exerciseId, prev);
@@ -65,7 +72,7 @@ export function muscleTotals(logs, sessions, exercises, range = {}) {
   return [...perMuscle.values()]
     .map((e) => ({
       ...e,
-      byExercise: [...e.byExercise.values()].sort((a, b) => b.sets - a.sets),
+      byExercise: [...e.byExercise.values()].sort((a, b) => b.weight - a.weight || b.sets - a.sets),
     }))
     .sort((a, b) => b.sets - a.sets);
 }
@@ -127,18 +134,18 @@ export function muscleSeries(logs, sessions, exercises, muscle, range = {}) {
     if (range.from && date < range.from) continue;
     if (range.to && date > range.to) continue;
 
-    const exercise = exerciseById.get(l.exercise_id);
-    if (!exercise?.muscle_groups?.includes(muscle)) continue;
+    const weight = muscleWeights(exerciseById.get(l.exercise_id)).get(muscle);
+    if (!weight) continue;
 
     const key = `${l.session_id}|${l.exercise_id}`;
-    if (!grouped.has(key)) grouped.set(key, { date, rows: [] });
+    if (!grouped.has(key)) grouped.set(key, { date, weight, rows: [] });
     grouped.get(key).rows.push(l);
   }
 
-  for (const { date, rows } of grouped.values()) {
+  for (const { date, weight, rows } of grouped.values()) {
     const entry = perSession.get(date) ?? { date, sets: 0, volume: 0 };
-    entry.sets += rows.length;
-    entry.volume += setsVolume(rows);
+    entry.sets += rows.length * weight;
+    entry.volume += setsVolume(rows) * weight;
     perSession.set(date, entry);
   }
 

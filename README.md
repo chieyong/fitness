@@ -253,14 +253,34 @@ Ingelogd worden wijzigingen bewaard. In de demo pas je alleen targets en video's
 ## Spieren van vandaag
 
 Boven de oefeningen staat een klein silhouet (voor- en achterkant) met de spiergroepen die
-de training van die dag raakt. Nog niet getraind is subtiel amber; deels gedaan lichtblauw; zodra
-alle oefeningen voor een spier klaar zijn kleurt hij blauw, en ernaast loopt de teller "3 van 12 getraind" op, met de
-spiergroepen die nog te gaan zijn.
+de training van die dag raakt, met twee doorlopende verlopen:
 
-Een spiergroep telt als getraind als álle oefeningen voor die spier klaar zijn (alle
-target-sets gelogd); is een deel gedaan, dan krijgt hij een tussenkleur. Overgeslagen
-oefeningen tellen niet mee. De logica staat puur in `src/lib/todayMuscles.js`, met tests; de
-kleuren als tokens `--today-planned`, `--today-busy` en `--today-done` in `tokens.css`.
+- **nog niets gedaan:** amber, sterker naarmate de spier vandaag meer nadruk krijgt (geplande
+  gewogen sets, zie hieronder)
+- **begonnen:** van lichtblauw naar blauw, naar het deel van de gewogen sets dat af is
+
+Ernaast loopt de teller "3 van 12 getraind" op, met de spiergroepen die nog te gaan zijn,
+zwaarste nadruk eerst. Overgeslagen oefeningen tellen niet mee; sets boven het target ook
+niet. Logica in `src/lib/todayMuscles.js`; kleuren als tokens `--today-planned`,
+`--today-busy` en `--today-done`, gemengd met `color-mix` zodat ze met het thema meegaan.
+
+## Primaire, secundaire en tertiaire spieren
+
+Elke oefening belast spieren ongelijk. Per spier telt een set daarom naar rol: **primair ×1,
+secundair ×0,5, tertiair ×0,25**. Dat geldt voor Voortgang (gewogen sets en volume per
+spiergroep, en de kleur van het silhouet), voor Vandaag (nadruk en voortgang) en voor de
+lijstjes per spiergroep, waar bij elke oefening de rol staat. Het oefeningscherm toont de
+spieren per rol.
+
+De verdeling staat in `src/data/muscleRoles.js` als `'primair | secundair | tertiair'`, per
+bibliotheeksleutel, plus aliassen voor programmanamen. `src/lib/muscleWeights.js` zoekt hem
+op: eerst `muscle_roles` op de oefening (voor later), dan `catalog_key`, dan de naam in
+beide talen; anders geldt de eerste spiergroep als primair en de rest als secundair — dat
+geldt dus voor eigen oefeningen. Tests bewaken dat elke bibliotheek- en programmaoefening
+een verdeling heeft die haar spiergroepen dekt.
+
+Het silhouet in Voortgang kleurt doorlopend (geen vijf stappen meer) tussen `--ramp-1` en
+`--ramp-5`.
 
 ## Hoe ging het?
 
