@@ -304,7 +304,8 @@ export default function Schema({ onAddExercise }) {
                       )}
                     </span>
                     <span className="item__tools">
-                      {!demo && (
+                      {/* Pas na het potloodje: in de lijst zelf geen verwijderknop in de weg. */}
+                      {!demo && open && (
                         <IconButton danger label={tx('ex.delete', { name })} disabled={busy}
                           onClick={() => { close(); setEditing({ type: 'delete', id: group.exerciseId }); }}>
                           <TrashIcon />

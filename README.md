@@ -244,7 +244,7 @@ workout halen. Workouts kun je toevoegen, hernoemen en verwijderen.
 - *Oefeningen*: elke oefening één keer, met **één target en de video's**, die gelden voor
   elke workout waarin ze staat. Wijzigingen worden **automatisch bewaard** zodra je een veld
   verlaat (alleen als er echt iets veranderd is), en gaan naar al die workouts. Met het
-  prullenbakje haal je een oefening uit álle workouts; de oefening en haar logs blijven. Verschilt
+  prullenbakje (zichtbaar zodra je de oefening met het potloodje opent) haal je een oefening uit álle workouts; de oefening en haar logs blijven. Verschilt
   het target nu nog per workout (bijvoorbeeld 4×8 in A en 3×10 in C), dan staat dat erbij en
   trekt de eerste wijziging het gelijk. Een oefening die al in een andere workout staat, neemt bij
   toevoegen dat target over.
