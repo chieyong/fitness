@@ -5,7 +5,27 @@
  * zo'n oefening als dezelfde wordt herkend en de geschiedenis doorloopt.
  */
 
-const e = (key, name, muscles, equipment, measure) => ({ key, name, muscles, equipment, measure });
+/** Engelse namen voor oefeningen waarvan de naam Nederlands is. */
+const EN = {
+  'bankdrukken': 'Bench press',
+  'dumbbell-bankdrukken': 'Dumbbell bench press',
+  'gebogen-rij': 'Bent-over row',
+  'eenarmige-dumbbell-rij': 'One-arm dumbbell row',
+  'schouderpers': 'Shoulder press',
+  'bicepscurls': 'Biceps curls',
+  'close-grip-bankdrukken': 'Close-grip bench press',
+  'squat-zonder-gewicht': 'Bodyweight squat',
+  'uitvalspassen': 'Lunges',
+  'kuitheffen-dumbbells': 'Dumbbell calf raises',
+  'kuitheffen-machine': 'Calf raise (machine)',
+  'kuitheffen': 'Calf raises',
+  'handstand-tegen-muur': 'Wall handstand',
+  'russian-twists-gewicht': 'Weighted Russian twists',
+  'heupabductie-kabel': 'Cable hip abduction',
+  'zijwaartse-beenheffing': 'Side-lying leg raise',
+};
+
+const e = (key, name, muscles, equipment, measure) => ({ key, name, en: EN[key], muscles, equipment, measure });
 
 export const CATALOG = [
   // Borst

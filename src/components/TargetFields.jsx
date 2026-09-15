@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './TargetFields.css';
 
 /**
@@ -7,22 +8,23 @@ import './TargetFields.css';
 export default function TargetFields({ measure, value, onChange }) {
   const set = (field) => (e) => onChange({ ...value, [field]: e.target.value });
   const timed = measure === 'tijd';
+  const { t } = useI18n();
 
   return (
     <div className="target">
       <label className="target__field">
-        <span>Sets</span>
+        <span>{t('target.sets')}</span>
         <input type="text" inputMode="numeric" value={value.sets ?? ''} onChange={set('sets')} />
       </label>
       <label className="target__field">
-        <span>{timed ? 'Seconden' : 'Reps'}</span>
+        <span>{t(timed ? 'target.seconds' : 'target.reps')}</span>
         <input type="text" inputMode="numeric"
           value={(timed ? value.secondsMin : value.repsMin) ?? ''}
           onChange={set(timed ? 'secondsMin' : 'repsMin')} />
       </label>
-      <span className="target__dash" aria-hidden="true">tot</span>
+      <span className="target__dash" aria-hidden="true">{t('target.to')}</span>
       <label className="target__field">
-        <span>Tot (optioneel)</span>
+        <span>{t('target.max')}</span>
         <input type="text" inputMode="numeric"
           value={(timed ? value.secondsMax : value.repsMax) ?? ''}
           onChange={set(timed ? 'secondsMax' : 'repsMax')} />

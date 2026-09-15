@@ -12,8 +12,8 @@ export default defineConfig({
       manifest: {
         name: 'Repz',
         short_name: 'Repz',
-        description: 'Je trainingsschema, je sets en je voortgang per spiergroep.',
-        lang: 'nl',
+        description: 'Your workout plan, your sets and your progress per muscle group.',
+        lang: 'en',
         start_url: '/',
         scope: '/',
         display: 'standalone',

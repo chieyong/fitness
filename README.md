@@ -75,8 +75,9 @@ jaar aan voorbeeldtrainingen volgens het echte programma, gemaakt in de browser 
 video's van oefeningen. Dat gaat niet naar de database, maar blijft in `sessionStorage`
 staan: herladen behoudt het, de browser sluiten wist het, en een nieuwe dag begint vers.
 Het schema ombouwen kan in de demo niet — geen workouts toevoegen, hernoemen, verwijderen
-of ordenen, en geen oefeningen toevoegen of uit een workout halen. De demo-bron weigert dat
-ook zelf (`lockStructure`), zodat het via een directe link evenmin kan.
+of ordenen, geen oefeningen toevoegen of uit een workout halen, en de planning
+(trainingsdagen en volgorde) niet wijzigen; die toont de demo alleen als samenvatting. De
+demo-bron weigert dat ook zelf (`lockStructure`), zodat het via een directe link evenmin kan.
 
 Ingelogd staat in dezelfde balk met welk account, met een knop om uit te loggen — op elk
 scherm, niet alleen op het scherm van vandaag.
@@ -144,6 +145,16 @@ kaarten met schaduw, gradients en een geladen font juist uitsloot.
 Systeem, Licht of Donker. De keuze staat in `localStorage` (`repz.theme`) en wordt vóór de
 eerste weergave toegepast, zodat er geen ander thema in beeld flitst. Beide thema's spreken
 dezelfde ontwerptaal; alleen de kleuren verschillen.
+
+**Taal.** De app is standaard Engels; de knop `NL`/`EN` in de balk bovenaan wisselt. De
+keuze staat in `localStorage` (`repz.locale`). Teksten staan per scherm in
+`src/i18n/messages/` als `{ en, nl }`; `useI18n()` geeft `t(sleutel, invulvelden)` en de taal.
+Een test bewaakt dat elke tekst in beide talen bestaat, met dezelfde `{invulvelden}`. Datums,
+spiergroepen, materiaal, planning en foutmeldingen krijgen de taal als laatste argument.
+Wat je zelf invoert blijft zoals je het invoerde: een eigen oefening heet in beide talen
+hetzelfde. De bibliotheek heeft Engelse namen (`en` in `catalog.js`) en herkent een
+oefening in beide talen als dezelfde. De demo heeft per taal eigen namen en een eigen opslag
+(`repz.demo.v2.en` / `.nl`).
 
 **Kleuren.** Alles staat als token in `src/styles/tokens.css`: een lichte reeks op `:root`,
 een donkere onder `prefers-color-scheme: dark` en onder `[data-theme="dark"]`. De waarden
@@ -237,7 +248,7 @@ afgeronde trainingen blijven, alleen zijn geplande sessies vervallen. Kies je ee
 uit de bibliotheek die je al hebt (op sleutel of naam), dan wordt dat dezelfde oefening en
 loopt de grafiek door.
 
-Ingelogd worden wijzigingen bewaard. In de demo pas je alleen targets en video's van bestaande oefeningen aan, tot je de browser sluit.
+Ingelogd worden wijzigingen bewaard. In de demo pas je alleen targets en video's van bestaande oefeningen aan, tot je de browser sluit. Aanpassen gaat via het potloodje naast een oefening.
 
 ## Hoe ging het?
 

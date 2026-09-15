@@ -86,3 +86,11 @@
 
 /* Als geïnstalleerde app loopt de pagina onder de statusbalk door: ruimte vrijhouden. */
 .appbar__inner { padding-top: calc(var(--space-4) + env(safe-area-inset-top)); }
+
+/* Taalknop: zelfde vorm als de themaknop, alleen een code. */
+.appbar__lang {
+  min-width: 36px;
+  justify-content: center;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}

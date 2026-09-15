@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   WEEKDAYS, normalizeScheduleSettings, validateScheduleSettings, scheduleOptions, describeSchedule,
+  weekdays, rotationLabel,
 } from '../src/lib/scheduleSettings.js';
 
 test('zonder instellingen: di, do, za op volgorde', () => {
@@ -31,4 +32,13 @@ test('beschrijving in gewone taal, maandag eerst', () => {
   assert.equal(describeSchedule({ training_days: [3], rotation: 'volgorde' }, 2), 'Woensdag, op volgorde.');
   assert.equal(WEEKDAYS[0].short, 'ma');
   assert.equal(WEEKDAYS[6].day, 0);
+});
+
+test('planning in het Engels', () => {
+  assert.equal(describeSchedule({ training_days: [2, 4, 6], rotation: 'volgorde' }, 3, 'en'), 'Tuesday, Thursday and Saturday, in order.');
+  assert.equal(describeSchedule({ training_days: [1], rotation: 'willekeurig' }, 4, 'en'), 'Monday, random order, reshuffled after every round of 4 workouts.');
+  assert.deepEqual(validateScheduleSettings({ training_days: [], rotation: 'x' }, 'en'), ['Choose at least one training day.', 'Choose how the workouts rotate.']);
+  assert.deepEqual(weekdays('en').map((w) => w.short), ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']);
+  assert.equal(weekdays('nl')[0].label, 'maandag');
+  assert.equal(rotationLabel('willekeurig', 'en'), 'Random each round');
 });

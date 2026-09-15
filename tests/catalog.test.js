@@ -40,3 +40,9 @@ test('oefeningen die ook in het programma staan, zijn daar identiek aan', () => 
   }
   assert.ok(shared >= 10, `${shared} gedeeld`);
 });
+
+test('Engelse namen zijn uniek en ingevuld waar de naam Nederlands is', () => {
+  const en = CATALOG.map((c) => (c.en ?? c.name).toLowerCase());
+  assert.equal(new Set(en).size, CATALOG.length);
+  assert.equal(CATALOG.find((c) => c.key === 'bankdrukken').en, 'Bench press');
+});

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDemoSource } from '../src/lib/sources/demo.js';
+import { createDemoSource, demoStorageKey } from '../src/lib/sources/demo.js';
 import { supabaseSource } from '../src/lib/sources/supabase.js';
 import * as queries from '../src/lib/queries.js';
 
@@ -221,7 +221,7 @@ test('nieuwe id\'s botsen niet na herladen', async () => {
 
 test('kapotte opslag valt terug op een verse demo', async () => {
   const storage = memoryStorage();
-  storage.setItem('repz.demo.v1', '{kapot');
+  storage.setItem(demoStorageKey('nl'), '{kapot');
   assert.equal((await createDemoSource({ today, storage }).fetchTemplates()).length, 3);
 });
 
@@ -270,10 +270,27 @@ test('opnieuw indelen wist alleen toekomstige geplande trainingen zonder logs', 
   assert.ok(!after.some((x) => x.id === second.id));
 });
 
-test('de planning mag in de demo en blijft bewaard tot de browser sluit', async () => {
+test('in de demo is ook de planning op slot; zonder slot blijft hij bewaard', async () => {
+  const locked = createDemoSource({ today, lockStructure: true, locale: 'en' });
+  await assert.rejects(locked.saveScheduleSettings({ training_days: [1], rotation: 'willekeurig' }), /demo/i);
+  await assert.rejects(locked.replanUpcoming(today), /demo/i);
+
   const storage = memoryStorage();
-  const a = createDemoSource({ today, storage, lockStructure: true });
+  const a = createDemoSource({ today, storage });
   await a.saveScheduleSettings({ training_days: [1], rotation: 'willekeurig' });
   const b = createDemoSource({ today, storage });
   assert.deepEqual(await b.fetchScheduleSettings(), { training_days: [1], rotation: 'willekeurig' });
+});
+
+test('Engelse demo: Engelse namen, en een eigen opslag per taal', async () => {
+  const storage = memoryStorage();
+  const en = createDemoSource({ today, storage, locale: 'en' });
+  const names = (await en.fetchAllExercises()).map((e) => e.name);
+  assert.ok(names.includes('Bench press') && names.includes('Lunges'), names.join(', '));
+  assert.ok(!names.includes('Bankdrukken'));
+  const [row] = await en.fetchTemplateExercises('demo-tpl-0');
+  await en.updateTemplateExercise(row.id, { target_sets: 9 });
+  const nl = createDemoSource({ today, storage, locale: 'nl' });
+  assert.notEqual((await nl.fetchTemplateExercises('demo-tpl-0'))[0].target_sets, 9);
+  assert.ok((await nl.fetchAllExercises()).some((e) => e.name === 'Bankdrukken'));
 });

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { niceDomain, ticksFor, project } from '../lib/chart.js';
 import { formatDateShort } from '../lib/schedule.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './LineChart.css';
 
 const PAD = { top: 16, right: 16, bottom: 26, left: 40 };
@@ -32,6 +33,7 @@ export default function LineChart({ points, title, formatValue, emptyLabel }) {
   const boxRef = useRef(null);
   const width = useWidth(boxRef);
   const [active, setActive] = useState(null);
+  const { t, locale } = useI18n();
 
   const values = points.map((p) => p.value);
   const domain = niceDomain(values);
@@ -77,7 +79,7 @@ export default function LineChart({ points, title, formatValue, emptyLabel }) {
       >
         {width > 0 && (
           <svg width={width} height={HEIGHT} role="img"
-            aria-label={`${title}. ${points.length} metingen van ${formatValue(points[0].value)} tot ${formatValue(last.value)}.`}>
+            aria-label={t('exercise.chartAria', { title, count: points.length, first: formatValue(points[0].value), last: formatValue(last.value) })}>
             <g transform={`translate(${PAD.left} ${PAD.top})`}>
               {ticksFor(domain).map((t) => (
                 <g key={t}>
@@ -111,7 +113,7 @@ export default function LineChart({ points, title, formatValue, emptyLabel }) {
                   <text key={`x${c.index}`} className="chart__tick"
                     x={c.cx} y={plotH + 18}
                     textAnchor={i === 0 ? 'start' : 'end'}>
-                    {formatDateShort(c.date)}
+                    {formatDateShort(c.date, locale)}
                   </text>
                 )
               ))}
@@ -121,7 +123,7 @@ export default function LineChart({ points, title, formatValue, emptyLabel }) {
                 <rect key={`hit${c.index}`} className="chart__hit"
                   x={c.cx - 16} y={-PAD.top} width={32} height={HEIGHT}
                   tabIndex={0} role="button"
-                  aria-label={`${formatDateShort(c.date)}: ${formatValue(c.value)}`}
+                  aria-label={`${formatDateShort(c.date, locale)}: ${formatValue(c.value)}`}
                   onFocus={() => setActive(c.index)}
                   onBlur={() => setActive(null)} />
               ))}
@@ -135,7 +137,7 @@ export default function LineChart({ points, title, formatValue, emptyLabel }) {
             top: shown.cy + PAD.top - 8,
           }}>
             <span className="tip__value">{formatValue(shown.value)}</span>
-            <span className="tip__date">{formatDateShort(shown.date)}</span>
+            <span className="tip__date">{formatDateShort(shown.date, locale)}</span>
           </div>
         )}
       </div>

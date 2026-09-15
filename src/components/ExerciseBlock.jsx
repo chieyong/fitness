@@ -5,6 +5,7 @@ import { parseDecimal, parseWhole, formatNumber } from '../lib/input.js';
 import { formatDateShort } from '../lib/schedule.js';
 import { parseYouTube } from '../lib/youtube.js';
 import Stars from './Stars.jsx';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 
 /** Zoveel invoerregels als het target vraagt, maar nooit minder dan al gelogd is. */
 function buildRows(item, logged) {
@@ -27,6 +28,7 @@ export default function ExerciseBlock({
   feedback, previousFeedback, onSaveFeedback, onPlayVideo,
 }) {
   const exercise = item.exercise;
+  const { t, locale } = useI18n();
   const isTimed = item.target_seconds != null;
 
   const [rows, setRows] = useState(() => buildRows(item, logged));
@@ -84,9 +86,9 @@ export default function ExerciseBlock({
   const status = exerciseStatus({ logged, targetSets: item.target_sets, skipped });
   // Rechts staat het target al; hier hoort wat je nog niet weet. Zolang er
   // niets gelogd is, is dat wat je vorige keer deed.
-  const summary = skipped ? 'Overgeslagen'
+  const summary = skipped ? t('block.skipped')
     : logged.length > 0 ? formatSets(logged)
-    : previous && !previous.skipped ? `Vorige keer ${formatSets(previous.sets)}`
+    : previous && !previous.skipped ? t('block.previous', { sets: formatSets(previous.sets) })
     : null;
 
   return (
@@ -101,15 +103,15 @@ export default function ExerciseBlock({
             {summary && !open && <span className="row__summary">{summary}</span>}
             {!open && feedback?.rating ? <Stars value={feedback.rating} size={11} /> : null}
           </span>
-          <span className="row__target">{formatTarget(item)}</span>
+          <span className="row__target">{formatTarget(item, locale)}</span>
         </button>
         {videos.length > 0 && (
           <span className="row__videos">
             {videos.map((v, i) => (
               <button key={v.id} type="button" className="vbtn"
-                aria-label={`Video${videos.length > 1 ? ` ${i + 1}` : ''} van ${exercise.name} afspelen`}
+                aria-label={videos.length > 1 ? t('block.videoN', { n: i + 1, name: exercise.name }) : t('block.video', { name: exercise.name })}
                 onClick={() => onPlayVideo({
-                  ...v, title: videos.length > 1 ? `${exercise.name}, video ${i + 1}` : exercise.name,
+                  ...v, title: videos.length > 1 ? t('block.videoTitle', { name: exercise.name, n: i + 1 }) : exercise.name,
                 })}>
                 <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                   <path d="M2.5 1.4v7.2L8.6 5z" fill="currentColor" />
@@ -126,15 +128,15 @@ export default function ExerciseBlock({
       {previous && (
         <p className="block__previous">
           {previous.skipped
-            ? `Vorige keer niet gedaan — ${formatDateShort(previous.date)}`
-            : `Vorige keer ${formatSets(previous.sets)} — ${formatDateShort(previous.date)}`}
+            ? t('block.previousNotDone', { date: formatDateShort(previous.date, locale) })
+            : t('block.previousDated', { sets: formatSets(previous.sets), date: formatDateShort(previous.date, locale) })}
           {previous.note && <span className="block__previous-note">{previous.note}</span>}
         </p>
       )}
 
       {previousFeedback && (previousFeedback.rating || previousFeedback.comment) && (
         <p className="block__previous feedback__previous">
-          <span>Vorige keer ging het</span>
+          <span>{t('block.previousFeeling')}</span>
           <Stars value={previousFeedback.rating} size={12} />
           {previousFeedback.comment && <span className="block__previous-note">{previousFeedback.comment}</span>}
         </p>
@@ -142,10 +144,10 @@ export default function ExerciseBlock({
 
       {skipped ? (
         <p className="block__skipped-label">
-          Overgeslagen
+          {t('block.skipped')}
           {!readOnly && (
             <button type="button" className="block__link" onClick={() => onToggleSkip(false)}>
-              Toch loggen
+              {t('block.logAnyway')}
             </button>
           )}
         </p>
@@ -163,7 +165,7 @@ export default function ExerciseBlock({
                       value={row.seconds} readOnly={readOnly}
                       onChange={(e) => update(i, 'seconds', e.target.value)}
                       onBlur={() => commit(i)}
-                      aria-label={`Set ${row.set_number}, seconden`}
+                      aria-label={t('block.setSeconds', { n: row.set_number })}
                     />
                     <span className="set__unit">sec</span>
                   </label>
@@ -175,7 +177,7 @@ export default function ExerciseBlock({
                         value={row.reps} readOnly={readOnly}
                         onChange={(e) => update(i, 'reps', e.target.value)}
                         onBlur={() => commit(i)}
-                        aria-label={`Set ${row.set_number}, herhalingen`}
+                        aria-label={t('block.setReps', { n: row.set_number })}
                       />
                       <span className="set__unit">reps</span>
                     </label>
@@ -185,7 +187,7 @@ export default function ExerciseBlock({
                         value={row.weight} readOnly={readOnly}
                         onChange={(e) => update(i, 'weight', e.target.value)}
                         onBlur={() => commit(i)}
-                        aria-label={`Set ${row.set_number}, gewicht in kilo`}
+                        aria-label={t('block.setWeight', { n: row.set_number })}
                       />
                       <span className="set__unit">kg</span>
                     </label>
@@ -199,9 +201,9 @@ export default function ExerciseBlock({
 
           {!readOnly && (
             <div className="block__actions">
-              <button type="button" className="block__link" onClick={addRow}>Set erbij</button>
+              <button type="button" className="block__link" onClick={addRow}>{t('block.addSet')}</button>
               <button type="button" className="block__link" onClick={() => onToggleSkip(true)}>
-                Niet gedaan
+                {t('block.notDone')}
               </button>
             </div>
           )}
@@ -210,26 +212,26 @@ export default function ExerciseBlock({
 
       {!skipped && (!readOnly || feedback?.rating || feedback?.comment) && (
         <div className="feedback">
-          <span className="feedback__label">Hoe ging het?</span>
+          <span className="feedback__label">{t('block.feedback')}</span>
           <Stars value={feedback?.rating ?? null} onChange={readOnly ? undefined : saveRating} />
           {readOnly ? (
             feedback?.comment && <p className="feedback__comment-read">{feedback.comment}</p>
           ) : commentOpen || feedback?.comment ? (
             <textarea className="feedback__comment" rows={2}
-              placeholder="Toelichting, bijvoorbeeld: laatste set met hulp"
-              value={comment} aria-label={`Toelichting bij ${exercise.name}`}
+              placeholder={t('block.commentPlaceholder')}
+              value={comment} aria-label={t('block.commentAria', { name: exercise.name })}
               onChange={(e) => setComment(e.target.value)}
               onBlur={saveComment} />
           ) : (
             <button type="button" className="block__link feedback__add" onClick={() => setCommentOpen(true)}>
-              Toelichting toevoegen
+              {t('block.addComment')}
             </button>
           )}
         </div>
       )}
 
       <button type="button" className="block__link block__progress" onClick={onOpen}>
-        Voortgang van deze oefening
+        {t('block.progress')}
       </button>
       </div>
       )}
@@ -239,9 +241,10 @@ export default function ExerciseBlock({
 
 /** Open rondje, half gevuld of een vinkje -- de staat in één oogopslag. */
 function Status({ status }) {
+  const { t } = useI18n();
   if (status === 'klaar') {
     return (
-      <span className="status status--klaar" aria-label="gedaan">
+      <span className="status status--klaar" aria-label={t('status.done')}>
         <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
           <circle cx="10" cy="10" r="9" fill="currentColor" />
           <path d="M5.5 10.5 8.5 13.5 14.5 6.5" stroke="#fff" strokeWidth="2"
@@ -253,7 +256,7 @@ function Status({ status }) {
 
   if (status === 'overgeslagen') {
     return (
-      <span className="status status--overgeslagen" aria-label="overgeslagen">
+      <span className="status status--overgeslagen" aria-label={t('status.skipped')}>
         <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
           <circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
           <path d="M6 10h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -263,7 +266,7 @@ function Status({ status }) {
   }
 
   return (
-    <span className={`status status--${status}`} aria-label={status === 'bezig' ? 'bezig' : 'nog te doen'}>
+    <span className={`status status--${status}`} aria-label={t(status === 'bezig' ? 'status.busy' : 'status.todo')}>
       <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
         <circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
         {status === 'bezig' && <circle cx="10" cy="10" r="4.5" fill="currentColor" />}

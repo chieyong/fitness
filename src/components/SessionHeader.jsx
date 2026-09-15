@@ -1,4 +1,5 @@
 import { formatDateLong, formatDateShort } from '../lib/schedule.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './SessionHeader.css';
 
 /**
@@ -6,20 +7,21 @@ import './SessionHeader.css';
  * iets is ingehaald -- waar die sessie oorspronkelijk stond.
  */
 export default function SessionHeader({ date, today, template, entry, done }) {
+  const { t, locale } = useI18n();
   return (
     <header className="session-header">
-      <p className="session-header__date">{formatDateLong(date, today)}</p>
+      <p className="session-header__date">{formatDateLong(date, today, locale)}</p>
       <h1 className="session-header__title">
-        {template ? template.label : 'Rustdag'}
+        {template ? template.label : t('session.rest')}
       </h1>
       {entry?.shifted && (
         <p className="session-header__note">
-          Ingehaald — stond gepland op {formatDateShort(entry.original_date)}
+          {t('session.shifted', { date: formatDateShort(entry.original_date, locale) })}
         </p>
       )}
       {done && (
         <p className="session-header__done">
-          {done.status === 'voltooid' ? 'Voltooid' : 'Overgeslagen'}
+          {t(done.status === 'voltooid' ? 'session.completed' : 'session.skipped')}
         </p>
       )}
     </header>

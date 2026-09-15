@@ -5,23 +5,59 @@
 
 const norm = (s) => String(s ?? '').trim().toLocaleLowerCase('nl');
 
+const MESSAGES = {
+  nl: {
+    sets: 'Aantal sets moet tussen 1 en 10 liggen.',
+    seconds: 'Geef het aantal seconden op (minstens 5).',
+    upper: 'De bovengrens moet hoger zijn dan de ondergrens.',
+    reps: 'Geef het aantal reps op (minstens 1).',
+    exerciseName: 'Geef de oefening een naam.',
+    exerciseExists: 'Er bestaat al een oefening met die naam.',
+    muscles: 'Kies minstens één spiergroep.',
+    equipment: 'Kies het materiaal.',
+    measure: 'Kies hoe je deze oefening logt.',
+    workoutName: 'Geef de workout een naam.',
+    workoutExists: 'Er is al een workout met die naam.',
+  },
+  en: {
+    sets: 'Sets must be between 1 and 10.',
+    seconds: 'Enter the number of seconds (at least 5).',
+    upper: 'The upper limit must be higher than the lower limit.',
+    reps: 'Enter the number of reps (at least 1).',
+    exerciseName: 'Give the exercise a name.',
+    exerciseExists: 'An exercise with that name already exists.',
+    muscles: 'Choose at least one muscle group.',
+    equipment: 'Choose the equipment.',
+    measure: 'Choose how you log this exercise.',
+    workoutName: 'Give the workout a name.',
+    workoutExists: 'A workout with that name already exists.',
+  },
+};
+
+const msg = (locale, key) => (MESSAGES[locale] ?? MESSAGES.nl)[key];
+
+/** De naam van een bibliotheekoefening in de gekozen taal. */
+export function catalogName(entry, locale = 'nl') {
+  return locale === 'en' ? (entry.en ?? entry.name) : entry.name;
+}
+
 /**
  * Oefeningen uit de bibliotheek voor één spiergroep, gefilterd op materiaal en
  * een zoekterm. Oefeningen waarin die spier de hoofdrol speelt komen eerst.
  */
-export function filterCatalog(catalog, { muscle = null, equipment = 'alles', query = '' } = {}) {
+export function filterCatalog(catalog, { muscle = null, equipment = 'alles', query = '', locale = 'nl' } = {}) {
   const q = norm(query);
   return catalog
     .filter((c) => !muscle || c.muscles.includes(muscle))
     .filter((c) => equipment === 'alles' || c.equipment === equipment)
-    .filter((c) => !q || norm(c.name).includes(q))
+    .filter((c) => !q || norm(catalogName(c, locale)).includes(q) || norm(c.name).includes(q))
     .sort((a, b) => {
       if (muscle) {
         const pa = a.muscles[0] === muscle ? 0 : 1;
         const pb = b.muscles[0] === muscle ? 0 : 1;
         if (pa !== pb) return pa - pb;
       }
-      return a.name.localeCompare(b.name, 'nl');
+      return catalogName(a, locale).localeCompare(catalogName(b, locale), locale);
     });
 }
 
@@ -31,7 +67,8 @@ export function findExistingExercise(exercises, entry) {
     const byKey = exercises.find((x) => x.catalog_key === entry.key);
     if (byKey) return byKey;
   }
-  return exercises.find((x) => norm(x.name) === norm(entry.name)) ?? null;
+  // Op naam in beide talen: een Nederlandse 'Bankdrukken' is ook 'Bench press'.
+  return exercises.find((x) => norm(x.name) === norm(entry.name) || (entry.en && norm(x.name) === norm(entry.en))) ?? null;
 }
 
 /** De volgende vrije positie onderaan een workout. */
@@ -75,21 +112,21 @@ export function defaultTarget(measure) {
 const whole = (v) => (v === '' || v == null ? null : Number(v));
 
 /** Controleert een target-formulier; geeft foutmeldingen in het Nederlands. */
-export function validateTarget(measure, form) {
+export function validateTarget(measure, form, locale = 'nl') {
   const errors = [];
   const sets = whole(form.sets);
-  if (!Number.isInteger(sets) || sets < 1 || sets > 10) errors.push('Aantal sets moet tussen 1 en 10 liggen.');
+  if (!Number.isInteger(sets) || sets < 1 || sets > 10) errors.push(msg(locale, 'sets'));
 
   if (measure === 'tijd') {
     const min = whole(form.secondsMin);
     const max = whole(form.secondsMax);
-    if (!Number.isInteger(min) || min < 5) errors.push('Geef het aantal seconden op (minstens 5).');
-    if (max != null && (!Number.isInteger(max) || max < min)) errors.push('De bovengrens moet hoger zijn dan de ondergrens.');
+    if (!Number.isInteger(min) || min < 5) errors.push(msg(locale, 'seconds'));
+    if (max != null && (!Number.isInteger(max) || max < min)) errors.push(msg(locale, 'upper'));
   } else {
     const min = whole(form.repsMin);
     const max = whole(form.repsMax);
-    if (!Number.isInteger(min) || min < 1) errors.push('Geef het aantal reps op (minstens 1).');
-    if (max != null && (!Number.isInteger(max) || max < min)) errors.push('De bovengrens moet hoger zijn dan de ondergrens.');
+    if (!Number.isInteger(min) || min < 1) errors.push(msg(locale, 'reps'));
+    if (max != null && (!Number.isInteger(max) || max < min)) errors.push(msg(locale, 'upper'));
   }
   return errors;
 }
@@ -128,13 +165,13 @@ export function measureOf(row, exercise) {
 }
 
 /** Controleert een zelf aangemaakte oefening. */
-export function validateOwnExercise({ name, muscles, equipment, measure }, existing, { equipmentIds, measureIds }) {
+export function validateOwnExercise({ name, muscles, equipment, measure }, existing, { equipmentIds, measureIds }, locale = 'nl') {
   const errors = [];
-  if (!norm(name)) errors.push('Geef de oefening een naam.');
-  else if (existing.some((x) => norm(x.name) === norm(name))) errors.push('Er bestaat al een oefening met die naam.');
-  if (!muscles?.length) errors.push('Kies minstens één spiergroep.');
-  if (!equipmentIds.includes(equipment)) errors.push('Kies het materiaal.');
-  if (!measureIds.includes(measure)) errors.push('Kies hoe je deze oefening logt.');
+  if (!norm(name)) errors.push(msg(locale, 'exerciseName'));
+  else if (existing.some((x) => norm(x.name) === norm(name))) errors.push(msg(locale, 'exerciseExists'));
+  if (!muscles?.length) errors.push(msg(locale, 'muscles'));
+  if (!equipmentIds.includes(equipment)) errors.push(msg(locale, 'equipment'));
+  if (!measureIds.includes(measure)) errors.push(msg(locale, 'measure'));
   return errors;
 }
 
@@ -160,8 +197,8 @@ export function archiveImpact(sessions, templateId) {
 }
 
 /** Een workoutnaam moet bestaan en uniek zijn. */
-export function validateTemplateLabel(label, templates, ownId = null) {
-  if (!norm(label)) return 'Geef de workout een naam.';
-  if (templates.some((t) => t.id !== ownId && norm(t.label) === norm(label))) return 'Er is al een workout met die naam.';
+export function validateTemplateLabel(label, templates, ownId = null, locale = 'nl') {
+  if (!norm(label)) return msg(locale, 'workoutName');
+  if (templates.some((t) => t.id !== ownId && norm(t.label) === norm(label))) return msg(locale, 'workoutExists');
   return null;
 }

@@ -52,18 +52,24 @@ export function canonicalUrl({ id, vertical }) {
 /** Lege velden tellen niet mee. */
 const filled = (urls) => (urls ?? []).map((u) => String(u ?? '').trim()).filter(Boolean);
 
-/** Foutmeldingen voor een lijst links, in het Nederlands. */
-export function validateVideoUrls(urls) {
+const VIDEO_MESSAGES = {
+  nl: { max: `Maximaal ${MAX_VIDEOS} video's per oefening.`, invalid: (n) => `Link ${n} is geen geldige YouTube-link.`, twice: 'Dezelfde video staat er twee keer in.' },
+  en: { max: `Up to ${MAX_VIDEOS} videos per exercise.`, invalid: (n) => `Link ${n} is not a valid YouTube link.`, twice: 'The same video is listed twice.' },
+};
+
+/** Foutmeldingen voor een lijst links, in de gekozen taal. */
+export function validateVideoUrls(urls, locale = 'nl') {
+  const m = VIDEO_MESSAGES[locale] ?? VIDEO_MESSAGES.nl;
   const list = filled(urls);
   const errors = [];
-  if (list.length > MAX_VIDEOS) errors.push(`Maximaal ${MAX_VIDEOS} video's per oefening.`);
+  if (list.length > MAX_VIDEOS) errors.push(m.max);
   const seen = new Set();
   list.forEach((u, i) => {
     const parsed = parseYouTube(u);
     if (!parsed) {
-      errors.push(`Link ${i + 1} is geen geldige YouTube-link.`);
+      errors.push(m.invalid(i + 1));
     } else if (seen.has(parsed.id)) {
-      errors.push('Dezelfde video staat er twee keer in.');
+      errors.push(m.twice);
     } else {
       seen.add(parsed.id);
     }

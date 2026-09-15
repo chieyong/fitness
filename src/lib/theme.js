@@ -5,7 +5,6 @@
  */
 
 export const THEMES = ['system', 'light', 'dark'];
-export const THEME_LABELS = { system: 'Systeem', light: 'Licht', dark: 'Donker' };
 
 const KEY = 'repz.theme';
 

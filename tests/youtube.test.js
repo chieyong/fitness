@@ -54,3 +54,7 @@ test('opslaan: canoniek, uniek, zonder lege velden, en null als er niets over is
   assert.equal(cleanVideoUrls(['', '  ']), null);
   assert.equal(cleanVideoUrls(null), null);
 });
+
+test('YouTube-meldingen in het Engels', () => {
+  assert.equal(validateVideoUrls(['onzin'], 'en')[0], 'Link 1 is not a valid YouTube link.');
+});

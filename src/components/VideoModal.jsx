@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { embedUrl } from '../lib/youtube.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './VideoModal.css';
 
 /**
@@ -9,6 +10,7 @@ import './VideoModal.css';
  */
 export default function VideoModal({ video, onClose }) {
   const closeRef = useRef(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!video) return undefined;
@@ -34,7 +36,7 @@ export default function VideoModal({ video, onClose }) {
         role="dialog" aria-modal="true" aria-label={video.title}>
         <div className="vmodal__head">
           <span className="vmodal__title">{video.title}</span>
-          <button ref={closeRef} type="button" className="vmodal__close" onClick={onClose} aria-label="Video sluiten">
+          <button ref={closeRef} type="button" className="vmodal__close" onClick={onClose} aria-label={t('video.close')}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>

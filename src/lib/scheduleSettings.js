@@ -26,6 +26,41 @@ export const ROTATIONS = [
 
 const ROTATION_IDS = ROTATIONS.map((r) => r.id);
 
+const TEXT = {
+  nl: {
+    labels: ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'],
+    short: ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
+    and: 'en',
+    inOrder: 'op volgorde',
+    random: (n) => `willekeurige volgorde, opnieuw geschud na elke ronde van ${n} workouts`,
+    rotations: { volgorde: 'Op volgorde', willekeurig: 'Willekeurig per ronde' },
+    errDays: 'Kies minstens één trainingsdag.',
+    errRotation: 'Kies hoe de workouts rouleren.',
+  },
+  en: {
+    labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    short: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+    and: 'and',
+    inOrder: 'in order',
+    random: (n) => `random order, reshuffled after every round of ${n} workouts`,
+    rotations: { volgorde: 'In order', willekeurig: 'Random each round' },
+    errDays: 'Choose at least one training day.',
+    errRotation: 'Choose how the workouts rotate.',
+  },
+};
+
+const text = (locale) => TEXT[locale] ?? TEXT.nl;
+
+/** De week in de gekozen taal, maandag eerst. */
+export function weekdays(locale = 'nl') {
+  const tx = text(locale);
+  return WEEKDAYS.map((w) => ({ day: w.day, short: tx.short[w.day], label: tx.labels[w.day] }));
+}
+
+export function rotationLabel(id, locale = 'nl') {
+  return text(locale).rotations[id] ?? id;
+}
+
 /** Alleen geldige, unieke dagen, oplopend. */
 function validDays(raw) {
   const list = Array.isArray(raw) ? raw : [];
@@ -43,10 +78,11 @@ export function normalizeScheduleSettings(raw) {
 }
 
 /** Foutmeldingen voor wat iemand invult. */
-export function validateScheduleSettings(raw) {
+export function validateScheduleSettings(raw, locale = 'nl') {
+  const tx = text(locale);
   const errors = [];
-  if (validDays(raw?.training_days).length === 0) errors.push('Kies minstens één trainingsdag.');
-  if (!ROTATION_IDS.includes(raw?.rotation)) errors.push('Kies hoe de workouts rouleren.');
+  if (validDays(raw?.training_days).length === 0) errors.push(tx.errDays);
+  if (!ROTATION_IDS.includes(raw?.rotation)) errors.push(tx.errRotation);
   return errors;
 }
 
@@ -57,12 +93,11 @@ export function scheduleOptions(settings) {
 }
 
 /** "Dinsdag, donderdag en zaterdag, op volgorde." */
-export function describeSchedule(settings, workoutCount) {
+export function describeSchedule(settings, workoutCount, locale = 'nl') {
+  const tx = text(locale);
   const s = normalizeScheduleSettings(settings);
-  const names = WEEKDAYS.filter((w) => s.training_days.includes(w.day)).map((w) => w.label);
-  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} en ${names.at(-1)}` : names[0];
-  const order = s.rotation === 'willekeurig'
-    ? `willekeurige volgorde, opnieuw geschud na elke ronde van ${workoutCount} workouts`
-    : 'op volgorde';
+  const names = WEEKDAYS.filter((w) => s.training_days.includes(w.day)).map((w) => tx.labels[w.day]);
+  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} ${tx.and} ${names.at(-1)}` : names[0];
+  const order = s.rotation === 'willekeurig' ? tx.random(workoutCount) : tx.inOrder;
   return `${list.charAt(0).toUpperCase()}${list.slice(1)}, ${order}.`;
 }

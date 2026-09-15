@@ -14,3 +14,21 @@ export const MEASURES = [
 
 export const EQUIPMENT_IDS = EQUIPMENT.map((e) => e.id);
 export const MEASURE_IDS = MEASURES.map((m) => m.id);
+
+const LABELS = {
+  nl: {
+    'losse-gewichten': 'Losse gewichten', machine: 'Machine of kabel', zonder: 'Zonder hulpmiddelen',
+    gewicht: "Reps en kilo's", reps: 'Alleen reps', tijd: 'Seconden',
+  },
+  en: {
+    'losse-gewichten': 'Free weights', machine: 'Machine or cable', zonder: 'No equipment',
+    gewicht: 'Reps and weight', reps: 'Reps only', tijd: 'Seconds',
+  },
+};
+
+const labelsFor = (locale) => LABELS[locale] ?? LABELS.nl;
+
+export const equipmentLabel = (id, locale = 'nl') => labelsFor(locale)[id] ?? null;
+export const measureLabel = (id, locale = 'nl') => labelsFor(locale)[id] ?? null;
+export const equipmentOptions = (locale = 'nl') => EQUIPMENT_IDS.map((id) => ({ id, label: labelsFor(locale)[id] }));
+export const measureOptions = (locale = 'nl') => MEASURE_IDS.map((id) => ({ id, label: labelsFor(locale)[id] }));

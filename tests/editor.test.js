@@ -91,3 +91,12 @@ test('workouts: volgende naam, naamcontrole en wat verwijderen raakt', () => {
     { template_id: 'u', status: 'gepland' },
   ], 't'), { planned: 1, history: 2 });
 });
+
+test('meldingen in het Engels, en zoeken en herkennen in beide talen', () => {
+  assert.deepEqual(validateTarget('gewicht', { sets: 0, repsMin: 8 }, 'en'), ['Sets must be between 1 and 10.']);
+  assert.equal(validateTemplateLabel('  ', [], null, 'en'), 'Give the workout a name.');
+  const cat = [{ key: 'bankdrukken', name: 'Bankdrukken', en: 'Bench press', muscles: ['chest'], equipment: 'losse-gewichten', measure: 'gewicht' }];
+  assert.equal(filterCatalog(cat, { query: 'bench', locale: 'en' }).length, 1);
+  assert.equal(filterCatalog(cat, { query: 'bank', locale: 'en' }).length, 1);
+  assert.equal(findExistingExercise([{ id: 1, name: 'Bench press' }], cat[0]).id, 1);
+});

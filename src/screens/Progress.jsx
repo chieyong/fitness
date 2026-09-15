@@ -7,24 +7,26 @@ import { muscleLabel, KNOWN_MUSCLES } from '../lib/muscleLabels.js';
 import { addDays, todayISO, formatDateShort } from '../lib/schedule.js';
 import { formatNumber } from '../lib/input.js';
 import { fetchAllExercises, fetchAllLogs, fetchSessions } from '../lib/queries.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import BodyMap, { RampLegend } from '../components/BodyMap.jsx';
 import MiniLine from '../components/MiniLine.jsx';
 import './Progress.css';
 import './Exercise.css';
 
 const RANGES = [
-  { id: '30', label: '30 dagen', days: 30 },
-  { id: '90', label: '90 dagen', days: 90 },
-  { id: 'alles', label: 'Alles', days: null },
+  { id: '30', label: 'progress.range30', days: 30 },
+  { id: '90', label: 'progress.range90', days: 90 },
+  { id: 'alles', label: 'progress.rangeAll', days: null },
 ];
 
 const METRICS = [
-  { id: 'sets', label: 'Sets', unit: '' },
-  { id: 'volume', label: 'Volume', unit: 'kg' },
+  { id: 'sets', label: 'progress.sets', unit: '' },
+  { id: 'volume', label: 'progress.volume', unit: 'kg' },
 ];
 
 export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
   const today = useMemo(() => todayISO(), []);
+  const { t, locale } = useI18n();
   const [range, setRange] = useState('30');
   const [metric, setMetric] = useState('sets');
   const [infoOpen, setInfoOpen] = useState(false);
@@ -116,9 +118,9 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
   const unit = METRICS.find((m) => m.id === metric)?.unit ?? '';
 
   const valueOf = (m) => {
-    const t = findMuscle(totals, m);
-    const n = t ? (metric === 'sets' ? t.sets : Math.round(t.volume)) : 0;
-    return `${formatNumber(n)}${unit ? ` ${unit}` : ' sets'}`;
+    const found = findMuscle(totals, m);
+    const n = found ? (metric === 'sets' ? found.sets : Math.round(found.volume)) : 0;
+    return unit ? `${formatNumber(n)} ${unit}` : t('progress.setsValue', { count: n });
   };
 
   // Een spiergroep kiezen klapt hem open en brengt je erheen. Nog een keer
@@ -156,18 +158,18 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
   return (
     <main className="page">
 
-      <h1 className="exercise__title">Voortgang</h1>
+      <h1 className="exercise__title">{t('progress.title')}</h1>
       {error && <p className="exercise__meta">{error}</p>}
 
       <div className="filters">
-        <Segmented options={RANGES} value={range} onChange={setRange} label="Periode" />
+        <Segmented options={RANGES} value={range} onChange={setRange} label={t('progress.period')} />
         <span className="metric" ref={infoRef}>
-          <Segmented options={METRICS} value={metric} onChange={chooseMetric} label="Maat" />
+          <Segmented options={METRICS} value={metric} onChange={chooseMetric} label={t('progress.measure')} />
           {/* Altijd in de layout en alleen zichtbaar bij volume: zo is de rij in beide
               standen even breed en verspringt hij niet naar een volgende regel. */}
           <button type="button"
             className={`metric__info${metric === 'volume' ? '' : ' metric__info--hidden'}`}
-            aria-label="Uitleg over volume"
+            aria-label={t('progress.volumeInfo')}
             aria-hidden={metric !== 'volume'}
             tabIndex={metric === 'volume' ? 0 : -1}
             aria-expanded={infoOpen} onClick={() => setInfoOpen(!infoOpen)}>
@@ -178,10 +180,8 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
               </svg>
           </button>
           {infoOpen && (
-            <span className="pop" role="dialog" aria-label="Uitleg over volume">
-              Volume in kilo's zegt veel binnen één oefening, maar weinig tussen
-              spiergroepen: een beenpers verplaatst meer gewicht dan een curl, door
-              anatomie en niet door inspanning. Sets geven een eerlijker beeld.
+            <span className="pop" role="dialog" aria-label={t('progress.volumeInfo')}>
+              {t('progress.volumeText')}
             </span>
           )}
         </span>
@@ -189,7 +189,7 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
 
       {totals.length === 0 ? (
         <p className="exercise__empty">
-          Nog niets gelogd in deze periode{from && <> (sinds {formatDateShort(from)})</>}.
+          {from ? t('progress.emptySince', { date: formatDateShort(from, locale) }) : t('progress.empty')}
         </p>
       ) : (
         <>
@@ -197,9 +197,9 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
             <BodyMap intensity={intensity} selected={selected}
               onSelect={select} valueLabel={valueOf} />
             <RampLegend
-              maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle)})` : ''} />
+              maxLabel={busiest ? `${valueOf(busiest.muscle)} (${muscleLabel(busiest.muscle, locale)})` : ''} />
             <p className="body__hint">
-              Tik een spiergroep aan om de oefeningen te openen.
+              {t('progress.hint')}
             </p>
           </div>
 
@@ -220,13 +220,13 @@ export default function Progress({ muscle, onSelectMuscle, onOpenExercise }) {
 
           {!bodyVisible && (
             <button type="button" className="tobody" onClick={() => scrollTo('lichaam')}>
-              Lichaam
+              {t('progress.toBody')}
             </button>
           )}
 
           {offBody.length > 0 && (
             <p className="body__hint">
-              Niet op het silhouet: {offBody.map((t) => muscleLabel(t.muscle)).join(', ')}.
+              {t('progress.offBody', { list: offBody.map((x) => muscleLabel(x.muscle, locale)).join(', ') })}
             </p>
           )}
         </>
@@ -242,6 +242,7 @@ function MuscleSection({
   // staan tot de inklapbeweging klaar is, daarna pas weg.
   const [mounted, setMounted] = useState(open);
   const [expanded, setExpanded] = useState(open);
+  const { t, locale } = useI18n();
 
   useEffect(() => {
     let frame = 0;
@@ -260,7 +261,7 @@ function MuscleSection({
   }, [open]);
 
   const value = metric === 'sets'
-    ? `${total.sets} sets`
+    ? t('progress.setsValue', { count: total.sets })
     : `${formatNumber(Math.round(total.volume))} kg`;
 
   const points = series.map((p) => ({ date: p.date, value: p[metric] }));
@@ -271,7 +272,7 @@ function MuscleSection({
       className={`muscle${open ? ' muscle--open' : ''}${dimmed ? ' muscle--dimmed' : ''}`}>
       <button type="button" className="muscle__head" onClick={onToggle}
         aria-expanded={open}>
-        <span className="muscle__name">{muscleLabel(total.muscle)}</span>
+        <span className="muscle__name">{muscleLabel(total.muscle, locale)}</span>
         <MiniLine points={points} formatValue={(v) => `${formatNumber(v)} ${suffix}`} />
         <span className="muscle__value">{value}</span>
       </button>
@@ -328,6 +329,7 @@ function ExerciseLine({ entry, logs, sessions, onOpen }) {
 }
 
 function Segmented({ options, value, onChange, label }) {
+  const { t } = useI18n();
   return (
     <div className="segmented" role="group" aria-label={label}>
       {options.map((o) => (
@@ -335,7 +337,7 @@ function Segmented({ options, value, onChange, label }) {
           className={`segmented__item${value === o.id ? ' segmented__item--on' : ''}`}
           aria-pressed={value === o.id}
           onClick={() => onChange(o.id)}>
-          {o.label}
+          {t(o.label)}
         </button>
       ))}
     </div>

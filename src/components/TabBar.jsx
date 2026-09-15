@@ -1,15 +1,17 @@
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './TabBar.css';
 
 const TABS = [
-  { id: 'vandaag', label: 'Vandaag', icon: TodayIcon },
-  { id: 'voortgang', label: 'Voortgang', icon: ProgressIcon },
-  { id: 'schema', label: 'Schema', icon: SchemaIcon },
+  { id: 'vandaag', label: 'nav.today', icon: TodayIcon },
+  { id: 'voortgang', label: 'nav.progress', icon: ProgressIcon },
+  { id: 'schema', label: 'nav.schema', icon: SchemaIcon },
 ];
 
 /** Tabbalk onderaan: bereikbaar met je duim, de actieve tab verhoogd in blauw. */
 export default function TabBar({ active, onNavigate }) {
+  const { t } = useI18n();
   return (
-    <nav className="tabbar" aria-label="Hoofdnavigatie">
+    <nav className="tabbar" aria-label={t('nav.aria')}>
       <div className="tabbar__inner">
         {TABS.map(({ id, label, icon: Icon }) => {
           const on = id === active;
@@ -19,7 +21,7 @@ export default function TabBar({ active, onNavigate }) {
               aria-current={on ? 'page' : undefined}
               onClick={() => onNavigate(id)}>
               <span className="tab__icon"><Icon /></span>
-              <span className="tab__label">{label}</span>
+              <span className="tab__label">{t(label)}</span>
             </button>
           );
         })}

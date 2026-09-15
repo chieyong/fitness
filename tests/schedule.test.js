@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   addDays, dayOfWeek, isTrainingDay, nextTrainingDay,
   projectSchedule, resolveToday, planNextSessions,
-  formatTarget, formatDateLong,
+  formatTarget, formatDateLong, formatDateShort,
 } from '../src/lib/schedule.js';
 
 // Referentiedatums (2026): di 15 sep, do 17 sep, za 19 sep, di 22 sep.
@@ -277,4 +277,14 @@ test('willekeurig: ook na een eerder afgeronde ronde uit de geschiedenis een and
     assert.notEqual(c[0].template_id, 'a');
     assert.ok(c.every((x) => x.cycle === 4));
   }
+});
+
+test('datums en targets in het Engels', () => {
+  assert.equal(formatDateShort('2026-09-15', 'en'), 'Tue 15 Sep');
+  assert.equal(formatDateLong('2026-09-19', '2026-09-15', 'en'), 'Saturday 19 September');
+  assert.equal(formatDateLong('2026-09-15', '2026-09-15', 'en'), 'Today');
+  assert.equal(formatDateLong('2026-09-16', '2026-09-15', 'en'), 'Tomorrow');
+  assert.equal(formatTarget({ target_sets: 3, target_reps_min: 12, target_note: 'per been' }, 'en'), '3 × 12 per leg');
+  assert.equal(formatTarget({ target_sets: 3, target_seconds: 30, target_note: 'per kant' }, 'en'), '3 × 30 sec per side');
+  assert.equal(formatDateShort('2026-09-15'), 'di 15 sep');
 });

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useI18n } from './i18n/I18nProvider.jsx';
 import { resolveAccess, onAuthChange, signInWithGoogle, signOut } from './lib/auth.js';
 import { setDataSource } from './lib/queries.js';
 import { hideSplash } from './lib/splash.js';
@@ -38,6 +39,9 @@ function takeAuthError() {
 export default function App() {
   const [access, setAccess] = useState(null);
   const [authError, setAuthError] = useState(takeAuthError);
+  const { locale } = useI18n();
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
 
   useEffect(() => {
     let cancelled = false;
@@ -48,7 +52,7 @@ export default function App() {
       ));
       if (cancelled) return;
       // Eerst de bron, dan pas de schermen: die halen meteen gegevens op.
-      setDataSource(next.mode === 'owner' ? 'supabase' : 'demo');
+      setDataSource(next.mode === 'owner' ? 'supabase' : 'demo', localeRef.current);
       setAccess(next);
     };
 
@@ -70,13 +74,17 @@ export default function App() {
 
   if (!access) return <main className="page" />;
 
+  // Andere taal = een demo met namen in die taal. Hier en niet in een effect:
+  // de schermen halen hun gegevens op in hún effect, en dat draait eerder.
+  setDataSource(access.mode === 'owner' ? 'supabase' : 'demo', locale);
+
   // Geen inlogscherm vooraf: een nieuwe bezoeker ziet meteen de demo, met in
   // de balk bovenaan hoe je je eigen trainingen bewaart.
   return (
     <>
       <AccessBanner access={access} error={authError} onLogin={login} onLogout={logout} />
       {/* Andere bron = alles opnieuw ophalen; de key dwingt dat af. */}
-      <Router key={`${access.mode}:${access.email ?? ''}`} />
+      <Router key={`${access.mode}:${access.email ?? ''}:${locale}`} />
     </>
   );
 }

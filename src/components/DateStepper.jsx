@@ -1,4 +1,5 @@
 import { addDays, formatDateShort } from '../lib/schedule.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './DateStepper.css';
 
 /**
@@ -6,18 +7,19 @@ import './DateStepper.css';
  * te kunnen zien werken zonder op een echte donderdag te wachten.
  */
 export default function DateStepper({ date, today, onChange }) {
+  const { t, locale } = useI18n();
   return (
     <div className="stepper">
-      <button type="button" onClick={() => onChange(addDays(date, -1))} aria-label="Dag terug">
+      <button type="button" onClick={() => onChange(addDays(date, -1))} aria-label={t('date.back')}>
         <Chevron direction="left" />
       </button>
-      <span className="stepper__value">{formatDateShort(date)}</span>
-      <button type="button" onClick={() => onChange(addDays(date, 1))} aria-label="Dag vooruit">
+      <span className="stepper__value">{formatDateShort(date, locale)}</span>
+      <button type="button" onClick={() => onChange(addDays(date, 1))} aria-label={t('date.forward')}>
         <Chevron direction="right" />
       </button>
       {date !== today && (
         <button type="button" className="stepper__reset" onClick={() => onChange(today)}>
-          Vandaag
+          {t('date.today')}
         </button>
       )}
     </div>

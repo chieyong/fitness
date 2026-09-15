@@ -6,20 +6,19 @@ import {
   fetchScheduleSettings, saveScheduleSettings, replanUpcoming, ensureUpcomingSessions,
 } from '../lib/queries.js';
 import { formatTarget, todayISO } from '../lib/schedule.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import {
-  WEEKDAYS, ROTATIONS, normalizeScheduleSettings, validateScheduleSettings, describeSchedule,
+  ROTATIONS, weekdays, rotationLabel, normalizeScheduleSettings, validateScheduleSettings, describeSchedule,
 } from '../lib/scheduleSettings.js';
 import {
   moveRow, removeRow, validateTarget, targetColumns, formFromColumns, measureOf,
   nextTemplateLabel, archiveImpact, validateTemplateLabel,
 } from '../lib/editor.js';
-import { EQUIPMENT } from '../data/equipment.js';
+import { equipmentLabel } from '../data/equipment.js';
 import { MAX_VIDEOS, validateVideoUrls, cleanVideoUrls } from '../lib/youtube.js';
 import TargetFields from '../components/TargetFields.jsx';
 import './Schema.css';
 import './Exercise.css';
-
-const equipmentLabel = (id) => EQUIPMENT.find((e) => e.id === id)?.label ?? null;
 
 /** Altijd drie velden, gevuld met wat er al is. */
 const videoFields = (urls) => Array.from({ length: MAX_VIDEOS }, (_, i) => urls?.[i] ?? '');
@@ -35,6 +34,7 @@ const visibleVideoFields = (videos = []) => {
 export default function Schema({ onAddExercise }) {
   // In de demo pas je bestaande oefeningen aan, maar bouw je het schema niet om.
   const demo = dataMode() === 'demo';
+  const { t: tx, locale } = useI18n();
   const [templates, setTemplates] = useState([]);
   const [rows, setRows] = useState(new Map());
   const [exercises, setExercises] = useState(new Map());
@@ -92,7 +92,7 @@ export default function Schema({ onAddExercise }) {
 
   const saveTarget = (row) => {
     const measure = measureOf(row, exercises.get(row.exercise_id));
-    const errs = [...validateTarget(measure, form), ...validateVideoUrls(form.videos)];
+    const errs = [...validateTarget(measure, form, locale), ...validateVideoUrls(form.videos, locale)];
     if (errs.length) { setFormErrors(errs); return; }
     run(async () => {
       await updateTemplateExercise(row.id, targetColumns(measure, form));
@@ -125,7 +125,7 @@ export default function Schema({ onAddExercise }) {
   };
 
   const saveRename = (t) => {
-    const problem = validateTemplateLabel(form.label, templates, t.id);
+    const problem = validateTemplateLabel(form.label, templates, t.id, locale);
     if (problem) { setFormErrors([problem]); return; }
     run(async () => { await renameTemplate(t.id, form.label.trim()); close(); });
   };
@@ -156,7 +156,7 @@ export default function Schema({ onAddExercise }) {
     || draft.training_days.length === 0;
 
   const savePlanning = () => {
-    const errs = validateScheduleSettings(draft);
+    const errs = validateScheduleSettings(draft, locale);
     if (errs.length) { setPlanErrors(errs); return; }
     run(async () => {
       const saved = await saveScheduleSettings(draft);
@@ -166,9 +166,7 @@ export default function Schema({ onAddExercise }) {
       const moved = await replanUpcoming(today);
       const [t, ses] = await Promise.all([fetchTemplates(), fetchSessions()]);
       await ensureUpcomingSessions(t, ses, today, saved);
-      setPlanNote(moved > 0
-        ? `Planning opgeslagen. ${moved} geplande ${moved === 1 ? 'training is' : 'trainingen zijn'} opnieuw ingedeeld.`
-        : 'Planning opgeslagen.');
+      setPlanNote(moved > 0 ? tx('plan.savedMoved', { count: moved }) : tx('plan.saved'));
     });
   };
 
@@ -177,61 +175,65 @@ export default function Schema({ onAddExercise }) {
   return (
     <main className="page">
 
-      <h1 className="exercise__title">Schema</h1>
+      <h1 className="exercise__title">{tx('schema.title')}</h1>
       <p className="exercise__meta">
-        {demo
-          ? "In de demo pas je de planning en de targets en video's van bestaande oefeningen aan; dat blijft bewaard tot je de browser sluit. Log in om workouts en oefeningen toe te voegen."
-          : 'Pas je workouts aan. Je trainingsgeschiedenis blijft bewaard, ook als je een oefening of workout weghaalt.'}
+        {tx(demo ? 'schema.introDemo' : 'schema.intro')}
       </p>
       {error && <p className="schema__error" role="alert">{error}</p>}
 
       <section className="plan card" aria-labelledby="plan-title">
-        <h2 id="plan-title" className="wk__title">Planning</h2>
-        <p className="plan__summary">{describeSchedule(settings, templates.length)}</p>
+        <h2 id="plan-title" className="wk__title">{tx('plan.title')}</h2>
+        <p className="plan__summary">{describeSchedule(settings, templates.length, locale)}</p>
 
-        <span className="plan__label" id="plan-days">Trainingsdagen</span>
-        <div className="plan__days" role="group" aria-labelledby="plan-days">
-          {WEEKDAYS.map((w) => {
-            const on = draft.training_days.includes(w.day);
-            return (
-              <button key={w.day} type="button" aria-pressed={on} aria-label={w.label}
-                className={`plan__day${on ? ' plan__day--on' : ''}`} onClick={() => toggleDay(w.day)}>
-                {w.short}
+        {demo ? (
+          <p className="plan__hint">{tx('plan.demoHint')}</p>
+        ) : (
+          <>
+          <span className="plan__label" id="plan-days">{tx('plan.days')}</span>
+          <div className="plan__days" role="group" aria-labelledby="plan-days">
+            {weekdays(locale).map((w) => {
+              const on = draft.training_days.includes(w.day);
+              return (
+                <button key={w.day} type="button" aria-pressed={on} aria-label={w.label}
+                  className={`plan__day${on ? ' plan__day--on' : ''}`} onClick={() => toggleDay(w.day)}>
+                  {w.short}
+                </button>
+              );
+            })}
+          </div>
+
+          <span className="plan__label" id="plan-order">{tx('plan.order')}</span>
+          <div className="plan__options" role="radiogroup" aria-labelledby="plan-order">
+            {ROTATIONS.map((r) => {
+              const on = draft.rotation === r.id;
+              return (
+                <button key={r.id} type="button" role="radio" aria-checked={on}
+                  className={`plan__option${on ? ' plan__option--on' : ''}`}
+                  onClick={() => { setPlanNote(null); setDraft((prev) => ({ ...prev, rotation: r.id })); }}>
+                  <span className="plan__option-title">{rotationLabel(r.id, locale)}</span>
+                  <span className="plan__option-text">
+                    {r.id === 'volgorde'
+                      ? tx('plan.inOrderText', { list: templates.map((x) => x.label.replace(/^Workout\s+/i, '')).join(' → ') })
+                      : tx('plan.randomText', { count: templates.length })}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {planErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
+          {planNote && <p className="plan__note" role="status">{planNote}</p>}
+
+          <div className="plan__footer">
+            <span className="plan__hint">{tx('plan.missed')}</span>
+            {planChanged && (
+              <button type="button" className="schema__primary" disabled={busy} onClick={savePlanning}>
+                {tx('plan.save')}
               </button>
-            );
-          })}
-        </div>
-
-        <span className="plan__label" id="plan-order">Volgorde van de workouts</span>
-        <div className="plan__options" role="radiogroup" aria-labelledby="plan-order">
-          {ROTATIONS.map((r) => {
-            const on = draft.rotation === r.id;
-            return (
-              <button key={r.id} type="button" role="radio" aria-checked={on}
-                className={`plan__option${on ? ' plan__option--on' : ''}`}
-                onClick={() => { setPlanNote(null); setDraft((prev) => ({ ...prev, rotation: r.id })); }}>
-                <span className="plan__option-title">{r.label}</span>
-                <span className="plan__option-text">
-                  {r.id === 'volgorde'
-                    ? `Steeds ${templates.map((t) => t.label.replace(/^Workout\s+/i, '')).join(' → ')}`
-                    : `Na elke ronde van ${templates.length} workouts een nieuwe volgorde`}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {planErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
-        {planNote && <p className="plan__note" role="status">{planNote}</p>}
-
-        <div className="plan__footer">
-          <span className="plan__hint">Een gemiste training schuift door naar de volgende trainingsdag.</span>
-          {planChanged && (
-            <button type="button" className="schema__primary" disabled={busy} onClick={savePlanning}>
-              Planning opslaan
-            </button>
-          )}
-        </div>
+            )}
+          </div>
+          </>
+        )}
       </section>
 
       {templates.map((t) => {
@@ -245,21 +247,21 @@ export default function Schema({ onAddExercise }) {
             <div className="wk__head">
               {renaming ? (
                 <form className="wk__rename" onSubmit={(e) => { e.preventDefault(); saveRename(t); }}>
-                  <input autoFocus value={form.label ?? ''} aria-label="Naam van de workout"
+                  <input autoFocus value={form.label ?? ''} aria-label={tx('wk.nameAria')}
                     onChange={(e) => setForm({ label: e.target.value })} />
-                  <button type="submit" className="schema__primary" disabled={busy}>Opslaan</button>
-                  <button type="button" className="schema__link" onClick={close}>Annuleren</button>
+                  <button type="submit" className="schema__primary" disabled={busy}>{tx('common.save')}</button>
+                  <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
                 </form>
               ) : (
                 <>
                   <h2 className="wk__title">{t.label}</h2>
                   {!demo && (
                     <span className="wk__actions">
-                      <button type="button" className="schema__link" onClick={() => startRename(t)}>Hernoemen</button>
+                      <button type="button" className="schema__link" onClick={() => startRename(t)}>{tx('wk.rename')}</button>
                       {templates.length > 1 && (
                         <button type="button" className="schema__link schema__link--quiet"
                           onClick={() => { setEditing({ type: 'archive', id: t.id }); setFormErrors([]); }}>
-                          Verwijderen
+                          {tx('wk.remove')}
                         </button>
                       )}
                     </span>
@@ -270,15 +272,15 @@ export default function Schema({ onAddExercise }) {
             {renaming && formErrors.length > 0 && <p className="schema__error">{formErrors[0]}</p>}
 
             {archiving && (
-              <div className="confirm" role="alertdialog" aria-label={`${t.label} verwijderen`}>
+              <div className="confirm" role="alertdialog" aria-label={tx('wk.removeAria', { name: t.label })}>
                 <p>
-                  {t.label} verwijderen?
-                  {impact.planned > 0 && ` ${impact.planned} geplande ${impact.planned === 1 ? 'sessie vervalt' : 'sessies vervallen'}.`}
-                  {impact.history > 0 && ` ${impact.history} afgeronde ${impact.history === 1 ? 'training blijft' : 'trainingen blijven'} bewaard.`}
+                  {tx('wk.removeQuestion', { name: t.label })}
+                  {impact.planned > 0 && ` ${tx('wk.plannedLost', { count: impact.planned })}`}
+                  {impact.history > 0 && ` ${tx('wk.historyKept', { count: impact.history })}`}
                 </p>
                 <span className="confirm__buttons">
-                  <button type="button" className="schema__danger" disabled={busy} onClick={() => archive(t)}>Verwijderen</button>
-                  <button type="button" className="schema__link" onClick={close}>Annuleren</button>
+                  <button type="button" className="schema__danger" disabled={busy} onClick={() => archive(t)}>{tx('wk.remove')}</button>
+                  <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
                 </span>
               </div>
             )}
@@ -293,29 +295,29 @@ export default function Schema({ onAddExercise }) {
                     <div className="item__row">
                       <span className="item__main">
                         <span className="item__name">{row.exercise?.name ?? exercise?.name}</span>
-                        <span className="item__meta">{formatTarget(row)}</span>
-                        {equipmentLabel(exercise?.equipment) && (
-                          <span className="item__meta">{equipmentLabel(exercise.equipment)}</span>
+                        <span className="item__meta">{formatTarget(row, locale)}</span>
+                        {equipmentLabel(exercise?.equipment, locale) && (
+                          <span className="item__meta">{equipmentLabel(exercise.equipment, locale)}</span>
                         )}
                         {exercise?.video_urls?.length > 0 && (
                           <span className="item__meta item__meta--video">
-                            {exercise.video_urls.length === 1 ? '1 video' : `${exercise.video_urls.length} video's`}
+                            {tx('item.videos', { count: exercise.video_urls.length })}
                           </span>
                         )}
                       </span>
                       <span className="item__tools">
 {!demo && (
                           <>
-                        <IconButton label={`${row.exercise?.name} omhoog`} disabled={busy || i === 0}
+                        <IconButton label={tx('item.up', { name: row.exercise?.name })} disabled={busy || i === 0}
                           onClick={() => move(t.id, row.id, -1)}><Chevron direction="up" /></IconButton>
-                        <IconButton label={`${row.exercise?.name} omlaag`} disabled={busy || i === list.length - 1}
+                        <IconButton label={tx('item.down', { name: row.exercise?.name })} disabled={busy || i === list.length - 1}
                           onClick={() => move(t.id, row.id, +1)}><Chevron direction="down" /></IconButton>
                           </>
                         )}
-                        <button type="button" className="schema__link"
-                          onClick={() => (open ? close() : startTarget(row))}>
-                          {open ? 'Sluiten' : 'Aanpassen'}
-                        </button>
+                        <IconButton label={tx(open ? 'item.close' : 'item.edit', { name: row.exercise?.name })}
+                          active={open} onClick={() => (open ? close() : startTarget(row))}>
+                          {open ? <CloseIcon /> : <EditIcon />}
+                        </IconButton>
                       </span>
                     </div>
 
@@ -323,28 +325,28 @@ export default function Schema({ onAddExercise }) {
                       <div className="item__edit">
                         <TargetFields measure={measure} value={form} onChange={setForm} />
                         <div className="videos">
-                          <span className="videos__label">Video's</span>
+                          <span className="videos__label">{tx('videos.label')}</span>
                           {(form.videos ?? []).slice(0, visibleVideoFields(form.videos)).map((url, vi) => (
                             <input key={vi} className="videos__input" type="url" inputMode="url"
-                              placeholder={vi === 0 ? 'Plak een YouTube-link' : 'Nog een link (optioneel)'} value={url}
-                              aria-label={`YouTube-link ${vi + 1}`}
+                              placeholder={tx(vi === 0 ? 'videos.first' : 'videos.more')} value={url}
+                              aria-label={tx('videos.aria', { n: vi + 1 })}
                               onChange={(e) => setForm({
                                 ...form, videos: form.videos.map((u, j) => (j === vi ? e.target.value : u)),
                               })} />
                           ))}
                           {(form.videos ?? []).some((u) => String(u ?? '').trim()) && (
                             <span className="videos__hint">
-                              Maximaal {MAX_VIDEOS}. Hoort bij de oefening, dus zichtbaar in elke workout.
+                              {tx('videos.hint', { max: MAX_VIDEOS })}
                             </span>
                           )}
                         </div>
                         {formErrors.map((m) => <p key={m} className="schema__error">{m}</p>)}
                         <span className="item__buttons">
-                          <button type="button" className="schema__primary" disabled={busy} onClick={() => saveTarget(row)}>Opslaan</button>
-                          <button type="button" className="schema__link" onClick={close}>Annuleren</button>
+                          <button type="button" className="schema__primary" disabled={busy} onClick={() => saveTarget(row)}>{tx('common.save')}</button>
+                          <button type="button" className="schema__link" onClick={close}>{tx('common.cancel')}</button>
                           {!demo && (
                                                     <button type="button" className="schema__link schema__link--danger" disabled={busy}
-                            onClick={() => remove(t.id, row)}>Uit workout halen</button>
+                            onClick={() => remove(t.id, row)}>{tx('item.removeFromWorkout')}</button>
                           )}
                         </span>
                       </div>
@@ -353,12 +355,12 @@ export default function Schema({ onAddExercise }) {
                 );
               })}
             </ol>
-            {list.length === 0 && <p className="exercise__meta">Nog geen oefeningen in deze workout.</p>}
+            {list.length === 0 && <p className="exercise__meta">{tx('wk.empty')}</p>}
 
             {!demo && (
 
                         <button type="button" className="schema__add" onClick={() => onAddExercise(t.id)}>
-              Oefening toevoegen
+              {tx('wk.addExercise')}
             </button>
 
             )}
@@ -369,10 +371,10 @@ export default function Schema({ onAddExercise }) {
       {!demo && (
         <div className="schema__footer">
           <button type="button" className="schema__primary" disabled={busy} onClick={addWorkout}>
-            Workout toevoegen
+            {tx('wk.addWorkout')}
           </button>
           <p className="exercise__meta">
-            Een nieuwe workout komt in de rotatie na de sessies die al gepland staan.
+            {tx('wk.addWorkoutHint')}
           </p>
         </div>
       )}
@@ -380,9 +382,10 @@ export default function Schema({ onAddExercise }) {
   );
 }
 
-function IconButton({ label, onClick, disabled, children }) {
+function IconButton({ label, onClick, disabled, active, children }) {
   return (
-    <button type="button" className="icon" aria-label={label} onClick={onClick} disabled={disabled}>
+    <button type="button" className={`icon${active ? ' icon--active' : ''}`} aria-label={label}
+      aria-expanded={active === undefined ? undefined : active} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );
@@ -399,6 +402,25 @@ function Chevron({ direction }) {
   return (
     <svg width={w} height={h} viewBox={box} fill="none" aria-hidden="true">
       <path d={d} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Potlood: aanpassen. */
+function EditIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M9.6 2.2l2.2 2.2-7 7H2.6V9.2l7-7z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M8.4 3.4l2.2 2.2" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
+/** Kruisje: sluiten. */
+function CloseIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+      <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

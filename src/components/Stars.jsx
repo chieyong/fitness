@@ -1,13 +1,14 @@
 import { useState } from 'react';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './Stars.css';
-
-const LABELS = ['', 'Slecht', 'Matig', 'Oké', 'Goed', 'Top'];
 
 /**
  * Vijf sterren. Met onChange is het een keuze (nog een keer op dezelfde ster
  * tikken wist hem); zonder onChange alleen weergave.
  */
-export default function Stars({ value, onChange, size = 20, label = 'Hoe ging het?' }) {
+export default function Stars({ value, onChange, size = 20, label }) {
+  const { t } = useI18n();
+  const words = (n) => t(`stars.${n}`);
   const [hover, setHover] = useState(0);
   const shown = hover || value || 0;
   const interactive = typeof onChange === 'function';
@@ -15,17 +16,17 @@ export default function Stars({ value, onChange, size = 20, label = 'Hoe ging he
   if (!interactive) {
     if (!value) return null;
     return (
-      <span className="stars stars--static" role="img" aria-label={`${value} van 5 sterren`}>
+      <span className="stars stars--static" role="img" aria-label={t('stars.static', { value })}>
         {[1, 2, 3, 4, 5].map((n) => <Star key={n} filled={n <= value} size={size} />)}
       </span>
     );
   }
 
   return (
-    <span className="stars" role="radiogroup" aria-label={label} onMouseLeave={() => setHover(0)}>
+    <span className="stars" role="radiogroup" aria-label={label ?? t('stars.label')} onMouseLeave={() => setHover(0)}>
       {[1, 2, 3, 4, 5].map((n) => (
         <button key={n} type="button" role="radio" aria-checked={value === n}
-          aria-label={`${n} ${n === 1 ? 'ster' : 'sterren'}: ${LABELS[n]}`}
+          aria-label={t('stars.option', { count: n, label: words(n) })}
           className="stars__button"
           onMouseEnter={() => setHover(n)}
           onFocus={() => setHover(n)}
@@ -34,7 +35,7 @@ export default function Stars({ value, onChange, size = 20, label = 'Hoe ging he
           <Star filled={n <= shown} size={size} />
         </button>
       ))}
-      {shown > 0 && <span className="stars__label">{LABELS[shown]}</span>}
+      {shown > 0 && <span className="stars__label">{words(shown)}</span>}
     </span>
   );
 }

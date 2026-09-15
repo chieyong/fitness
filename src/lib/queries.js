@@ -9,15 +9,21 @@ import { todayISO } from './schedule.js';
 let active = supabaseSource;
 let mode = 'supabase';
 let demo = null;
+let demoLocale = null;
 
 /** 'supabase' voor de eigenaar, 'demo' voor iedereen anders. */
-export function setDataSource(next) {
+export function setDataSource(next, locale = 'nl') {
+  if (next === 'demo' && demoLocale !== locale) {
+    demo = null;
+    demoLocale = locale;
+  }
   if (next === 'demo') {
     // In de browser: aanpassingen bewaren tot de browser sluit, en de structuur op slot.
     demo ??= createDemoSource({
       today: todayISO(),
       storage: globalThis.sessionStorage ?? null,
       lockStructure: true,
+      locale,
     });
     active = demo;
   } else {

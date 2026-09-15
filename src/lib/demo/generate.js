@@ -42,19 +42,20 @@ const LOAD = {
   'Close-grip bankdrukken': [9, 2],
 };
 
-const SESSION_NOTES = [
-  'Zwaar vandaag',
-  'Voelde sterk',
-  'Kort op tijd, tempo omhoog',
-  'Slecht geslapen',
-  'Druk in de sportschool',
-];
+const SESSION_NOTES = {
+  nl: ['Zwaar vandaag', 'Voelde sterk', 'Kort op tijd, tempo omhoog', 'Slecht geslapen', 'Druk in de sportschool'],
+  en: ['Tough today', 'Felt strong', 'Short on time, faster pace', 'Slept badly', 'Busy gym'],
+};
 
-const EXERCISE_NOTES = ['Nieuw record', 'Laatste set met hulp', 'Techniek gefilmd', 'Voelde licht', 'Techniek beter'];
+const EXERCISE_NOTES = {
+  nl: ['Nieuw record', 'Laatste set met hulp', 'Techniek gefilmd', 'Voelde licht', 'Techniek beter'],
+  en: ['New record', 'Last set with a spot', 'Filmed my form', 'Felt light', 'Better technique'],
+};
 
 const isCore = (e) => e.muscles.some((m) => m === 'abs' || m === 'obliques');
 
-export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
+export function generateDemoData({ today, weeks = 26, seed = 20260913, locale = 'nl' } = {}) {
+  const lang = locale === 'en' ? 'en' : 'nl';
   const random = rng(seed);
   const chance = (p) => random() < p;
   const pick = (list) => list[Math.floor(random() * list.length)];
@@ -67,13 +68,13 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
       if (byName.has(e.name)) continue;
       const row = {
         id: `demo-ex-${exercises.length + 1}`,
-        name: e.name,
+        name: lang === 'en' ? (e.en ?? e.name) : e.name,
         muscle_groups: [...e.muscles],
         equipment: e.equipment ?? null,
         measure: e.measure ?? null,
         catalog_key: null,
         video_urls: null,
-        notes: e.notes ?? null,
+        notes: lang === 'en' ? (e.notesEn ?? e.notes ?? null) : (e.notes ?? null),
       };
       exercises.push(row);
       byName.set(e.name, row);
@@ -140,7 +141,7 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
       sessions.push(session);
       continue;
     }
-    if (chance(0.12)) session.notes = pick(SESSION_NOTES);
+    if (chance(0.12)) session.notes = pick(SESSION_NOTES[lang]);
     sessions.push(session);
 
     const badDay = chance(0.1);
@@ -161,7 +162,7 @@ export function generateDemoData({ today, weeks = 26, seed = 20260913 } = {}) {
       else if (chance(0.05)) sets += 1;
 
       // Hoe het ging: niet elke keer ingevuld, en op een slechte dag lager.
-      const comment = chance(0.06) ? pick(EXERCISE_NOTES) : null;
+      const comment = chance(0.06) ? pick(EXERCISE_NOTES[lang]) : null;
       if (comment || chance(0.55)) {
         exercise_feedback.push({
           id: `demo-f-${exercise_feedback.length + 1}`,

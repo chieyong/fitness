@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { THEME_LABELS, getThemePreference, nextTheme, setThemePreference } from '../lib/theme.js';
+import { getThemePreference, nextTheme, setThemePreference } from '../lib/theme.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './AccessBanner.css';
 
 const MESSAGES = {
-  'niet-ingelogd': 'Dit zijn demo-gegevens. Wat je aanpast blijft bewaard tot je de browser sluit; log in om je eigen trainingen op te slaan.',
-  'niet-geconfigureerd': 'Dit zijn demo-gegevens. Deze versie is niet met een database verbonden.',
-  'geen-toegang': 'Dit account heeft geen toegang tot eigen gegevens. Je ziet de demo.',
-  'controle-mislukt': 'Je toegang kon niet worden gecontroleerd. Je ziet de demo.',
+  'niet-ingelogd': 'demo.notLoggedIn',
+  'niet-geconfigureerd': 'demo.notConfigured',
+  'geen-toegang': 'demo.noAccess',
+  'controle-mislukt': 'demo.checkFailed',
 };
 
 /**
@@ -19,6 +20,8 @@ export default function AccessBanner({ access, error, onLogin, onLogout }) {
   const canLogin = access.reason === 'niet-ingelogd';
   const [theme, setTheme] = useState(getThemePreference);
   const cycleTheme = () => setTheme(setThemePreference(nextTheme(theme)));
+  const { t, locale, setLocale } = useI18n();
+  const themeName = t(`theme.${theme}`);
 
   return (
     <header className="appbar">
@@ -26,20 +29,26 @@ export default function AccessBanner({ access, error, onLogin, onLogout }) {
         <span className="appbar__name">Repz</span>
         <span className="appbar__actions">
           <button type="button" className="appbar__theme" onClick={cycleTheme}
-            aria-label={`Thema: ${THEME_LABELS[theme]}. Tik om te wisselen.`}
-            title={`Thema: ${THEME_LABELS[theme]}`}>
+            aria-label={t('theme.aria', { name: themeName })}
+            title={t('theme.title', { name: themeName })}>
             <ThemeIcon theme={theme} />
-            <span className="appbar__theme-label">{THEME_LABELS[theme]}</span>
+            <span className="appbar__theme-label">{themeName}</span>
+          </button>
+          {/* Toont de taal waar je naartoe gaat: in het Engels staat er NL. */}
+          <button type="button" className="appbar__theme appbar__lang"
+            onClick={() => setLocale(locale === 'en' ? 'nl' : 'en')}
+            aria-label={t('locale.aria')} title={t('locale.switch')}>
+            {locale === 'en' ? 'NL' : 'EN'}
           </button>
           {owner && <span className="appbar__account">{access.email}</span>}
           {canLogin && (
-            <button type="button" className="appbar__action" onClick={onLogin} aria-label="Inloggen met Google">
-              <span className="appbar__action-long" aria-hidden="true">Inloggen met Google</span>
-              <span className="appbar__action-short" aria-hidden="true">Inloggen</span>
+            <button type="button" className="appbar__action" onClick={onLogin} aria-label={t('auth.loginLong')}>
+              <span className="appbar__action-long" aria-hidden="true">{t('auth.loginLong')}</span>
+              <span className="appbar__action-short" aria-hidden="true">{t('auth.loginShort')}</span>
             </button>
           )}
           {loggedIn && (
-            <button type="button" className="appbar__action" onClick={onLogout}>Uitloggen</button>
+            <button type="button" className="appbar__action" onClick={onLogout}>{t('auth.logout')}</button>
           )}
         </span>
       </div>
@@ -47,9 +56,9 @@ export default function AccessBanner({ access, error, onLogin, onLogout }) {
       {(!owner || error) && (
         <div className="appbar__note" role="status">
           <div className="appbar__note-inner">
-            {!owner && (MESSAGES[access.reason] ?? MESSAGES['niet-ingelogd'])}
+            {!owner && t(MESSAGES[access.reason] ?? MESSAGES['niet-ingelogd'])}
             {!owner && loggedIn && <span className="appbar__note-account">{access.email}</span>}
-            {error && <span className="appbar__error" role="alert">Inloggen lukte niet: {error}</span>}
+            {error && <span className="appbar__error" role="alert">{t('auth.failed', { error })}</span>}
           </div>
         </div>
       )}

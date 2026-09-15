@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CATALOG } from '../data/catalog.js';
-import { EQUIPMENT, MEASURES, EQUIPMENT_IDS, MEASURE_IDS } from '../data/equipment.js';
+import {
+  EQUIPMENT_IDS, MEASURE_IDS, equipmentLabel, equipmentOptions, measureOptions,
+} from '../data/equipment.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import { muscleLabel } from '../lib/muscleLabels.js';
 import {
-  filterCatalog, findExistingExercise, nextPosition, defaultTarget,
+  filterCatalog, findExistingExercise, catalogName, nextPosition, defaultTarget,
   validateTarget, targetColumns, validateOwnExercise,
 } from '../lib/editor.js';
 import {
@@ -22,10 +25,10 @@ const MUSCLE_ORDER = [
   'quadriceps', 'hamstring', 'gluteal', 'calves', 'adductor', 'abductors',
 ];
 
-const EQUIPMENT_FILTER = [{ id: 'alles', label: 'Alles' }, ...EQUIPMENT];
-const equipmentLabel = (id) => EQUIPMENT.find((e) => e.id === id)?.label ?? '';
-
 export default function AddExercise({ templateId, onDone, onBack }) {
+  const { t: tx, locale } = useI18n();
+  const equipment_ = equipmentOptions(locale);
+  const equipmentFilter = [{ id: 'alles', label: tx('add.all') }, ...equipment_];
   const [template, setTemplate] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [rows, setRows] = useState([]);
@@ -62,8 +65,8 @@ export default function AddExercise({ templateId, onDone, onBack }) {
   }, [templateId]);
 
   const results = useMemo(
-    () => (muscle || query.trim() ? filterCatalog(CATALOG, { muscle, equipment, query }) : []),
-    [muscle, equipment, query],
+    () => (muscle || query.trim() ? filterCatalog(CATALOG, { muscle, equipment, query, locale }) : []),
+    [muscle, equipment, query, locale],
   );
 
   /** Waar staat deze bibliotheekoefening al? */
@@ -99,13 +102,13 @@ export default function AddExercise({ templateId, onDone, onBack }) {
   const addFromCatalog = async (entry) => {
     const { existing } = whereIs(entry);
     const measure = existing?.measure ?? entry.measure;
-    const errs = validateTarget(measure, form);
+    const errs = validateTarget(measure, form, locale);
     if (errs.length) { setErrors(errs); return; }
     setBusy(true);
     try {
       // Bestaat hij al, dan dezelfde oefening: de geschiedenis loopt door.
       const exercise = existing ?? await createExercise({
-        name: entry.name, muscle_groups: entry.muscles,
+        name: catalogName(entry, locale), muscle_groups: entry.muscles,
         equipment: entry.equipment, measure: entry.measure, catalog_key: entry.key,
       });
       await link(exercise, measure);
@@ -133,8 +136,8 @@ export default function AddExercise({ templateId, onDone, onBack }) {
 
   const addOwn = async () => {
     const errs = [
-      ...validateOwnExercise(own, exercises, { equipmentIds: EQUIPMENT_IDS, measureIds: MEASURE_IDS }),
-      ...(own.measure ? validateTarget(own.measure, form) : []),
+      ...validateOwnExercise(own, exercises, { equipmentIds: EQUIPMENT_IDS, measureIds: MEASURE_IDS }, locale),
+      ...(own.measure ? validateTarget(own.measure, form, locale) : []),
     ];
     if (errs.length) { setErrors(errs); return; }
     setBusy(true);
@@ -158,13 +161,11 @@ export default function AddExercise({ templateId, onDone, onBack }) {
             <svg width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
               <path d="M8 2 2 8l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="sr-only">Terug</span>
+            <span className="sr-only">{tx('common.back')}</span>
           </button>
         </div>
-        <h1 className="exercise__title">Oefening toevoegen</h1>
-        <p className="exercise__empty">
-          In de demo kun je geen oefeningen toevoegen. Log in om je eigen schema op te bouwen.
-        </p>
+        <h1 className="exercise__title">{tx('add.title')}</h1>
+        <p className="exercise__empty">{tx('add.demo')}</p>
       </main>
     );
   }
@@ -179,37 +180,37 @@ export default function AddExercise({ templateId, onDone, onBack }) {
             <path d="M8 2 2 8l6 6" stroke="currentColor" strokeWidth="2"
               strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="sr-only">Terug</span>
+          <span className="sr-only">{tx('common.back')}</span>
         </button>
       </div>
 
-      <h1 className="exercise__title">Oefening toevoegen</h1>
-      <p className="exercise__meta">aan {template?.label ?? 'deze workout'}</p>
+      <h1 className="exercise__title">{tx('add.title')}</h1>
+      <p className="exercise__meta">{tx('add.to', { name: template?.label ?? tx('add.thisWorkout') })}</p>
       {error && <p className="schema__error" role="alert">{error}</p>}
 
       <section className="pick">
-        <h2 className="pick__label">Spiergroep</h2>
+        <h2 className="pick__label">{tx('add.muscle')}</h2>
         <div className="chips">
           {MUSCLE_ORDER.map((m) => (
             <button key={m} type="button" aria-pressed={muscle === m}
               className={`chip${muscle === m ? ' chip--on' : ''}`}
               onClick={() => { setMuscle(muscle === m ? null : m); setChosen(null); }}>
-              {muscleLabel(m)}
+              {muscleLabel(m, locale)}
             </button>
           ))}
         </div>
 
-        <h2 className="pick__label">Materiaal</h2>
-        <ChipGroup options={EQUIPMENT_FILTER} value={equipment} onChange={setEquipment} label="Materiaal" />
+        <h2 className="pick__label">{tx('add.equipment')}</h2>
+        <ChipGroup options={equipmentFilter} value={equipment} onChange={setEquipment} label={tx('add.equipment')} />
 
-        <input className="pick__search" type="search" placeholder="Of zoek op naam"
+        <input className="pick__search" type="search" placeholder={tx('add.search')}
           value={query} onChange={(e) => { setQuery(e.target.value); setChosen(null); }} />
       </section>
 
       {(muscle || query.trim()) && (
         <section className="results">
           <h2 className="pick__label">
-            {results.length === 0 ? 'Geen oefeningen gevonden' : `${results.length} ${results.length === 1 ? 'oefening' : 'oefeningen'}`}
+            {results.length === 0 ? tx('add.noResults') : tx('add.results', { count: results.length })}
           </h2>
           <ul className="results__list">
             {results.map((entry) => {
@@ -220,12 +221,12 @@ export default function AddExercise({ templateId, onDone, onBack }) {
                   <button type="button" className="result__row" disabled={where.here}
                     aria-expanded={open} onClick={() => choose(entry)}>
                     <span className="item__main">
-                      <span className="item__name">{entry.name}</span>
-                      <span className="item__meta">{entry.muscles.map(muscleLabel).join(', ')}</span>
+                      <span className="item__name">{catalogName(entry, locale)}</span>
+                      <span className="item__meta">{entry.muscles.map((m) => muscleLabel(m, locale)).join(', ')}</span>
                       <span className="item__meta">
-                        {equipmentLabel(entry.equipment)}
-                        {where.here && ' — staat al in deze workout'}
-                        {!where.here && where.elsewhere.length > 0 && ` — ook in ${where.elsewhere.join(' en ')}`}
+                        {equipmentLabel(entry.equipment, locale)}
+                        {where.here && tx('add.alreadyHere')}
+                        {!where.here && where.elsewhere.length > 0 && tx('add.alsoIn', { list: where.elsewhere.join(` ${tx('add.and')} `) })}
                       </span>
                     </span>
                   </button>
@@ -237,9 +238,9 @@ export default function AddExercise({ templateId, onDone, onBack }) {
                       <span className="item__buttons">
                         <button type="button" className="schema__primary" disabled={busy}
                           onClick={() => addFromCatalog(entry)}>
-                          Toevoegen
+                          {tx('add.add')}
                         </button>
-                        <button type="button" className="schema__link" onClick={() => setChosen(null)}>Annuleren</button>
+                        <button type="button" className="schema__link" onClick={() => setChosen(null)}>{tx('common.cancel')}</button>
                       </span>
                     </div>
                   )}
@@ -253,41 +254,41 @@ export default function AddExercise({ templateId, onDone, onBack }) {
       <section className="own">
         {!ownOpen ? (
           <p className="exercise__meta">
-            Staat je oefening er niet tussen?{' '}
-            <button type="button" className="schema__link" onClick={openOwn}>Maak een eigen oefening</button>
+            {tx('add.notListed')}{' '}
+            <button type="button" className="schema__link" onClick={openOwn}>{tx('add.createOwn')}</button>
           </p>
         ) : (
           <div className="own__form">
-            <h2 className="wk__title">Eigen oefening</h2>
+            <h2 className="wk__title">{tx('add.own')}</h2>
             <label className="own__field">
-              <span className="pick__label">Naam</span>
+              <span className="pick__label">{tx('add.name')}</span>
               <input value={own.name} onChange={(e) => setOwn({ ...own, name: e.target.value })} />
             </label>
 
-            <span className="pick__label">Spiergroepen</span>
+            <span className="pick__label">{tx('add.muscles')}</span>
             <div className="chips">
               {MUSCLE_ORDER.map((m) => (
                 <button key={m} type="button" aria-pressed={own.muscles.includes(m)}
                   className={`chip${own.muscles.includes(m) ? ' chip--on' : ''}`}
                   onClick={() => toggleOwnMuscle(m)}>
-                  {muscleLabel(m)}
+                  {muscleLabel(m, locale)}
                 </button>
               ))}
             </div>
 
-            <span className="pick__label">Materiaal</span>
-            <ChipGroup options={EQUIPMENT} value={own.equipment} label="Materiaal"
+            <span className="pick__label">{tx('add.equipment')}</span>
+            <ChipGroup options={equipment_} value={own.equipment} label={tx('add.equipment')}
               onChange={(id) => setOwn({ ...own, equipment: id })} />
 
-            <span className="pick__label">Wat log je?</span>
-            <ChipGroup options={MEASURES} value={own.measure} label="Meetwijze" onChange={setOwnMeasure} />
+            <span className="pick__label">{tx('add.measure')}</span>
+            <ChipGroup options={measureOptions(locale)} value={own.measure} label={tx('add.measureAria')} onChange={setOwnMeasure} />
 
             {own.measure && <TargetFields measure={own.measure} value={form} onChange={setForm} />}
             {errors.map((m) => <p key={m} className="schema__error">{m}</p>)}
 
             <span className="item__buttons">
-              <button type="button" className="schema__primary" disabled={busy} onClick={addOwn}>Toevoegen</button>
-              <button type="button" className="schema__link" onClick={() => { setOwnOpen(false); setErrors([]); }}>Annuleren</button>
+              <button type="button" className="schema__primary" disabled={busy} onClick={addOwn}>{tx('add.add')}</button>
+              <button type="button" className="schema__link" onClick={() => { setOwnOpen(false); setErrors([]); }}>{tx('common.cancel')}</button>
             </span>
           </div>
         )}

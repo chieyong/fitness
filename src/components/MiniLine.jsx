@@ -1,4 +1,5 @@
 import { formatDateShort } from '../lib/schedule.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './MiniLine.css';
 
 const MAX_POINTS = 12;
@@ -13,9 +14,10 @@ const PAD = 4;
  * ernaast draagt de precieze waarde.
  */
 export default function MiniLine({ points, formatValue }) {
+  const { t, locale } = useI18n();
   const shown = points.slice(-MAX_POINTS);
   if (shown.length === 0) {
-    return <span className="miniline miniline--empty">geen data</span>;
+    return <span className="miniline miniline--empty">{t('progress.noData')}</span>;
   }
 
   const values = shown.map((p) => p.value);
@@ -34,7 +36,7 @@ export default function MiniLine({ points, formatValue }) {
   return (
     <svg className="miniline" width={WIDTH} height={HEIGHT}
       role="img"
-      aria-label={shown.map((p) => `${formatDateShort(p.date)}: ${formatValue(p.value)}`).join(', ')}>
+      aria-label={shown.map((p) => `${formatDateShort(p.date, locale)}: ${formatValue(p.value)}`).join(', ')}>
       {shown.length > 1 && <path className="miniline__path" d={d} />}
       <circle className="miniline__end" cx={x(lastIndex)} cy={y(shown[lastIndex].value)} r={3} />
     </svg>

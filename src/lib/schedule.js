@@ -16,14 +16,28 @@ const OPEN_STATUS = 'gepland';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const WEEKDAY_NAMES = [
-  'zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag',
-];
+/** Datumwoorden per taal. Weekdagen op JavaScript-volgorde: zondag = 0. */
+const DATE_WORDS = {
+  nl: {
+    weekdays: ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'],
+    weekdaysShort: ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
+    months: ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'],
+    monthsShort: ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
+    today: 'Vandaag', tomorrow: 'Morgen', yesterday: 'Gisteren',
+  },
+  en: {
+    weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    weekdaysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    today: 'Today', tomorrow: 'Tomorrow', yesterday: 'Yesterday',
+  },
+};
 
-const MONTH_NAMES = [
-  'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-  'juli', 'augustus', 'september', 'oktober', 'november', 'december',
-];
+const words = (locale) => DATE_WORDS[locale] ?? DATE_WORDS.nl;
+
+/** Target-toevoegingen uit het programma, vertaald. Onbekende blijven zoals ze zijn. */
+const TARGET_NOTES = { en: { 'per been': 'per leg', 'per kant': 'per side' } };
 
 /** 'YYYY-MM-DD' -> UTC-timestamp op middernacht. */
 function parseISO(iso) {
@@ -273,35 +287,38 @@ function shuffledRounds(ordered, all, random) {
   };
 }
 
-/** 'Zaterdag 13 september' — en 'Vandaag' / 'Morgen' waar dat duidelijker is. */
-export function formatDateLong(iso, today) {
+/** 'Zaterdag 13 september' / 'Saturday 19 September' — en 'Vandaag' / 'Today' waar dat duidelijker is. */
+export function formatDateLong(iso, today, locale = 'nl') {
+  const w = words(locale);
   if (today) {
     const delta = daysBetween(today, iso);
-    if (delta === 0) return 'Vandaag';
-    if (delta === 1) return 'Morgen';
-    if (delta === -1) return 'Gisteren';
+    if (delta === 0) return w.today;
+    if (delta === 1) return w.tomorrow;
+    if (delta === -1) return w.yesterday;
   }
   const d = new Date(parseISO(iso));
-  const weekday = WEEKDAY_NAMES[d.getUTCDay()];
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()]}`;
+  const weekday = w.weekdays[d.getUTCDay()];
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${d.getUTCDate()} ${w.months[d.getUTCMonth()]}`;
 }
 
-/** 'za 20 sep' — compacte variant voor lijstjes. */
-export function formatDateShort(iso) {
+/** 'za 20 sep' / 'Sat 20 Sep' — compacte variant voor lijstjes. */
+export function formatDateShort(iso, locale = 'nl') {
+  const w = words(locale);
   const d = new Date(parseISO(iso));
-  return `${WEEKDAY_NAMES[d.getUTCDay()].slice(0, 2)} ${d.getUTCDate()} ${MONTH_NAMES[d.getUTCMonth()].slice(0, 3)}`;
+  return `${w.weekdaysShort[d.getUTCDay()]} ${d.getUTCDate()} ${w.monthsShort[d.getUTCMonth()]}`;
 }
 
-/** '3 × 10-12', '3 × 30-45 sec', '3 × 12 per been' */
+/** '3 × 10-12', '3 × 30-45 sec', '3 × 12 per been' / '3 × 12 per leg' */
 export function formatTarget({
   target_sets, target_reps_min, target_reps_max,
   target_seconds, target_seconds_max, target_note,
-}) {
+}, locale = 'nl') {
   const range = (min, max) => (max && max !== min ? `${min}-${max}` : `${min}`);
 
   const core = target_seconds
     ? `${target_sets} × ${range(target_seconds, target_seconds_max)} sec`
     : `${target_sets} × ${range(target_reps_min, target_reps_max)}`;
 
-  return target_note ? `${core} ${target_note}` : core;
+  const note = target_note ? (TARGET_NOTES[locale]?.[target_note] ?? target_note) : null;
+  return note ? `${core} ${note}` : core;
 }

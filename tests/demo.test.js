@@ -99,3 +99,11 @@ test('demo-feedback: geldige sterren, geldige verwijzingen, één per oefening p
     keys.add(k);
   }
 });
+
+test('de Engelse demo gebruikt Engelse namen en is ook deterministisch', () => {
+  const en = generateDemoData({ today, locale: 'en' });
+  const names = en.exercises.map((e) => e.name);
+  assert.ok(names.includes('Bench press') && names.includes('Plank with shoulder taps'));
+  assert.deepEqual(generateDemoData({ today, locale: 'en' }), en);
+  assert.equal(en.sessions.length, data.sessions.length);
+});

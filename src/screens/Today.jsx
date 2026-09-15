@@ -8,6 +8,7 @@ import {
   ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
   closeSession, reopenSession, dataMode,
 } from '../lib/queries.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import SessionHeader from '../components/SessionHeader.jsx';
 import ExerciseBlock from '../components/ExerciseBlock.jsx';
 import SessionActions from '../components/SessionActions.jsx';
@@ -31,6 +32,7 @@ function dateFromUrl() {
 export default function Today({ onOpenExercise }) {
   const today = useMemo(() => todayISO(), []);
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
+  const { t, locale } = useI18n();
 
   const [templates, setTemplates] = useState([]);
   const [settings, setSettings] = useState(null);
@@ -43,7 +45,7 @@ export default function Today({ onOpenExercise }) {
 
   // Rondleiding: vanzelf bij het eerste bezoek, daarna via "Uitleg bekijken".
   const [tourOpen, setTourOpen] = useState(false);
-  const steps = useMemo(() => tourSteps({ demo: dataMode() === 'demo' }), []);
+  const steps = useMemo(() => tourSteps({ demo: dataMode() === 'demo', t }), [t]);
   const closeTour = useCallback(() => { markTourSeen(window.localStorage); setTourOpen(false); }, []);
   // Eén oefening tegelijk open houdt het scherm compact in de gym.
   const [openId, setOpenId] = useState(null);
@@ -180,7 +182,7 @@ export default function Today({ onOpenExercise }) {
   if (status === 'fout') {
     return (
       <main className="page">
-        <h1 className="session-header__title">Kan de gegevens niet laden</h1>
+        <h1 className="session-header__title">{t('common.loadError')}</h1>
         <p className="today__message">{error}</p>
       </main>
     );
@@ -239,18 +241,19 @@ export default function Today({ onOpenExercise }) {
         </>
       ) : (
         <p className="today__message">
-          Geen training gepland. De eerstvolgende sessie staat op{' '}
-          {view?.upcoming[0] ? formatDateShort(view.upcoming[0].date) : 'nog geen datum'}.
+          {t('session.none', {
+            date: view?.upcoming[0] ? formatDateShort(view.upcoming[0].date, locale) : t('session.noDate'),
+          })}
         </p>
       )}
 
       {view?.upcoming.length > 0 && (
         <section className="upcoming">
-          <h2 className="upcoming__heading">Hierna</h2>
+          <h2 className="upcoming__heading">{t('session.upcoming')}</h2>
           <ul className="upcoming__list">
             {view.upcoming.slice(0, 3).map((entry) => (
               <li key={entry.session.id} className="upcoming__item">
-                <span>{formatDateShort(entry.date)}</span>
+                <span>{formatDateShort(entry.date, locale)}</span>
                 <span className="upcoming__label">
                   {templates.find((t) => t.id === entry.session.template_id)?.label ?? '—'}
                 </span>
@@ -260,7 +263,7 @@ export default function Today({ onOpenExercise }) {
         </section>
       )}
       <button type="button" className="today__help" onClick={() => setTourOpen(true)}>
-        Uitleg bekijken
+        {t('session.help')}
       </button>
       <Tour steps={steps} open={tourOpen} onClose={closeTour} />
       <VideoModal video={video} onClose={closeVideo} />

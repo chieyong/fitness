@@ -6,11 +6,13 @@ import { muscleLabel } from '../lib/muscleLabels.js';
 import {
   fetchExercise, fetchExerciseTemplates, fetchSessions, fetchLogsForExercises,
 } from '../lib/queries.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import LineChart from '../components/LineChart.jsx';
 import './Exercise.css';
 
 export default function Exercise({ exerciseId, onBack }) {
   const [exercise, setExercise] = useState(null);
+  const { t, locale } = useI18n();
   const [inTemplates, setInTemplates] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -54,7 +56,7 @@ export default function Exercise({ exerciseId, onBack }) {
     return (
       <main className="page">
         <Back onBack={onBack} />
-        <h1 className="exercise__title">Kan de oefening niet laden</h1>
+        <h1 className="exercise__title">{t('exercise.loadError')}</h1>
         <p className="exercise__meta">{error}</p>
       </main>
     );
@@ -63,7 +65,7 @@ export default function Exercise({ exerciseId, onBack }) {
     return (
       <main className="page">
         <Back onBack={onBack} />
-        <h1 className="exercise__title">Oefening niet gevonden</h1>
+        <h1 className="exercise__title">{t('exercise.notFound')}</h1>
       </main>
     );
   }
@@ -79,15 +81,14 @@ export default function Exercise({ exerciseId, onBack }) {
 
       <h1 className="exercise__title">{exercise.name}</h1>
       <p className="exercise__meta">
-        {exercise.muscle_groups.map(muscleLabel).join(', ')}
+        {exercise.muscle_groups.map((m) => muscleLabel(m, locale)).join(', ')}
         {inTemplates.length > 0 && ` · ${inTemplates.map((t) => t.template.label).join(', ')}`}
       </p>
       {exercise.notes && <p className="exercise__notes">{exercise.notes}</p>}
 
       {series.length === 0 ? (
         <p className="exercise__empty">
-          Nog niets gelogd voor deze oefening. Zodra je hem een keer doet,
-          verschijnt hier je voortgang.
+          {t('exercise.empty')}
         </p>
       ) : (
         <>
@@ -95,48 +96,48 @@ export default function Exercise({ exerciseId, onBack }) {
         <div className="hero">
           <span className="hero__value">{formatNumber(latest[metric])}<span className="hero__unit">{unit}</span></span>
           <span className="hero__label">
-            {isTimed ? 'Langste set' : 'Zwaarste set'} — {formatDateShort(latest.date)}
+            {t(isTimed ? 'exercise.longest' : 'exercise.heaviest')} — {formatDateShort(latest.date, locale)}
             {delta != null && delta !== 0 && (
               <span className={`hero__delta${delta > 0 ? ' hero__delta--up' : ''}`}>
-                {delta > 0 ? '+' : ''}{formatNumber(delta)} {unit} sinds {formatDateShort(done[0].date)}
+                {t('exercise.since', { delta: `${delta > 0 ? '+' : ''}${formatNumber(delta)}`, unit, date: formatDateShort(done[0].date, locale) })}
               </span>
             )}
           </span>
         </div>
       ) : (
-        <p className="exercise__meta">Nog geen metingen voor deze oefening.</p>
+        <p className="exercise__meta">{t('exercise.noMeasurements')}</p>
       )}
 
       <LineChart
-        title={isTimed ? 'Langste set per training' : 'Zwaarste set per training'}
+        title={t(isTimed ? 'exercise.longestChart' : 'exercise.heaviestChart')}
         points={done.map((p) => ({ date: p.date, value: p[metric] }))}
         formatValue={(v) => `${formatNumber(v)} ${unit}`}
-        emptyLabel="Nog niets gelogd."
+        emptyLabel={t('exercise.chartEmpty')}
       />
 
       {!isTimed && (
         <LineChart
-          title="Volume per training"
+          title={t('exercise.volumeChart')}
           points={series.filter((p) => p.volume > 0).map((p) => ({ date: p.date, value: p.volume }))}
           formatValue={(v) => `${formatNumber(Math.round(v))} kg`}
-          emptyLabel="Nog niets gelogd."
+          emptyLabel={t('exercise.chartEmpty')}
         />
       )}
 
       <section className="log">
-        <h2 className="log__heading">Alle trainingen</h2>
+        <h2 className="log__heading">{t('exercise.history')}</h2>
         <table className="log__table">
           <thead>
               <tr>
-                <th scope="col">Datum</th>
-                <th scope="col">Sets</th>
-                <th scope="col">Volume</th>
+                <th scope="col">{t('exercise.date')}</th>
+                <th scope="col">{t('exercise.sets')}</th>
+                <th scope="col">{t('exercise.volume')}</th>
               </tr>
             </thead>
             <tbody>
               {[...series].reverse().map((p) => (
                 <tr key={p.sessionId}>
-                  <td>{formatDateShort(p.date)}</td>
+                  <td>{formatDateShort(p.date, locale)}</td>
                   <td>{formatSets(p.sets)}</td>
                   <td>{p.volume > 0 ? `${formatNumber(Math.round(p.volume))} kg` : '—'}</td>
                 </tr>
@@ -150,9 +151,11 @@ export default function Exercise({ exerciseId, onBack }) {
 
       {inTemplates.length > 0 && (
         <p className="exercise__targets">
-          Target: {inTemplates
-            .map((t) => `${formatTarget(t)} in ${t.template.label}`)
-            .join(' · ')}
+          {t('exercise.target', {
+            list: inTemplates
+              .map((row) => t('exercise.targetIn', { target: formatTarget(row, locale), workout: row.template.label }))
+              .join(' · '),
+          })}
         </p>
       )}
     </main>
@@ -160,13 +163,14 @@ export default function Exercise({ exerciseId, onBack }) {
 }
 
 function Back({ onBack }) {
+  const { t } = useI18n();
   return (
     <button type="button" className="back" onClick={onBack}>
       <svg width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
         <path d="M8 2 2 8l6 6" stroke="currentColor" strokeWidth="2"
           strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <span className="sr-only">Terug</span>
+      <span className="sr-only">{t('common.back')}</span>
     </button>
   );
 }

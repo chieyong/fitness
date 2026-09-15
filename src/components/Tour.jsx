@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { nextAvailable, placeTip } from '../lib/tour.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './Tour.css';
 
 const PAD = 8;
@@ -9,6 +10,7 @@ const PAD = 8;
  * uitlegkaartje naast. Overslaan kan altijd; Escape doet hetzelfde.
  */
 export default function Tour({ steps, open, onClose }) {
+  const { t } = useI18n();
   const [index, setIndex] = useState(-1);
   const [spot, setSpot] = useState(null);
   const [pos, setPos] = useState(null);
@@ -110,16 +112,16 @@ export default function Tour({ steps, open, onClose }) {
           visibility: pos ? 'visible' : 'hidden',
           '--arrow': `${pos?.arrow ?? 0}px`,
         }}>
-        <span className="tour__count">{number} van {available.length}</span>
+        <span className="tour__count">{t('tour.count', { n: number, total: available.length })}</span>
         <h2 id="tour-title" className="tour__title">{step.title}</h2>
         <p id="tour-body" className="tour__body">{step.body}</p>
         <div className="tour__buttons">
-          {!last && <button type="button" className="tour__skip" onClick={() => onClose(false)}>Overslaan</button>}
+          {!last && <button type="button" className="tour__skip" onClick={() => onClose(false)}>{t('tour.skip')}</button>}
           <span className="tour__nav">
-            {prevIndex >= 0 && <button type="button" className="tour__back" onClick={() => setIndex(prevIndex)}>Terug</button>}
+            {prevIndex >= 0 && <button type="button" className="tour__back" onClick={() => setIndex(prevIndex)}>{t('tour.back')}</button>}
             <button ref={primaryRef} type="button" className="tour__next"
               onClick={() => (last ? onClose(true) : setIndex(nextIndex))}>
-              {last ? 'Aan de slag' : 'Volgende'}
+              {last ? t('tour.done') : t('tour.next')}
             </button>
           </span>
         </div>

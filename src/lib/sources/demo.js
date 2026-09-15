@@ -8,25 +8,32 @@ import { planNextSessions } from '../schedule.js';
 import { normalizeScheduleSettings, scheduleOptions } from '../scheduleSettings.js';
 
 const HORIZON = 6;
-const STORAGE_KEY = 'repz.demo.v1';
+/** Per taal een eigen demo: namen en notities verschillen. */
+export const demoStorageKey = (locale = 'nl') => `repz.demo.v2.${locale === 'en' ? 'en' : 'nl'}`;
+
+const LOCK_MESSAGE = {
+  nl: 'Dit kan niet in de demo. Log in om je eigen schema en planning te beheren.',
+  en: 'Not available in the demo. Log in to manage your own schedule and planning.',
+};
 
 /** Wat de structuur van het schema verandert: in de demo niet toegestaan. */
 const STRUCTURE = [
   'createTemplate', 'renameTemplate', 'archiveTemplate', 'createExercise',
   'addTemplateExercise', 'deleteTemplateExercise', 'updateTemplateExercisePositions',
+  'saveScheduleSettings', 'replanUpcoming',
 ];
 
 /** Alles wat iets wijzigt, en dus bewaard moet worden. */
 const MUTATORS = [
   ...STRUCTURE, 'ensureUpcomingSessions', 'saveSet', 'deleteSet', 'setExerciseSkipped',
   'closeSession', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
-  'saveFeedback', 'updateExercise', 'saveScheduleSettings', 'replanUpcoming',
+  'saveFeedback', 'updateExercise',
 ];
 
 /** Een bewaarde demo, maar alleen als hij voor vandaag is gemaakt en leesbaar is. */
-function readSnapshot(storage, today) {
+function readSnapshot(storage, today, key) {
   try {
-    const raw = storage.getItem(STORAGE_KEY);
+    const raw = storage.getItem(key);
     if (!raw) return null;
     const snap = JSON.parse(raw);
     return snap && snap.today === today && snap.db ? snap : null;
@@ -43,9 +50,10 @@ const copy = (value) => structuredClone(value);
  * @param lockStructure in de demo geen workouts of oefeningen toevoegen, verwijderen
  *                      of ordenen; targets, video's, sets en sterren mogen wel.
  */
-export function createDemoSource({ today, data, storage = null, lockStructure = false } = {}) {
-  const saved = !data && storage ? readSnapshot(storage, today) : null;
-  const db = saved?.db ?? copy(data ?? generateDemoData({ today }));
+export function createDemoSource({ today, data, storage = null, lockStructure = false, locale = 'nl' } = {}) {
+  const key = demoStorageKey(locale);
+  const saved = !data && storage ? readSnapshot(storage, today, key) : null;
+  const db = saved?.db ?? copy(data ?? generateDemoData({ today, locale }));
   db.exercise_feedback ??= [];
   db.schedule_settings = normalizeScheduleSettings(db.schedule_settings);
   // De teller voor nieuwe id's reist mee, anders botsen id's na herladen.
@@ -54,7 +62,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
   const persist = () => {
     if (!storage) return;
     try {
-      storage.setItem(STORAGE_KEY, JSON.stringify({ today, counter, db }));
+      storage.setItem(key, JSON.stringify({ today, counter, db }));
     } catch {
       // Vol of geblokkeerd: dan blijft het bij het geheugen van deze pagina.
     }
@@ -294,7 +302,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
     const original = source[name];
     source[name] = async (...args) => {
       if (lockStructure && STRUCTURE.includes(name)) {
-        throw new Error('In de demo kun je geen workouts of oefeningen toevoegen of verwijderen. Log in om je eigen schema op te bouwen.');
+        throw new Error(LOCK_MESSAGE[locale] ?? LOCK_MESSAGE.nl);
       }
       const result = await original.apply(source, args);
       persist();

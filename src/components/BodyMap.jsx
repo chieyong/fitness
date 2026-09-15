@@ -1,6 +1,7 @@
 import Model from 'react-body-highlighter';
 import { intensityBucket } from '../lib/muscles.js';
 import { muscleLabel } from '../lib/muscleLabels.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
 import './BodyMap.css';
 
 /**
@@ -19,9 +20,10 @@ export const EMPTY = 'var(--body-empty)';
  * op `frequency`, en daar voeren we de stap van onze eigen schaal in.
  */
 export default function BodyMap({ intensity, selected, onSelect, valueLabel }) {
+  const { t, locale } = useI18n();
   const data = [...intensity.entries()]
     .map(([muscle, value]) => ({
-      name: muscleLabel(muscle),
+      name: muscleLabel(muscle, locale),
       muscles: [muscle],
       frequency: intensityBucket(value, RAMP.length),
     }))
@@ -31,10 +33,10 @@ export default function BodyMap({ intensity, selected, onSelect, valueLabel }) {
 
   return (
     <div className="body">
-      <Figure type="anterior" label="Voorkant" data={data} onClick={handle} />
-      <Figure type="posterior" label="Achterkant" data={data} onClick={handle} />
+      <Figure type="anterior" label={t('progress.front')} data={data} onClick={handle} />
+      <Figure type="posterior" label={t('progress.backSide')} data={data} onClick={handle} />
       <p className="body__sr">
-        {[...intensity.keys()].map((m) => `${muscleLabel(m)}: ${valueLabel(m)}`).join('. ')}
+        {[...intensity.keys()].map((m) => `${muscleLabel(m, locale)}: ${valueLabel(m)}`).join('. ')}
       </p>
     </div>
   );
@@ -59,9 +61,10 @@ function Figure({ type, label, data, onClick }) {
 
 /** Schaallegenda: zonder deze is een kleurverloop niet af te lezen. */
 export function RampLegend({ maxLabel }) {
+  const { t } = useI18n();
   return (
     <div className="ramp">
-      <span className="ramp__end">niets</span>
+      <span className="ramp__end">{t('progress.none')}</span>
       <span className="ramp__bar" aria-hidden="true">
         {RAMP.map((c) => <i key={c} style={{ background: c }} />)}
       </span>
