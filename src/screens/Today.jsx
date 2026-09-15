@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveToday, todayISO, formatDateShort } from '../lib/schedule.js';
-import { lastPerformance, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
+import { lastPerformance, setsFor, feedbackFor, lastFeedback, exerciseStatus } from '../lib/progress.js';
+import { todayMuscles } from '../lib/todayMuscles.js';
 import { scheduleOptions } from '../lib/scheduleSettings.js';
 import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises, fetchScheduleSettings,
@@ -11,6 +12,7 @@ import {
 import { useI18n } from '../i18n/I18nProvider.jsx';
 import SessionHeader from '../components/SessionHeader.jsx';
 import ExerciseBlock from '../components/ExerciseBlock.jsx';
+import TodayBody from '../components/TodayBody.jsx';
 import SessionActions from '../components/SessionActions.jsx';
 import DateStepper from '../components/DateStepper.jsx';
 import VideoModal from '../components/VideoModal.jsx';
@@ -94,6 +96,23 @@ export default function Today({ onOpenExercise }) {
   const session = view?.current?.session ?? view?.done ?? null;
   const template = session ? templates.find((t) => t.id === session.template_id) : null;
   const readOnly = session ? session.status !== 'gepland' : true;
+
+  // Welke spiergroepen deze training raakt, en hoe ver je bent: zelfde status
+  // als het rondje bij elke oefening, dus afvinken kleurt het lichaam meteen in.
+  const muscleStates = useMemo(() => {
+    if (!session) return new Map();
+    return todayMuscles(exercises.map((item) => {
+      const logged = setsFor(logs, session.id, item.exercise_id);
+      return {
+        muscles: item.exercise?.muscle_groups ?? [],
+        status: exerciseStatus({
+          logged: logged.filter((l) => !l.skipped),
+          targetSets: item.target_sets,
+          skipped: logged.length > 0 && logged.every((l) => l.skipped),
+        }),
+      };
+    }));
+  }, [session?.id, exercises, logs]);
 
   // Oefeningen van de getoonde sessie, plus alle logs van die oefeningen --
   // die laatste voeden zowel de invoervelden als "vorige keer".
@@ -206,6 +225,7 @@ export default function Today({ onOpenExercise }) {
 
       {session ? (
         <>
+          <TodayBody states={muscleStates} />
           <ol className="blocks">
             {exercises.map((item) => {
               const logged = setsFor(logs, session.id, item.exercise_id);

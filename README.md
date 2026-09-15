@@ -250,6 +250,18 @@ loopt de grafiek door.
 
 Ingelogd worden wijzigingen bewaard. In de demo pas je alleen targets en video's van bestaande oefeningen aan, tot je de browser sluit. Aanpassen gaat via het potloodje naast een oefening.
 
+## Spieren van vandaag
+
+Boven de oefeningen staat een klein silhouet (voor- en achterkant) met de spiergroepen die
+de training van die dag raakt. Nog niet getraind is subtiel lichtblauw; zodra je oefeningen
+afvinkt kleurt de spier in, en ernaast loopt de teller "3 van 12 getraind" op, met de
+spiergroepen die nog te gaan zijn.
+
+Een spiergroep telt als getraind als álle oefeningen voor die spier klaar zijn (alle
+target-sets gelogd); is een deel gedaan, dan krijgt hij een tussenkleur. Overgeslagen
+oefeningen tellen niet mee. De logica staat puur in `src/lib/todayMuscles.js`, met tests; de
+kleuren als tokens `--today-planned`, `--today-busy` en `--today-done` in `tokens.css`.
+
 ## Hoe ging het?
 
 Onder de sets van een oefening geef je met 1 tot 5 sterren aan hoe het ging, met eventueel
