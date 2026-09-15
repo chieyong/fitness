@@ -260,7 +260,10 @@ de training van die dag raakt, met twee doorlopende verlopen:
 - **begonnen:** van lichtblauw naar blauw, naar het deel van de gewogen sets dat af is
 
 Ernaast loopt de teller "3 van 12 getraind" op, met de spiergroepen die nog te gaan zijn,
-zwaarste nadruk eerst. Overgeslagen oefeningen tellen niet mee; sets boven het target ook
+zwaarste nadruk eerst. Een spiergroep telt als getraind zodra al het **primaire en
+secundaire** werk ervoor af is; tertiaire belasting in een oefening die nog open staat,
+houdt hem niet tegen (hij kleurt dan ook volledig). Spieren die vandaag alleen tertiair
+meedoen, kleuren wel mee maar tellen niet mee in de teller. Overgeslagen oefeningen tellen niet mee; sets boven het target ook
 niet. Logica in `src/lib/todayMuscles.js`; kleuren als tokens `--today-planned`,
 `--today-busy` en `--today-done`, gemengd met `color-mix` zodat ze met het thema meegaan.
 
