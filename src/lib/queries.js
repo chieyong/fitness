@@ -46,6 +46,7 @@ export const fetchTemplates = (...args) => active.fetchTemplates(...args);
 export const fetchSessions = (...args) => active.fetchSessions(...args);
 export const fetchTemplateExercises = (...args) => active.fetchTemplateExercises(...args);
 export const ensureUpcomingSessions = (...args) => active.ensureUpcomingSessions(...args);
+export const closeStaleSessions = (...args) => active.closeStaleSessions(...args);
 export const fetchLogsForExercises = (...args) => active.fetchLogsForExercises(...args);
 export const saveSet = (...args) => active.saveSet(...args);
 export const deleteSet = (...args) => active.deleteSet(...args);

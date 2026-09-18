@@ -2,6 +2,7 @@ import { supabase } from '../supabase.js';
 import { isMissingTable, isMissingColumn } from '../dbErrors.js';
 import { normalizeScheduleSettings, scheduleOptions } from '../scheduleSettings.js';
 import { planNextSessions } from '../schedule.js';
+import { sessionsToAutoClose } from '../autoClose.js';
 
 /** Hoeveel sessies er altijd vooruit klaar moeten staan. */
 const HORIZON = 6;
@@ -47,6 +48,33 @@ async function ensureUpcomingSessions(templates, sessions, today, settings) {
     ({ error } = await supabase.from('sessions').insert(toCreate.map(({ cycle, ...rest }) => rest)));
   }
   if (error) throw new Error(error.message);
+  return fetchSessions();
+}
+
+/**
+ * Sessies die zijn ingevuld maar niet afgesloten: na afloop van die dag sluiten
+ * ze vanzelf, op de dag waarop het werk gebeurde. Idempotent: is er niets meer
+ * open, dan schrijft dit niets en gaat de lijst ongewijzigd terug.
+ */
+async function closeStaleSessions(sessions, today) {
+  const open = sessions.filter((s) => s.status === 'gepland' && s.planned_date < today);
+  if (open.length === 0) return sessions;
+
+  const logs = await unwrap(
+    supabase
+      .from('exercise_logs')
+      .select('session_id, skipped, logged_at')
+      .in('session_id', open.map((s) => s.id)),
+  );
+
+  const toClose = sessionsToAutoClose(open, logs, today);
+  if (toClose.length === 0) return sessions;
+
+  const byId = new Map(open.map((s) => [s.id, s]));
+  for (const { id, actualDate } of toClose) {
+    // De eigen opmerking meesturen: closeSession zet 'm anders leeg.
+    await closeSession(id, { status: 'voltooid', actualDate, notes: byId.get(id)?.notes });
+  }
   return fetchSessions();
 }
 
@@ -321,6 +349,7 @@ export const supabaseSource = {
   fetchSessions,
   fetchTemplateExercises,
   ensureUpcomingSessions,
+  closeStaleSessions,
   fetchLogsForExercises,
   saveSet,
   deleteSet,

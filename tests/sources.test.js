@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createDemoSource, demoStorageKey } from '../src/lib/sources/demo.js';
 import { supabaseSource } from '../src/lib/sources/supabase.js';
 import * as queries from '../src/lib/queries.js';
+import { addDays } from '../src/lib/schedule.js';
 
 const today = '2026-09-13';
 const fresh = () => createDemoSource({ today });
@@ -293,4 +294,30 @@ test('Engelse demo: Engelse namen, en een eigen opslag per taal', async () => {
   const nl = createDemoSource({ today, storage, locale: 'nl' });
   assert.notEqual((await nl.fetchTemplateExercises('demo-tpl-0'))[0].target_sets, 9);
   assert.ok((await nl.fetchAllExercises()).some((e) => e.name === 'Bankdrukken'));
+});
+
+test('een ingevulde sessie sluit vanzelf zodra die dag voorbij is', async () => {
+  const src = fresh();
+  await src.ensureUpcomingSessions(await src.fetchTemplates(), await src.fetchSessions(), today);
+  const open = (await src.fetchSessions()).find((s) => s.status === 'gepland');
+  const morgen = addDays(open.planned_date, 1);
+  const [exercise] = await src.fetchAllExercises();
+  await src.saveSet({ session_id: open.id, exercise_id: exercise.id, set_number: 1, reps: 10, weight_kg: 40 });
+
+  // Op de dag zelf verandert er niets: je kunt nog bezig zijn.
+  const zelfde = await src.closeStaleSessions(await src.fetchSessions(), open.planned_date);
+  assert.equal(zelfde.find((s) => s.id === open.id).status, 'gepland');
+
+  const na = await src.closeStaleSessions(zelfde, morgen);
+  const closed = na.find((s) => s.id === open.id);
+  assert.equal(closed.status, 'voltooid');
+  assert.equal(closed.actual_date, open.planned_date);
+});
+
+test('een sessie waar niets in staat blijft open en schuift door', async () => {
+  const src = fresh();
+  await src.ensureUpcomingSessions(await src.fetchTemplates(), await src.fetchSessions(), today);
+  const open = (await src.fetchSessions()).find((s) => s.status === 'gepland');
+  const na = await src.closeStaleSessions(await src.fetchSessions(), '2026-09-30');
+  assert.equal(na.find((s) => s.id === open.id).status, 'gepland');
 });

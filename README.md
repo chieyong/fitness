@@ -50,7 +50,9 @@ workout kwijt. Staat er achterstand open, dan is vandaag meteen een inhaaldag �
 vandaag geen reguliere trainingsdag is. Sessies die je bewust op `overgeslagen` zet vervallen
 wel; die schuiven niet mee.
 
-De app houdt zes sessies vooruit gepland. Dat gebeurt automatisch bij het laden.
+De app houdt zes sessies vooruit gepland. Dat gebeurt automatisch bij het laden, vlak nadat
+ingevulde maar niet afgesloten sessies van een vorige dag zichzelf hebben afgerond (zie
+"Een sessie loggen").
 
 ## Structuur
 
@@ -58,6 +60,7 @@ De app houdt zes sessies vooruit gepland. Dat gebeurt automatisch bij het laden.
 supabase/schema.sql   tabellen uit de spec
 supabase/seed.sql     3 schema's × 3 voorbeeldoefeningen (placeholder)
 src/lib/schedule.js   alle datum- en doorschuiflogica — puur, zonder React of Supabase
+src/lib/autoClose.js  welke ingevulde sessies zichzelf afronden — ook puur
 src/lib/queries.js    data-toegang
 src/screens/Today.js  "wat moet ik vandaag doen"
 tests/                tests op schedule.js
@@ -229,6 +232,21 @@ A als B, dan zie je gewoon de laatste keer dat je hem deed.
 
 Een sessie afronden (of overslaan) zet de status vast; pas daarna schuift het schema op
 naar de volgende training.
+
+**Vergeet je die knop, dan doet de app het.** Een sessie waarin je minstens één set hebt
+gelogd en die je niet hebt afgesloten, sluit zichzelf zodra die dag voorbij is: bij het
+eerstvolgende bezoek gaat hij op `voltooid`, met de dag waarop je werkte als `actual_date`
+(de laatste `logged_at`; zonder tijdstempel de plandatum). Anders zou een training die je
+gewoon gedaan hebt achterstand blijven maken en morgen opnieuw voor je neus staan, mét de
+sets die er al in stonden.
+
+Twee dingen blijven bewust open staan: een sessie waar je niet aan begonnen bent, en een
+sessie waarin je alleen "niet gedaan" hebt aangevinkt. Dat is inhaalwerk, geen vergeten
+knop, en dat schuift dus gewoon door. Klopt een automatische afronding niet, dan zet
+"Heropenen" hem terug op `gepland`. Regels in `src/lib/autoClose.js` (puur getest), het
+wegschrijven in de datalaag als `closeStaleSessions`. In de demo zie je dit niet gebeuren:
+die begint elke dag met verse gegevens, dus er staat nooit een ingevulde sessie van gisteren
+open.
 
 ## Schema aanpassen
 
