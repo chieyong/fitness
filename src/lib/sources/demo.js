@@ -5,6 +5,7 @@
  */
 import { generateDemoData } from '../demo/generate.js';
 import { planNextSessions } from '../schedule.js';
+import { sessionsToAutoClose } from '../autoClose.js';
 import { normalizeScheduleSettings, scheduleOptions } from '../scheduleSettings.js';
 
 const HORIZON = 6;
@@ -25,7 +26,7 @@ const STRUCTURE = [
 
 /** Alles wat iets wijzigt, en dus bewaard moet worden. */
 const MUTATORS = [
-  ...STRUCTURE, 'ensureUpcomingSessions', 'saveSet', 'deleteSet', 'setExerciseSkipped',
+  ...STRUCTURE, 'ensureUpcomingSessions', 'closeStaleSessions', 'saveSet', 'deleteSet', 'setExerciseSkipped',
   'closeSession', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
   'saveFeedback', 'updateExercise',
 ];
@@ -106,6 +107,16 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
       const toCreate = planNextSessions(templates, sessions, today, HORIZON, scheduleOptions(settings));
       for (const row of toCreate) {
         db.sessions.push({ id: newId('s'), actual_date: null, notes: null, ...row });
+      }
+      return this.fetchSessions();
+    },
+
+    /** Zelfde regel als bij Supabase: ingevuld en niet afgesloten sluit vanzelf. */
+    async closeStaleSessions(sessions, today) {
+      const toClose = sessionsToAutoClose(db.sessions, db.exercise_logs, today);
+      if (toClose.length === 0) return sessions;
+      for (const { id, actualDate } of toClose) {
+        updateSession(id, { status: 'voltooid', actual_date: actualDate });
       }
       return this.fetchSessions();
     },

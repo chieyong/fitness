@@ -8,7 +8,7 @@ import { scheduleOptions } from '../lib/scheduleSettings.js';
 import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises, fetchScheduleSettings,
   fetchFeedbackForExercises, saveFeedback, fetchAllExercises,
-  ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
+  ensureUpcomingSessions, closeStaleSessions, saveSet, deleteSet, setExerciseSkipped,
   closeSession, reopenSession, dataMode,
 } from '../lib/queries.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
@@ -76,7 +76,10 @@ export default function Today({ onOpenExercise }) {
         const [loadedTemplates, loadedSessions, loadedSettings] = await Promise.all([
           fetchTemplates(), fetchSessions(), fetchScheduleSettings(),
         ]);
-        const filled = await ensureUpcomingSessions(loadedTemplates, loadedSessions, today, loadedSettings);
+        // Eerst de vergeten knop: een ingevulde sessie van een vorige dag sluit
+        // vanzelf, zodat het schema daarna vanaf de juiste stand aanvult.
+        const closed = await closeStaleSessions(loadedSessions, today);
+        const filled = await ensureUpcomingSessions(loadedTemplates, closed, today, loadedSettings);
         if (cancelled) return;
         setSettings(loadedSettings);
         setTemplates(loadedTemplates);
