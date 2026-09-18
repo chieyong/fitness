@@ -5,6 +5,7 @@ import { parseDecimal, parseWhole, formatNumber } from '../lib/input.js';
 import { formatDateShort } from '../lib/schedule.js';
 import { parseYouTube } from '../lib/youtube.js';
 import Stars from './Stars.jsx';
+import ExerciseMuscles from './ExerciseMuscles.jsx';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 
 /** Zoveel invoerregels als het target vraagt, maar nooit minder dan al gelogd is. */
@@ -126,6 +127,7 @@ export default function ExerciseBlock({
 
       {!open ? null : (
       <div className="block__body">
+      <ExerciseMuscles exercise={exercise} />
       {alternative && canSwap && (
         <button type="button" className="block__link block__swap" onClick={onSwap}>
           ⇄ {t('block.swapTo', { name: alternative.name })}

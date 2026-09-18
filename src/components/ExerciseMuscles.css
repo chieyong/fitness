@@ -1,0 +1,29 @@
+/* Klein genoeg om boven de sets te passen, groot genoeg om de regio's te zien.
+   Geen eigen vlak: op de kaart zelf steekt het silhouet beter af. */
+.exmus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.exmus__figures { display: flex; gap: var(--space-2); flex: 0 0 auto; width: 112px; }
+.exmus__figures > div { flex: 1 1 0; }
+
+.exmus__roles { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: var(--text-micro); }
+.exmus__role { display: flex; gap: var(--space-2); align-items: baseline; }
+
+.exmus__role dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-width: 5.5em;
+  color: var(--ink-tertiary);
+}
+
+.exmus__role dd { margin: 0; color: var(--ink-secondary); }
+
+.exmus__dot { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; }

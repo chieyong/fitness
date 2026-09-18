@@ -299,6 +299,14 @@ spiergroep, en de kleur van het silhouet), voor Vandaag (nadruk en voortgang) en
 lijstjes per spiergroep, waar bij elke oefening de rol staat. Het oefeningscherm toont de
 spieren per rol.
 
+Klap je een oefening open, dan staat bovenaan een klein silhouet (voor- en achterkant) met
+precies die spieren gekleurd: primair het sterkst, tertiair het zachtst, uit dezelfde
+tintschaal als Voortgang (`--ramp-5`, `--ramp-3`, `--ramp-1`, per thema monotoon in
+lichtheid). De polygonen van het silhouet dragen geen tekst en zijn alleen met de muis te
+bedienen, dus de legenda ernaast noemt de spieren per rol bij naam — dat is meteen het
+toegankelijke alternatief voor het plaatje.
+Component: `src/components/ExerciseMuscles.jsx`.
+
 De verdeling staat in `src/data/muscleRoles.js` als `'primair | secundair | tertiair'`, per
 bibliotheeksleutel, plus aliassen voor programmanamen. `src/lib/muscleWeights.js` zoekt hem
 op: eerst `muscle_roles` op de oefening (voor later), dan `catalog_key`, dan de naam in
