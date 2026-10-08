@@ -14,6 +14,12 @@ export const TRAINING_DAYS = [2, 4, 6];
 
 const OPEN_STATUS = 'gepland';
 
+/**
+ * Heropend: weer open om aan te passen, maar vast op de dag waarop hij gedaan
+ * is (actual_date). Zo'n sessie schuift niet mee met de planning.
+ */
+const isPinned = (s) => s.status === OPEN_STATUS && s.actual_date != null;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Datumwoorden per taal. Weekdagen op JavaScript-volgorde: zondag = 0. */
@@ -98,7 +104,7 @@ export function nextTrainingDay(iso, { inclusive = false, trainingDays = TRAININ
 /** Openstaande sessies, oudste eerst. Volgorde = de A -> B -> C-keten. */
 export function openSessions(sessions) {
   return sessions
-    .filter((s) => s.status === OPEN_STATUS)
+    .filter((s) => s.status === OPEN_STATUS && !isPinned(s))
     .slice()
     .sort((a, b) => (a.planned_date < b.planned_date ? -1
       : a.planned_date > b.planned_date ? 1
@@ -127,7 +133,8 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
   if (open.length === 0) return [];
 
   // Dagen waarop al een sessie is afgerond of overgeslagen: daar past niets meer bij.
-  const closedDays = sessions.filter((s) => s.status === 'voltooid' || s.status === 'overgeslagen')
+  const closedDays = sessions
+    .filter((s) => s.status === 'voltooid' || s.status === 'overgeslagen' || isPinned(s))
     .map((s) => s.actual_date ?? s.planned_date);
   const taken = new Set(closedDays);
   const free = (iso) => {
@@ -171,19 +178,22 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
  * (indien die er is), de achterstand en de eerstvolgende sessie daarna.
  *
  * `today` is de getoonde dag. Geef `options.today` de echte datum van vandaag
- * mee: een dag in de toekomst toont dan de planning zoals die vanaf vandaag
- * doorschuift. Zonder dat zou een achterstallige sessie op elke toekomstige dag
- * als "in te halen" verschijnen.
+ * mee, dan geldt:
+ * - een dag in het verleden toont alleen wat er die dag gedaan is, anders is het
+ *   een rustdag. Openstaande sessies schuiven door en horen daar niet meer;
+ * - een dag in de toekomst toont de planning zoals die vanaf vandaag doorschuift.
  */
 export function resolveToday(sessions, today, { today: now, ...options } = {}) {
-  const from = now && today > now ? now : today;
+  const past = Boolean(now) && today < now;
+  const from = now && today !== now ? now : today;
   const schedule = projectSchedule(sessions, from, options);
-  const current = schedule.find((entry) => entry.date === today) ?? null;
+  const current = past ? null : schedule.find((entry) => entry.date === today) ?? null;
 
-  // Een sessie die op deze dag al is afgerond of bewust overgeslagen. Zonder dit
-  // zou een trainingsdag in het verleden als rustdag worden getoond.
+  // De sessie die op deze dag gedaan is: afgerond, overgeslagen, of heropend om
+  // aan te passen. Zonder dit zou een trainingsdag in het verleden als rustdag
+  // worden getoond.
   const done = sessions.find(
-    (s) => s.status !== OPEN_STATUS && (s.actual_date ?? s.planned_date) === today,
+    (s) => (s.status !== OPEN_STATUS || isPinned(s)) && (s.actual_date ?? s.planned_date) === today,
   ) ?? null;
   const upcoming = schedule.filter((entry) => entry.date > today);
   const backlog = schedule.filter(
@@ -207,6 +217,8 @@ export function resolveToday(sessions, today, { today: now, ...options } = {}) {
  *
  * `activity` is een lijst { session_id, at } met at een tijdstip (ISO of ms);
  * de dag van de laatste activiteit, in lokale tijd, wordt de actual_date.
+ * Een heropende sessie houdt haar eigen dag, en gaat weer dicht zodra er een
+ * dag voorbij is waarop er niets meer in veranderde.
  * Geeft terug: [{ id, actualDate }]
  */
 export function sessionsToAutoClose(sessions, activity, today) {
@@ -216,9 +228,13 @@ export function sessionsToAutoClose(sessions, activity, today) {
     const day = todayISO(new Date(at));
     if (!lastDay.has(session_id) || day > lastDay.get(session_id)) lastDay.set(session_id, day);
   }
-  return sessions
-    .filter((s) => s.status === OPEN_STATUS && lastDay.has(s.id) && lastDay.get(s.id) < today)
+  const pinned = sessions
+    .filter((s) => isPinned(s) && (lastDay.get(s.id) ?? s.actual_date) < today)
+    .map((s) => ({ id: s.id, actualDate: s.actual_date }));
+  const forgotten = sessions
+    .filter((s) => s.status === OPEN_STATUS && !isPinned(s) && lastDay.has(s.id) && lastDay.get(s.id) < today)
     .map((s) => ({ id: s.id, actualDate: lastDay.get(s.id) }));
+  return [...pinned, ...forgotten];
 }
 
 /**

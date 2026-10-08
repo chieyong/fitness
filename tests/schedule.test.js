@@ -390,3 +390,49 @@ test('na een ingehaalde sessie krijgt de volgende geen inhaalmelding, ook niet o
   const zonder = resolveToday(sessions.slice(1), '2026-10-10', { today: '2026-10-10' });
   assert.equal(zonder.current.catch_up, true);
 });
+
+test('terugbladeren: een dag in het verleden toont alleen wat er gedaan is, anders rustdag', () => {
+  // di, do, za. A gedaan di 6 okt; B (do 8 okt) pas ma 12 okt gedaan; C stond za 10 okt.
+  const today = '2026-10-12';
+  const sessions = [
+    { id: 'A', template_id: 'a', planned_date: '2026-10-06', actual_date: '2026-10-06', status: 'voltooid' },
+    session('B', 'b', '2026-10-08'),
+    session('C', 'c', '2026-10-10'),
+  ];
+  const show = (list, day) => {
+    const v = resolveToday(list, day, { today });
+    return v.current ? `open ${v.current.session.id}` : v.done ? `${v.done.status} ${v.done.id}` : 'rust';
+  };
+  const days = ['2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11', '2026-10-12', '2026-10-13'];
+  assert.deepEqual(days.map((d) => show(sessions, d)),
+    ['voltooid A', 'rust', 'rust', 'rust', 'rust', 'rust', 'open B', 'open C']);
+  assert.equal(resolveToday(sessions, today, { today }).current.catch_up, true);
+
+  const after = sessions.map((s) => (s.id === 'B' ? { ...s, status: 'voltooid', actual_date: today } : s));
+  assert.deepEqual(days.map((d) => show(after, d)),
+    ['voltooid A', 'rust', 'rust', 'rust', 'rust', 'rust', 'voltooid B', 'open C']);
+});
+
+test('een heropende sessie blijft op haar eigen dag en schuift niet mee', () => {
+  const today = '2026-10-12';
+  const sessions = [
+    { id: 'A', template_id: 'a', planned_date: '2026-10-06', actual_date: '2026-10-06', status: 'gepland' },
+    session('B', 'b', '2026-10-08'),
+  ];
+  const di = resolveToday(sessions, '2026-10-06', { today });
+  assert.equal(di.current, null);
+  assert.equal(di.done.id, 'A');                     // te bewerken op dinsdag
+  assert.equal(resolveToday(sessions, today, { today }).current.session.id, 'B');
+});
+
+test('een heropende sessie gaat weer dicht op haar eigen dag', () => {
+  const at = (iso) => new Date(`${iso}T18:00:00`).getTime();
+  const pinned = { id: 'A', template_id: 'a', planned_date: '2026-10-06', actual_date: '2026-10-06', status: 'gepland' };
+  // Vandaag nog aan gewerkt: blijft open tot morgen.
+  assert.deepEqual(sessionsToAutoClose([pinned], [{ session_id: 'A', at: at('2026-10-12') }], '2026-10-12'), []);
+  // Een dag later: dicht, op de oorspronkelijke dag.
+  assert.deepEqual(sessionsToAutoClose([pinned], [{ session_id: 'A', at: at('2026-10-12') }], '2026-10-13'),
+    [{ id: 'A', actualDate: '2026-10-06' }]);
+  // Niets meer aangepast: ook dicht.
+  assert.deepEqual(sessionsToAutoClose([pinned], [], '2026-10-12'), [{ id: 'A', actualDate: '2026-10-06' }]);
+});

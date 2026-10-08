@@ -20,7 +20,7 @@ export default function SessionHeader({ date, today, template, entry, done }) {
           {t('session.shifted', { date: formatDateShort(entry.original_date, locale) })}
         </p>
       )}
-      {done && (
+      {done && done.status !== 'gepland' && (
         <p className="session-header__done">
           {t(done.status === 'voltooid' ? 'session.completed' : 'session.skipped')}
         </p>

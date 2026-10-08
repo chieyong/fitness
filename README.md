@@ -240,6 +240,11 @@ sterren hebt gegeven, staat de volgende keer dat je de app opent als voltooid op
 waarop je er voor het laatst iets in invulde. Alleen "niet gedaan" aanvinken telt daarbij
 niet mee.
 
+Terugbladeren naar een eerdere dag toont alleen wat je die dag echt deed; heb je die dag
+niets afgerond, dan is het een rustdag. Openstaande sessies horen nooit bij een dag in het
+verleden: die schuiven door naar vandaag. Heropen je een eerdere sessie om iets aan te passen,
+dan blijft ze op haar eigen dag staan, ook als ze daarna vanzelf weer wordt afgerond.
+
 Wil je in een sessie eenmalig iets extra's doen, gebruik dan "+ Extra oefening (alleen deze
 sessie)" onder de oefeningen. Je kiest uit dezelfde lijst als bij Schema, met een eigen target;
 de oefening krijgt het label "Extra" en werkt verder als elke andere (sets, vorige keer,

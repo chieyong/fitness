@@ -184,7 +184,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
     },
 
     async reopenSession(sessionId) {
-      return updateSession(sessionId, { status: 'gepland', actual_date: null });
+      return updateSession(sessionId, { status: 'gepland' });
     },
 
     async saveSessionNote(sessionId, notes) {

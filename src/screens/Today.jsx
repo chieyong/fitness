@@ -29,6 +29,13 @@ import '../components/SessionActions.css';
 import './Today.css';
 import './Exercise.css';
 
+/**
+ * Vergeten sessies afronden gebeurt één keer per dag zolang de app open is, niet
+ * bij elke terugkeer naar dit scherm: anders gaat een net heropende sessie van
+ * een eerdere dag meteen weer dicht als je even naar een ander tabblad kijkt.
+ */
+let autoClosedOn = null;
+
 /** ?date=2026-09-15 overschrijft de begindatum; ongeldige waarden negeren we. */
 function dateFromUrl() {
   const value = new URLSearchParams(window.location.search).get('date');
@@ -99,7 +106,12 @@ export default function Today({ onOpenExercise, onAddExtra }) {
 
     (async () => {
       try {
-        await closeStaleSessions(today);
+        // Per gegevensbron: na inloggen gelden de echte sessies, niet die van de demo.
+        const key = `${dataMode()}:${today}`;
+        if (autoClosedOn !== key) {
+          await closeStaleSessions(today);
+          autoClosedOn = key;
+        }
         const [loadedTemplates, loadedSessions, loadedSettings] = await Promise.all([
           fetchTemplates(), fetchSessions(), fetchScheduleSettings(),
         ]);

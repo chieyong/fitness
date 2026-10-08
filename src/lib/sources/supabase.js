@@ -134,7 +134,7 @@ async function closeSession(sessionId, { status, actualDate, notes }) {
  * maar die niemand met de knop heeft afgerond. Geeft het aantal terug.
  */
 async function closeStaleSessions(today) {
-  const open = await unwrap(supabase.from('sessions').select('id, status').eq('status', 'gepland'));
+  const open = await unwrap(supabase.from('sessions').select('id, status, actual_date').eq('status', 'gepland'));
   if (open.length === 0) return 0;
   const ids = open.map((x) => x.id);
   const logged = await unwrap(
@@ -156,12 +156,12 @@ async function closeStaleSessions(today) {
   return stale.length;
 }
 
-/** Zet een afgeronde sessie terug op 'gepland'. */
+/** Zet een afgeronde sessie weer open; ze blijft op de dag waarop ze gedaan is. */
 async function reopenSession(sessionId) {
   const data = await unwrap(
     supabase
       .from('sessions')
-      .update({ status: 'gepland', actual_date: null })
+      .update({ status: 'gepland' })
       .eq('id', sessionId)
       .select(),
   );

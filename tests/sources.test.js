@@ -70,7 +70,10 @@ test('sessie afronden, heropenen en een opmerking bewaren', async () => {
   const closed = await src.closeSession(next.id, { status: 'voltooid', actualDate: today, notes: 'Ging lekker' });
   assert.equal(closed.status, 'voltooid');
   assert.equal(closed.notes, 'Ging lekker');
-  assert.equal((await src.reopenSession(next.id)).actual_date, null);
+  // Heropenen houdt de dag vast: de sessie blijft staan waar ze gedaan is.
+  const reopened = await src.reopenSession(next.id);
+  assert.equal(reopened.status, 'gepland');
+  assert.equal(reopened.actual_date, today);
   assert.equal((await src.saveSessionNote(next.id, '')).notes, null);
 });
 
