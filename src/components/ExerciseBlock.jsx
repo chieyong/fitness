@@ -26,7 +26,7 @@ export default function ExerciseBlock({
   item, logged, previous, history = [], readOnly, skipped,
   open, onToggleOpen, onSaveSet, onDeleteSet, onToggleSkip, onOpen,
   feedback, previousFeedback, onSaveFeedback, onPlayVideo,
-  alternative, swapped, canSwap, onSwap,
+  alternative, swapped, canSwap, onSwap, extra = false, onRemoveExtra = null,
 }) {
   const exercise = item.exercise;
   const { t, locale } = useI18n();
@@ -101,7 +101,10 @@ export default function ExerciseBlock({
           aria-expanded={open}>
           <Status status={status} />
           <span className="row__main">
-            <span className="row__name">{exercise.name}{alternative && <span className="row__alt" aria-hidden="true"> ⇄</span>}</span>
+            <span className="row__name">
+              {exercise.name}{alternative && <span className="row__alt" aria-hidden="true"> ⇄</span>}
+              {extra && <span className="row__extra">{t('block.extra')}</span>}
+            </span>
             {/* Uitgeklapt staat dezelfde informatie eronder, mét datum. */}
             {summary && !open && <span className="row__summary">{summary}</span>}
             {!open && feedback?.rating ? <Stars value={feedback.rating} size={11} /> : null}
@@ -269,6 +272,11 @@ export default function ExerciseBlock({
       <button type="button" className="block__link block__progress" onClick={onOpen}>
         {t('block.progress')}
       </button>
+      {onRemoveExtra && (
+        <button type="button" className="block__link block__remove-extra" onClick={onRemoveExtra}>
+          {t('block.removeExtra')}
+        </button>
+      )}
       </div>
       )}
     </li>

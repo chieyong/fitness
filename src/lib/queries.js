@@ -45,6 +45,9 @@ export function resetDemo() {
 export const fetchTemplates = (...args) => active.fetchTemplates(...args);
 export const fetchSessions = (...args) => active.fetchSessions(...args);
 export const fetchTemplateExercises = (...args) => active.fetchTemplateExercises(...args);
+export const fetchSessionExercises = (...args) => active.fetchSessionExercises(...args);
+export const addSessionExercise = (...args) => active.addSessionExercise(...args);
+export const deleteSessionExercise = (...args) => active.deleteSessionExercise(...args);
 export const ensureUpcomingSessions = (...args) => active.ensureUpcomingSessions(...args);
 export const fetchLogsForExercises = (...args) => active.fetchLogsForExercises(...args);
 export const saveSet = (...args) => active.saveSet(...args);

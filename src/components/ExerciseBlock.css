@@ -195,5 +195,11 @@
 
 /* Alternatief: een stil teken bij de naam, en wisselen bovenaan de uitgeklapte oefening. */
 .row__alt { color: var(--ink-tertiary); font-weight: 500; }
+.row__extra {
+  margin-left: var(--space-2); padding: 1px var(--space-2); border-radius: 999px;
+  font-size: var(--text-micro); font-weight: 600; vertical-align: 1px;
+  color: var(--accent); border: 1px solid currentColor;
+}
+.block__remove-extra { display: block; margin: var(--space-3) 0 0; color: var(--ink-tertiary); }
 .block__swap { display: inline-block; margin-bottom: var(--space-3); }
 .block__swap-note { font-size: var(--text-micro); color: var(--ink-tertiary); margin-bottom: var(--space-2); }

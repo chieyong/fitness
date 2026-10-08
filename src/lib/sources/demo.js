@@ -26,7 +26,7 @@ const STRUCTURE = [
 /** Alles wat iets wijzigt, en dus bewaard moet worden. */
 const MUTATORS = [
   ...STRUCTURE, 'ensureUpcomingSessions', 'saveSet', 'deleteSet', 'setExerciseSkipped',
-  'closeSession', 'closeStaleSessions', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
+  'addSessionExercise', 'deleteSessionExercise', 'closeSession', 'closeStaleSessions', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
   'saveFeedback', 'updateExercise',
 ];
 
@@ -55,6 +55,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
   const saved = !data && storage ? readSnapshot(storage, today, key) : null;
   const db = saved?.db ?? copy(data ?? generateDemoData({ today, locale }));
   db.exercise_feedback ??= [];
+  db.session_exercises ??= [];
   db.schedule_settings = normalizeScheduleSettings(db.schedule_settings);
   // De teller voor nieuwe id's reist mee, anders botsen id's na herladen.
   let counter = saved?.counter ?? 0;
@@ -100,6 +101,30 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
           const e = exerciseById(te.exercise_id);
           return { ...te, exercise: { id: e.id, name: e.name, muscle_groups: e.muscle_groups, notes: e.notes, video_urls: e.video_urls ?? null, catalog_key: e.catalog_key ?? null } };
         }));
+    },
+
+    async fetchSessionExercises(sessionId) {
+      return copy(db.session_exercises
+        .filter((se) => se.session_id === sessionId)
+        .sort((a, b) => a.position - b.position));
+    },
+
+    async addSessionExercise(row) {
+      if (db.session_exercises.some((se) => se.session_id === row.session_id && se.exercise_id === row.exercise_id)) {
+        throw new Error('Deze oefening staat al in deze sessie');
+      }
+      const created = {
+        id: newId('se'), position: 0, target_reps_min: null, target_reps_max: null,
+        target_seconds: null, target_seconds_max: null, target_note: null, ...row,
+      };
+      db.session_exercises.push(created);
+      return copy(created);
+    },
+
+    async deleteSessionExercise(id) {
+      const removed = db.session_exercises.filter((se) => se.id === id);
+      db.session_exercises = db.session_exercises.filter((se) => se.id !== id);
+      return copy(removed);
     },
 
     async ensureUpcomingSessions(templates, sessions, today, settings) {
@@ -296,7 +321,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
     },
 
     async replanUpcoming(today) {
-      const busy = new Set([...db.exercise_logs, ...db.exercise_feedback].map((x) => x.session_id));
+      const busy = new Set([...db.exercise_logs, ...db.exercise_feedback, ...db.session_exercises].map((x) => x.session_id));
       const before = db.sessions.length;
       db.sessions = db.sessions.filter(
         (x) => !(x.status === 'gepland' && x.planned_date >= today && !busy.has(x.id)),

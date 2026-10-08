@@ -50,6 +50,30 @@ async function ensureUpcomingSessions(templates, sessions, today, settings) {
   return fetchSessions();
 }
 
+/** Extra oefeningen van één sessie; leeg als migratie 008 nog niet gedraaid is. */
+async function fetchSessionExercises(sessionId) {
+  const { data, error } = await supabase.from('session_exercises')
+    .select('*').eq('session_id', sessionId).order('position');
+  if (error && isMissingTable(error, 'session_exercises')) return [];
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/** Eenmalige extra oefening in een sessie; het workoutschema blijft zoals het is. */
+async function addSessionExercise(row) {
+  const { data, error } = await supabase.from('session_exercises').insert(row).select();
+  if (error && isMissingTable(error, 'session_exercises')) {
+    throw new Error('Extra oefeningen kunnen nog niet worden bewaard: draai migratie 008 in Supabase.');
+  }
+  if (error) throw new Error(error.message);
+  return data[0];
+}
+
+/** Extra oefening weer uit de sessie halen. */
+function deleteSessionExercise(id) {
+  return unwrap(supabase.from('session_exercises').delete().eq('id', id).select());
+}
+
 /** Alle gelogde sets van een reeks oefeningen — voedt ook "vorige keer". */
 function fetchLogsForExercises(exerciseIds) {
   if (exerciseIds.length === 0) return Promise.resolve([]);
@@ -314,7 +338,7 @@ async function saveScheduleSettings(settings) {
 
 /**
  * Na een andere planning: geplande trainingen vanaf vandaag opnieuw indelen.
- * Trainingen waarin al iets gelogd of beoordeeld is, blijven altijd staan.
+ * Trainingen waarin al iets gelogd, beoordeeld of extra toegevoegd is, blijven altijd staan.
  */
 async function replanUpcoming(today) {
   const open = await unwrap(supabase.from('sessions').select('id').eq('status', 'gepland').gte('planned_date', today));
@@ -323,7 +347,9 @@ async function replanUpcoming(today) {
   const logged = await unwrap(supabase.from('exercise_logs').select('session_id').in('session_id', ids));
   const rated = await supabase.from('exercise_feedback').select('session_id').in('session_id', ids);
   if (rated.error && !isMissingTable(rated.error, 'exercise_feedback')) throw new Error(rated.error.message);
-  const keep = new Set([...logged, ...(rated.data ?? [])].map((x) => x.session_id));
+  const extra = await supabase.from('session_exercises').select('session_id').in('session_id', ids);
+  if (extra.error && !isMissingTable(extra.error, 'session_exercises')) throw new Error(extra.error.message);
+  const keep = new Set([...logged, ...(rated.data ?? []), ...(extra.data ?? [])].map((x) => x.session_id));
   const remove = ids.filter((id) => !keep.has(id));
   if (remove.length) await unwrap(supabase.from('sessions').delete().in('id', remove).select('id'));
   return remove.length;
@@ -348,6 +374,9 @@ export const supabaseSource = {
   fetchTemplates,
   fetchSessions,
   fetchTemplateExercises,
+  fetchSessionExercises,
+  addSessionExercise,
+  deleteSessionExercise,
   ensureUpcomingSessions,
   fetchLogsForExercises,
   saveSet,

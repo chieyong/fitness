@@ -67,6 +67,21 @@ create table if not exists exercise_logs (
   logged_at timestamptz default now()
 );
 
+-- Extra oefeningen bij één sessie, los van het workoutschema.
+create table if not exists session_exercises (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references sessions(id) on delete cascade,
+  exercise_id uuid not null references exercises(id) on delete restrict,
+  position int not null default 0,
+  target_sets int not null,
+  target_reps_min int,
+  target_reps_max int,
+  target_seconds int,
+  target_seconds_max int,
+  target_note text,
+  unique (session_id, exercise_id)
+);
+
 -- Hoe een oefening ging: 1 tot 5 sterren en/of een opmerking, per oefening per sessie.
 create table if not exists exercise_feedback (
   id uuid primary key default gen_random_uuid(),
@@ -92,6 +107,7 @@ create unique index if not exists exercises_catalog_key_idx
   on exercises (catalog_key) where catalog_key is not null;
 create index if not exists template_exercises_template_idx on template_exercises (template_id, position);
 create index if not exists sessions_planned_date_idx on sessions (planned_date);
+create index if not exists session_exercises_session_idx on session_exercises (session_id, position);
 create index if not exists exercise_logs_session_idx on exercise_logs (session_id);
 create index if not exists exercise_logs_exercise_idx on exercise_logs (exercise_id, logged_at);
 
@@ -107,6 +123,7 @@ alter table template_exercises enable row level security;
 alter table sessions enable row level security;
 alter table exercise_logs enable row level security;
 alter table exercise_feedback enable row level security;
+alter table session_exercises enable row level security;
 alter table schedule_settings enable row level security;
 
 create table if not exists public.app_owners (
@@ -136,7 +153,7 @@ grant execute on function public.is_owner() to anon, authenticated;
 do $$
 declare t text;
 begin
-  foreach t in array array['exercises','workout_templates','template_exercises','sessions','exercise_logs','exercise_feedback','schedule_settings']
+  foreach t in array array['exercises','workout_templates','template_exercises','sessions','session_exercises','exercise_logs','exercise_feedback','schedule_settings']
   loop
     execute format('drop policy if exists %I on %I', t || '_anon_all', t);
     execute format('drop policy if exists %I on %I', t || '_owner_all', t);

@@ -11,7 +11,7 @@ import {
 } from '../lib/editor.js';
 import {
   fetchTemplates, fetchTemplateExercises, fetchAllTemplateExercises, fetchAllExercises,
-  createExercise, addTemplateExercise, dataMode,
+  fetchSessions, fetchSessionExercises, createExercise, addTemplateExercise, addSessionExercise, dataMode,
 } from '../lib/queries.js';
 import TargetFields from '../components/TargetFields.jsx';
 import { formatTarget } from '../lib/schedule.js';
@@ -26,11 +26,18 @@ const MUSCLE_ORDER = [
   'quadriceps', 'hamstring', 'gluteal', 'calves', 'adductor', 'abductors',
 ];
 
-export default function AddExercise({ templateId, onDone, onBack }) {
+/**
+ * Oefening kiezen voor een workout (`templateId`), of -- met `sessionId` -- als
+ * eenmalige extra in één sessie. Dan blijft het workoutschema zoals het is.
+ */
+export default function AddExercise({ templateId: templateProp, sessionId = null, onDone, onBack }) {
   const { t: tx, locale } = useI18n();
   const equipment_ = equipmentOptions(locale);
   const equipmentFilter = [{ id: 'alles', label: tx('add.all') }, ...equipment_];
   const [template, setTemplate] = useState(null);
+  const [templateId, setTemplateId] = useState(templateProp ?? null);
+  // Extra oefeningen die al in deze sessie staan.
+  const [extras, setExtras] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [rows, setRows] = useState([]);
   const [links, setLinks] = useState([]);
@@ -54,18 +61,23 @@ export default function AddExercise({ templateId, onDone, onBack }) {
   useEffect(() => {
     (async () => {
       try {
-        const [t, r, l, ex] = await Promise.all([
-          fetchTemplates(), fetchTemplateExercises(templateId), fetchAllTemplateExercises(), fetchAllExercises(),
+        // Bij een sessie: de workout van die sessie, plus wat er al extra in staat.
+        const session = sessionId ? (await fetchSessions()).find((s) => s.id === sessionId) : null;
+        const tplId = session ? session.template_id : templateProp;
+        const [t, r, l, ex, se] = await Promise.all([
+          fetchTemplates(), fetchTemplateExercises(tplId), fetchAllTemplateExercises(), fetchAllExercises(),
+          sessionId ? fetchSessionExercises(sessionId) : [],
         ]);
         setTemplates(t);
-        setTemplate(t.find((x) => x.id === templateId) ?? null);
-        setRows(r); setLinks(l); setExercises(ex);
+        setTemplateId(tplId);
+        setTemplate(t.find((x) => x.id === tplId) ?? null);
+        setRows(r); setLinks(l); setExercises(ex); setExtras(se);
         setStatus('klaar');
       } catch (e) {
         setError(e.message); setStatus('fout');
       }
     })();
-  }, [templateId]);
+  }, [templateProp, sessionId]);
 
   const results = useMemo(
     () => (muscle || query.trim() ? filterCatalog(CATALOG, { muscle, equipment, query, locale }) : []),
@@ -79,7 +91,7 @@ export default function AddExercise({ templateId, onDone, onBack }) {
     const tplIds = links.filter((l) => l.exercise_id === existing.id).map((l) => l.template_id);
     return {
       existing,
-      here: tplIds.includes(templateId),
+      here: tplIds.includes(templateId) || extras.some((x) => x.exercise_id === existing.id),
       elsewhere: templates.filter((t) => t.id !== templateId && tplIds.includes(t.id)).map((t) => t.label),
     };
   };
@@ -108,12 +120,21 @@ export default function AddExercise({ templateId, onDone, onBack }) {
   };
 
   const link = async (exercise, measure) => {
-    await addTemplateExercise({
-      template_id: templateId,
-      exercise_id: exercise.id,
-      position: nextPosition(rows),
-      ...targetColumns(measure, form),
-    });
+    if (sessionId) {
+      await addSessionExercise({
+        session_id: sessionId,
+        exercise_id: exercise.id,
+        position: nextPosition(extras),
+        ...targetColumns(measure, form),
+      });
+    } else {
+      await addTemplateExercise({
+        template_id: templateId,
+        exercise_id: exercise.id,
+        position: nextPosition(rows),
+        ...targetColumns(measure, form),
+      });
+    }
     onDone();
   };
 
@@ -170,8 +191,8 @@ export default function AddExercise({ templateId, onDone, onBack }) {
     }
   };
 
-  // Ook via een directe link: in de demo voeg je geen oefeningen toe.
-  if (dataMode() === 'demo') {
+  // Ook via een directe link: in de demo voeg je geen oefeningen aan een workout toe.
+  if (dataMode() === 'demo' && !sessionId) {
     return (
       <main className="page">
         <div className="progress__bar">
@@ -203,7 +224,9 @@ export default function AddExercise({ templateId, onDone, onBack }) {
       </div>
 
       <h1 className="exercise__title">{tx('add.title')}</h1>
-      <p className="exercise__meta">{tx('add.to', { name: template?.label ?? tx('add.thisWorkout') })}</p>
+      <p className="exercise__meta">
+        {sessionId ? tx('add.toSession') : tx('add.to', { name: template?.label ?? tx('add.thisWorkout') })}
+      </p>
       {error && <p className="schema__error" role="alert">{error}</p>}
 
       <section className="pick">
@@ -243,7 +266,7 @@ export default function AddExercise({ templateId, onDone, onBack }) {
                       <span className="item__meta">{entry.muscles.map((m) => muscleLabel(m, locale)).join(', ')}</span>
                       <span className="item__meta">
                         {equipmentLabel(entry.equipment, locale)}
-                        {where.here && tx('add.alreadyHere')}
+                        {where.here && tx(sessionId ? 'add.alreadyInSession' : 'add.alreadyHere')}
                         {!where.here && where.elsewhere.length > 0 && tx('add.alsoIn', { list: where.elsewhere.join(` ${tx('add.and')} `) })}
                       </span>
                     </span>

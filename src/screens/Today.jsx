@@ -4,11 +4,13 @@ import { lastPerformance, previousPerformances, setsFor, feedbackFor, lastFeedba
 import { todayMuscles } from '../lib/todayMuscles.js';
 import { muscleWeights } from '../lib/muscleWeights.js';
 import { exerciseIdsWithAlternatives, resolveSessionItem } from '../lib/alternatives.js';
+import { extraItems } from '../lib/sessionExtras.js';
 import { scheduleOptions } from '../lib/scheduleSettings.js';
 import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises, fetchScheduleSettings,
   fetchFeedbackForExercises, saveFeedback, fetchAllExercises,
   ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
+  fetchSessionExercises, deleteSessionExercise,
   closeSession, closeStaleSessions, reopenSession, dataMode,
 } from '../lib/queries.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
@@ -33,7 +35,7 @@ function dateFromUrl() {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
-export default function Today({ onOpenExercise }) {
+export default function Today({ onOpenExercise, onAddExtra }) {
   const [today, setToday] = useState(() => todayISO());
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
 
@@ -63,6 +65,8 @@ export default function Today({ onOpenExercise }) {
   const [settings, setSettings] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
+  // Eenmalige extra oefeningen in deze sessie, los van het workoutschema.
+  const [extras, setExtras] = useState([]);
   const [logs, setLogs] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [allExercises, setAllExercises] = useState(new Map());
@@ -128,12 +132,21 @@ export default function Today({ onOpenExercise }) {
   // Andere sessie: eerdere wisselkeuzes gelden niet meer.
   useEffect(() => { setChoices(new Map()); }, [session?.id]);
 
-  // De oefeningen zoals deze sessie ze toont: met het gekozen alternatief, als dat er is.
+  // De oefeningen zoals deze sessie ze toont: met het gekozen alternatief, als dat
+  // er is, en de extra oefeningen van deze sessie achteraan.
   const items = useMemo(() => (session
-    ? exercises.map((item) => resolveSessionItem(item, {
-      exercisesById: allExercises, session, date, logs, sessions, choice: choices.get(item.id),
-    }))
-    : exercises), [session, exercises, allExercises, date, logs, sessions, choices]);
+    ? [
+      ...exercises.map((item) => resolveSessionItem(item, {
+        exercisesById: allExercises, session, date, logs, sessions, choice: choices.get(item.id),
+      })),
+      ...extraItems(extras, allExercises, exercises),
+    ]
+    : exercises), [session, exercises, extras, allExercises, date, logs, sessions, choices]);
+
+  // Alle oefeningen waarvan de logs nodig zijn: workout, alternatieven en extra's.
+  const logIds = useCallback((rows, extraRows, byId) => [
+    ...new Set([...exerciseIdsWithAlternatives(rows, byId), ...extraRows.map((x) => x.exercise_id)]),
+  ], []);
 
   // Welke spiergroepen deze training raakt, met nadruk per rol (primair,
   // secundair, tertiair), en hoe ver je bent: elke gelogde set kleurt mee.
@@ -154,16 +167,19 @@ export default function Today({ onOpenExercise }) {
   // die laatste voeden zowel de invoervelden als "vorige keer".
   useEffect(() => {
     let cancelled = false;
-    if (!template) { setExercises([]); setLogs([]); setFeedback([]); return undefined; }
+    if (!template) { setExercises([]); setExtras([]); setLogs([]); setFeedback([]); return undefined; }
 
     (async () => {
       try {
-        const [rows, all] = await Promise.all([fetchTemplateExercises(template.id), fetchAllExercises()]);
+        const [rows, all, extraRows] = await Promise.all([
+          fetchTemplateExercises(template.id), fetchAllExercises(), fetchSessionExercises(session.id),
+        ]);
         if (cancelled) return;
         const byId = new Map(all.map((e) => [e.id, e]));
         setAllExercises(byId);
         setExercises(rows);
-        const ids = exerciseIdsWithAlternatives(rows, byId);
+        setExtras(extraRows);
+        const ids = logIds(rows, extraRows, byId);
         const [loaded, fb] = await Promise.all([fetchLogsForExercises(ids), fetchFeedbackForExercises(ids)]);
         if (!cancelled) { setLogs(loaded); setFeedback(fb); }
       } catch (e) {
@@ -172,12 +188,19 @@ export default function Today({ onOpenExercise }) {
     })();
 
     return () => { cancelled = true; };
-  }, [template?.id]);
+  }, [template?.id, session?.id, logIds]);
 
   const reloadLogs = useCallback(async () => {
-    if (exercises.length === 0) return;
-    setLogs(await fetchLogsForExercises(exerciseIdsWithAlternatives(exercises, allExercises)));
-  }, [exercises, allExercises]);
+    if (exercises.length === 0 && extras.length === 0) return;
+    setLogs(await fetchLogsForExercises(logIds(exercises, extras, allExercises)));
+  }, [exercises, extras, allExercises, logIds]);
+
+  const handleRemoveExtra = useCallback(async (extraId) => {
+    try {
+      await deleteSessionExercise(extraId);
+      setExtras((prev) => prev.filter((x) => x.id !== extraId));
+    } catch (e) { setError(e.message); }
+  }, []);
 
   const handleSaveSet = useCallback(async (row) => {
     try {
@@ -293,10 +316,19 @@ export default function Today({ onOpenExercise }) {
                   swapped={item.swapped}
                   canSwap={!readOnly && logged.length === 0}
                   onSwap={() => item.alternative && setChoices((prev) => new Map(prev).set(item.id, item.alternative.id))}
+                  extra={item.extra === true}
+                  onRemoveExtra={item.extra && !readOnly && logged.length === 0 ? () => handleRemoveExtra(item.extraId) : null}
                 />
               );
             })}
           </ol>
+
+          {/* In de demo kun je geen oefeningen aanmaken, en de demo-oefeningen staan los van de catalogus. */}
+          {!readOnly && dataMode() !== 'demo' && (
+            <button type="button" className="today__extra" onClick={() => onAddExtra(session.id)}>
+              {t('session.addExtra')}
+            </button>
+          )}
 
           <SessionActions
             session={session}

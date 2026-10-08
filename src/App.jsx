@@ -16,6 +16,8 @@ function routeFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const exercise = params.get('oefening');
   if (exercise) return { screen: 'oefening', exercise };
+  const extra = params.get('extra');
+  if (extra) return { screen: 'toevoegen', session: extra };
   const adding = params.get('toevoegen');
   if (adding) return { screen: 'toevoegen', template: adding };
   if (params.has('schema')) return { screen: 'schema' };
@@ -111,6 +113,7 @@ function Router() {
     url.searchParams.delete('voortgang');
     url.searchParams.delete('schema');
     url.searchParams.delete('toevoegen');
+    url.searchParams.delete('extra');
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
     if (inPlace) {
       window.history.replaceState(null, '', url);
@@ -128,6 +131,7 @@ function Router() {
     else go({});
   };
   const openAddExercise = (templateId) => go({ toevoegen: templateId });
+  const openAddExtra = (sessionId) => go({ extra: sessionId });
   // Kom je hier via een gedeelde link, dan is er geen geschiedenis om naar
   // terug te gaan; val dan terug op het scherm van vandaag.
   const back = () => {
@@ -137,7 +141,7 @@ function Router() {
 
   // Het toevoegformulier is een zijstap: daar geen tabbalk, alleen terug.
   if (route.screen === 'toevoegen') {
-    return <AddExercise templateId={route.template} onDone={back} onBack={back} />;
+    return <AddExercise templateId={route.template} sessionId={route.session} onDone={back} onBack={back} />;
   }
 
   let screen;
@@ -154,7 +158,7 @@ function Router() {
   } else if (route.screen === 'schema') {
     screen = <Schema onAddExercise={openAddExercise} />;
   } else {
-    screen = <Today onOpenExercise={openExercise} />;
+    screen = <Today onOpenExercise={openExercise} onAddExtra={openAddExtra} />;
   }
 
   // Een oefening hoort bij Voortgang: die tab blijft dan aan.

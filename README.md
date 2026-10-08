@@ -118,7 +118,10 @@ precies dezelfde functies hebben.
 5. `supabase/migrations/005_feedback_and_videos.sql` draaien: sterren en toelichting per
    oefening, en de grens van drie video's.
 6. `supabase/migrations/006_schedule_settings.sql` draaien: trainingsdagen en volgorde.
-7. Inloggen.
+7. `supabase/migrations/007_exercise_alternatives.sql` en
+   `supabase/migrations/008_session_exercises.sql` draaien: alternatieven, en extra
+   oefeningen bij één sessie.
+8. Inloggen.
 
 Alle migraties zijn veilig opnieuw te draaien: ze controleren zelf wat er al is.
 
@@ -236,6 +239,13 @@ sessie vanzelf af zodra de dag voorbij is: een open sessie waarin je sets hebt g
 sterren hebt gegeven, staat de volgende keer dat je de app opent als voltooid op de dag
 waarop je er voor het laatst iets in invulde. Alleen "niet gedaan" aanvinken telt daarbij
 niet mee.
+
+Wil je in een sessie eenmalig iets extra's doen, gebruik dan "+ Extra oefening (alleen deze
+sessie)" onder de oefeningen. Je kiest uit dezelfde lijst als bij Schema, met een eigen target;
+de oefening krijgt het label "Extra" en werkt verder als elke andere (sets, vorige keer,
+sterren, voortgang). Je workoutschema blijft hetzelfde. Zolang je er nog niets in hebt
+gelogd, haal je haar weg met "Uit deze sessie halen". Vereist **migratie 008**
+(`session_exercises`); in de demo staat deze knop uit.
 
 ## Schema aanpassen
 
