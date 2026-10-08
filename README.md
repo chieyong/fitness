@@ -227,9 +227,9 @@ focus verliest; leegmaken wist hem. Komma en punt zijn allebei een decimaalteken
 "Vorige keer" kijkt naar de oefening, niet naar de workout. Doe je de beenpers in zowel
 A als B, dan zie je gewoon de laatste keer dat je hem deed.
 
-Een sessie afronden (of overslaan) zet de status vast; pas daarna schuift het schema op
+Een sessie afronden zet de status vast; pas daarna schuift het schema op
 naar de volgende training. Er staat één sessie per dag: rond je vandaag een ingehaalde sessie
-af (of sla je 'm over), dan blijft die vandaag zichtbaar en schuiven alle geplande sessies
+af, dan blijft die vandaag zichtbaar en schuiven alle geplande sessies
 door naar de volgende trainingsdagen. Vergeet je op "Sessie afronden" te drukken, dan rondt de app de
 sessie vanzelf af zodra de dag voorbij is: een open sessie waarin je sets hebt gelogd of
 sterren hebt gegeven, staat de volgende keer dat je de app opent als voltooid op de dag
