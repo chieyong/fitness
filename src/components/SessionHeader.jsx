@@ -3,8 +3,9 @@ import { useI18n } from '../i18n/I18nProvider.jsx';
 import './SessionHeader.css';
 
 /**
- * De kop van het scherm: welke dag het is, welke workout er staat, en -- als er
- * iets is ingehaald -- waar die sessie oorspronkelijk stond.
+ * De kop van het scherm: welke dag het is, welke workout er staat, en -- bij de
+ * sessie die vandaag wordt ingehaald -- waar die oorspronkelijk stond. Wat daarna
+ * doorschuift krijgt die melding niet.
  */
 export default function SessionHeader({ date, today, template, entry, done }) {
   const { t, locale } = useI18n();
@@ -14,7 +15,7 @@ export default function SessionHeader({ date, today, template, entry, done }) {
       <h1 className="session-header__title">
         {template ? template.label : t('session.rest')}
       </h1>
-      {entry?.shifted && (
+      {entry?.catch_up && (
         <p className="session-header__note">
           {t('session.shifted', { date: formatDateShort(entry.original_date, locale) })}
         </p>

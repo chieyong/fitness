@@ -116,7 +116,9 @@ export function openSessions(sessions) {
  * overgeslagen, komt geen nieuwe meer. Wat daar gepland stond schuift door naar
  * de eerstvolgende vrije trainingsdag.
  *
- * Geeft terug: [{ session, date, original_date, shifted, overdue_days }]
+ * Geeft terug: [{ session, date, original_date, shifted, overdue_days, catch_up }]
+ * `catch_up` geldt alleen voor de achterstallige sessie die vandaag wordt
+ * ingehaald; wat daarna doorschuift is gewoon de volgende training.
  */
 export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS } = {}) {
   const open = openSessions(sessions);
@@ -157,6 +159,7 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
       overdue_days: i === 0 && session.planned_date < today
         ? daysBetween(session.planned_date, today)
         : 0,
+      catch_up: i === 0 && session.planned_date < today && date === today,
     };
   });
 }

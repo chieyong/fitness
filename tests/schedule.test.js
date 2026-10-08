@@ -356,3 +356,22 @@ test('vooruitbladeren toont de planning zoals die vanaf vandaag doorschuift', ()
   assert.equal(resolveToday(sessions, '2026-10-13', options).current.session.id, 's3');
   assert.equal(resolveToday(sessions, '2026-10-12', options).current, null);
 });
+
+test('alleen de sessie die vandaag wordt ingehaald is een inhaalsessie, niet wat erna doorschuift', () => {
+  // di, do, za. A (di 6 okt) en B (do 8 okt) gemist; vrijdag 9 okt.
+  const options = { today: '2026-10-09' };
+  const open = [session('s1', 'a', '2026-10-06'), session('s2', 'b', '2026-10-08'), session('s3', 'c', '2026-10-10')];
+  const vr = resolveToday(open, '2026-10-09', options);
+  assert.equal(vr.current.session.id, 's1');
+  assert.equal(vr.current.catch_up, true);
+  const za = resolveToday(open, '2026-10-10', options);
+  assert.equal(za.current.session.id, 's2');
+  assert.equal(za.current.shifted, true);
+  assert.equal(za.current.catch_up, false);
+  assert.equal(resolveToday(open, '2026-10-13', options).current.catch_up, false);
+
+  // Na het inhalen van A: B op zaterdag en C op dinsdag zonder melding.
+  const after = [{ ...open[0], status: 'voltooid', actual_date: '2026-10-09' }, ...open.slice(1)];
+  assert.equal(resolveToday(after, '2026-10-10', options).current.catch_up, false);
+  assert.equal(resolveToday(after, '2026-10-13', options).current.catch_up, false);
+});
