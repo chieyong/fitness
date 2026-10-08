@@ -51,6 +51,7 @@ export const saveSet = (...args) => active.saveSet(...args);
 export const deleteSet = (...args) => active.deleteSet(...args);
 export const setExerciseSkipped = (...args) => active.setExerciseSkipped(...args);
 export const closeSession = (...args) => active.closeSession(...args);
+export const closeStaleSessions = (...args) => active.closeStaleSessions(...args);
 export const reopenSession = (...args) => active.reopenSession(...args);
 export const saveSessionNote = (...args) => active.saveSessionNote(...args);
 export const fetchExercise = (...args) => active.fetchExercise(...args);

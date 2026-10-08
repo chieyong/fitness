@@ -9,7 +9,7 @@ import {
   fetchTemplates, fetchSessions, fetchTemplateExercises, fetchLogsForExercises, fetchScheduleSettings,
   fetchFeedbackForExercises, saveFeedback, fetchAllExercises,
   ensureUpcomingSessions, saveSet, deleteSet, setExerciseSkipped,
-  closeSession, reopenSession, dataMode,
+  closeSession, closeStaleSessions, reopenSession, dataMode,
 } from '../lib/queries.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 import SessionHeader from '../components/SessionHeader.jsx';
@@ -34,8 +34,25 @@ function dateFromUrl() {
 }
 
 export default function Today({ onOpenExercise }) {
-  const today = useMemo(() => todayISO(), []);
+  const [today, setToday] = useState(() => todayISO());
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
+
+  // Blijft de app open staan tot na middernacht, dan bij terugkomen naar de
+  // nieuwe dag: zo wordt de sessie van gisteren alsnog vanzelf afgerond.
+  useEffect(() => {
+    const check = () => {
+      const now = todayISO();
+      if (document.visibilityState !== 'visible' || now === today) return;
+      setDate((d) => (d === today ? now : d));
+      setToday(now);
+    };
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    return () => {
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('focus', check);
+    };
+  }, [today]);
   const { t, locale } = useI18n();
 
   const [templates, setTemplates] = useState([]);
@@ -67,12 +84,14 @@ export default function Today({ onOpenExercise }) {
     window.history.replaceState(null, '', url);
   }, [date, today]);
 
-  // Eenmalig: schema's en sessies ophalen, en het schema vooruit aanvullen.
+  // Per dag: vergeten sessies van eerdere dagen afronden, schema's en sessies
+  // ophalen, en het schema vooruit aanvullen.
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
+        await closeStaleSessions(today);
         const [loadedTemplates, loadedSessions, loadedSettings] = await Promise.all([
           fetchTemplates(), fetchSessions(), fetchScheduleSettings(),
         ]);

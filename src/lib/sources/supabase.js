@@ -1,7 +1,7 @@
 import { supabase } from '../supabase.js';
 import { isMissingTable, isMissingColumn } from '../dbErrors.js';
 import { normalizeScheduleSettings, scheduleOptions } from '../scheduleSettings.js';
-import { planNextSessions } from '../schedule.js';
+import { planNextSessions, sessionsToAutoClose } from '../schedule.js';
 
 /** Hoeveel sessies er altijd vooruit klaar moeten staan. */
 const HORIZON = 6;
@@ -69,7 +69,8 @@ async function saveSet(row) {
   const data = await unwrap(
     supabase
       .from('exercise_logs')
-      .upsert(row, { onConflict: 'session_id,exercise_id,set_number' })
+      // logged_at = laatst bijgewerkt: daarop rondt closeStaleSessions een sessie af.
+      .upsert({ ...row, logged_at: new Date().toISOString() }, { onConflict: 'session_id,exercise_id,set_number' })
       .select(),
   );
   return data[0];
@@ -102,6 +103,33 @@ async function closeSession(sessionId, { status, actualDate, notes }) {
       .select(),
   );
   return data[0];
+}
+
+/**
+ * Rondt open sessies af waarin op een eerdere dag iets gelogd of beoordeeld is,
+ * maar die niemand met de knop heeft afgerond. Geeft het aantal terug.
+ */
+async function closeStaleSessions(today) {
+  const open = await unwrap(supabase.from('sessions').select('id, status').eq('status', 'gepland'));
+  if (open.length === 0) return 0;
+  const ids = open.map((x) => x.id);
+  const logged = await unwrap(
+    supabase.from('exercise_logs').select('session_id, logged_at').in('session_id', ids).eq('skipped', false),
+  );
+  const rated = await supabase.from('exercise_feedback').select('session_id, updated_at').in('session_id', ids);
+  if (rated.error && !isMissingTable(rated.error, 'exercise_feedback')) throw new Error(rated.error.message);
+  const activity = [
+    ...logged.map((l) => ({ session_id: l.session_id, at: l.logged_at })),
+    ...(rated.data ?? []).map((f) => ({ session_id: f.session_id, at: f.updated_at })),
+  ];
+  const stale = sessionsToAutoClose(open, activity, today);
+  for (const { id, actualDate } of stale) {
+    await unwrap(
+      supabase.from('sessions').update({ status: 'voltooid', actual_date: actualDate })
+        .eq('id', id).eq('status', 'gepland').select('id'),
+    );
+  }
+  return stale.length;
 }
 
 /** Zet een afgeronde sessie terug op 'gepland'. */
@@ -326,6 +354,7 @@ export const supabaseSource = {
   deleteSet,
   setExerciseSkipped,
   closeSession,
+  closeStaleSessions,
   reopenSession,
   saveSessionNote,
   fetchExercise,

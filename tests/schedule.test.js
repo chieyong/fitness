@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addDays, dayOfWeek, isTrainingDay, nextTrainingDay,
-  projectSchedule, resolveToday, planNextSessions,
+  projectSchedule, resolveToday, planNextSessions, sessionsToAutoClose,
   formatTarget, formatDateLong, formatDateShort,
 } from '../src/lib/schedule.js';
 
@@ -287,4 +287,22 @@ test('datums en targets in het Engels', () => {
   assert.equal(formatTarget({ target_sets: 3, target_reps_min: 12, target_note: 'per been' }, 'en'), '3 × 12 per leg');
   assert.equal(formatTarget({ target_sets: 3, target_seconds: 30, target_note: 'per kant' }, 'en'), '3 × 30 sec per side');
   assert.equal(formatDateShort('2026-09-15'), 'di 15 sep');
+});
+
+test('vergeten sessies worden afgerond op de dag van de laatste activiteit', () => {
+  const sessions = [
+    session('s1', 'a', DI),
+    session('s2', 'b', DO),
+    session('s3', 'c', ZA, 'voltooid'),
+    session('s4', 'a', DI2),
+  ];
+  const at = (iso, hour) => new Date(`${iso}T${String(hour).padStart(2, '0')}:00:00`).getTime();
+  const activity = [
+    { session_id: 's1', at: at(DI, 18) },
+    { session_id: 's1', at: at(WO, 9) },   // later nog iets aangevuld
+    { session_id: 's2', at: at(DO, 19) },  // vandaag: blijft open
+    { session_id: 's3', at: at(ZA, 10) },  // al afgerond
+  ];
+  assert.deepEqual(sessionsToAutoClose(sessions, activity, DO), [{ id: 's1', actualDate: WO }]);
+  assert.deepEqual(sessionsToAutoClose(sessions, [], DO), []);
 });

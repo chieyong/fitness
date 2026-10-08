@@ -4,7 +4,7 @@
  * de gegenereerde gegevens. Er gaat niets naar de database.
  */
 import { generateDemoData } from '../demo/generate.js';
-import { planNextSessions } from '../schedule.js';
+import { planNextSessions, sessionsToAutoClose } from '../schedule.js';
 import { normalizeScheduleSettings, scheduleOptions } from '../scheduleSettings.js';
 
 const HORIZON = 6;
@@ -26,7 +26,7 @@ const STRUCTURE = [
 /** Alles wat iets wijzigt, en dus bewaard moet worden. */
 const MUTATORS = [
   ...STRUCTURE, 'ensureUpcomingSessions', 'saveSet', 'deleteSet', 'setExerciseSkipped',
-  'closeSession', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
+  'closeSession', 'closeStaleSessions', 'reopenSession', 'saveSessionNote', 'updateTemplateExercise',
   'saveFeedback', 'updateExercise',
 ];
 
@@ -116,6 +116,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
     },
 
     async saveSet(row) {
+      row = { ...row, logged_at: new Date().toISOString() };
       const existing = db.exercise_logs.find((l) => l.session_id === row.session_id
         && l.exercise_id === row.exercise_id && l.set_number === row.set_number);
       if (existing) {
@@ -145,6 +146,16 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
 
     async closeSession(sessionId, { status, actualDate, notes }) {
       return updateSession(sessionId, { status, actual_date: actualDate, notes: notes || null });
+    },
+
+    async closeStaleSessions(today) {
+      const activity = [
+        ...db.exercise_logs.filter((l) => !l.skipped).map((l) => ({ session_id: l.session_id, at: l.logged_at })),
+        ...db.exercise_feedback.map((f) => ({ session_id: f.session_id, at: f.updated_at })),
+      ];
+      const stale = sessionsToAutoClose(db.sessions, activity, today);
+      for (const { id, actualDate } of stale) updateSession(id, { status: 'voltooid', actual_date: actualDate });
+      return stale.length;
     },
 
     async reopenSession(sessionId) {
@@ -257,7 +268,7 @@ export function createDemoSource({ today, data, storage = null, lockStructure = 
 
     async saveFeedback({ session_id, exercise_id, rating, comment }) {
       const text = String(comment ?? '').trim();
-      const fields = { rating: rating ?? null, comment: text || null };
+      const fields = { rating: rating ?? null, comment: text || null, updated_at: new Date().toISOString() };
       const existing = db.exercise_feedback.find((f) => f.session_id === session_id && f.exercise_id === exercise_id);
       if (existing) {
         Object.assign(existing, fields);

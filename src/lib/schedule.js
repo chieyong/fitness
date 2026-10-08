@@ -166,6 +166,27 @@ export function resolveToday(sessions, today, options = {}) {
 }
 
 /**
+ * Sessies die vanzelf afgerond worden: nog open, maar er is op een eerdere dag
+ * dan vandaag in gelogd of beoordeeld. Wie vergeet op "Sessie afronden" te
+ * drukken, ziet de volgende dag dus niet dezelfde workout terug.
+ *
+ * `activity` is een lijst { session_id, at } met at een tijdstip (ISO of ms);
+ * de dag van de laatste activiteit, in lokale tijd, wordt de actual_date.
+ * Geeft terug: [{ id, actualDate }]
+ */
+export function sessionsToAutoClose(sessions, activity, today) {
+  const lastDay = new Map();
+  for (const { session_id, at } of activity) {
+    if (!session_id || at == null) continue;
+    const day = todayISO(new Date(at));
+    if (!lastDay.has(session_id) || day > lastDay.get(session_id)) lastDay.set(session_id, day);
+  }
+  return sessions
+    .filter((s) => s.status === OPEN_STATUS && lastDay.has(s.id) && lastDay.get(s.id) < today)
+    .map((s) => ({ id: s.id, actualDate: lastDay.get(s.id) }));
+}
+
+/**
  * Vult het schema aan tot `count` openstaande sessies, doorgaand in de
  * A -> B -> C-rotatie vanaf de laatst bekende sessie. Geeft alleen de nieuwe
  * rijen terug; wegschrijven doet de aanroeper.

@@ -294,3 +294,26 @@ test('Engelse demo: Engelse namen, en een eigen opslag per taal', async () => {
   assert.notEqual((await nl.fetchTemplateExercises('demo-tpl-0'))[0].target_sets, 9);
   assert.ok((await nl.fetchAllExercises()).some((e) => e.name === 'Bankdrukken'));
 });
+
+test('een sessie met sets van gisteren wordt vanzelf afgerond, een lege niet', async () => {
+  const src = fresh();
+  const templates = await src.fetchTemplates();
+  const sessions = await src.ensureUpcomingSessions(templates, await src.fetchSessions(), today);
+  const [first, second] = sessions.filter((s) => s.status === 'gepland');
+  const [exercise] = await src.fetchAllExercises();
+  await src.saveSet({ session_id: first.id, exercise_id: exercise.id, set_number: 1, reps: 10 });
+  await src.setExerciseSkipped(second.id, exercise.id, true);
+
+  const now = new Date();
+  const local = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  assert.equal(await src.closeStaleSessions(local(now)), 0);
+
+  const tomorrow = local(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  assert.equal(await src.closeStaleSessions(tomorrow), 1);
+  const after = await src.fetchSessions();
+  const closed = after.find((s) => s.id === first.id);
+  assert.equal(closed.status, 'voltooid');
+  assert.equal(closed.actual_date, local(now));
+  // Alleen "niet gedaan" aangevinkt telt niet als training.
+  assert.equal(after.find((s) => s.id === second.id).status, 'gepland');
+});
