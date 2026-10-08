@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { resolveToday, todayISO, formatDateShort } from '../lib/schedule.js';
+import { resolveToday, todayISO, closingDate, formatDateShort } from '../lib/schedule.js';
 import { lastPerformance, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
 import { todayMuscles } from '../lib/todayMuscles.js';
 import { muscleWeights } from '../lib/muscleWeights.js';
@@ -37,8 +37,10 @@ export default function Today({ onOpenExercise }) {
   const [today, setToday] = useState(() => todayISO());
   const [date, setDate] = useState(() => dateFromUrl() ?? today);
 
-  // Blijft de app open staan tot na middernacht, dan bij terugkomen naar de
-  // nieuwe dag: zo wordt de sessie van gisteren alsnog vanzelf afgerond.
+  // Blijft de app open staan tot na middernacht, dan door naar de nieuwe dag:
+  // bij terugkomen in de app, en elke minuut zolang hij in beeld is. Zo wordt de
+  // sessie van gisteren alsnog vanzelf afgerond, en telt een inhaalsessie op de
+  // echte dag.
   useEffect(() => {
     const check = () => {
       const now = todayISO();
@@ -46,9 +48,11 @@ export default function Today({ onOpenExercise }) {
       setDate((d) => (d === today ? now : d));
       setToday(now);
     };
+    const timer = setInterval(check, 60 * 1000);
     document.addEventListener('visibilitychange', check);
     window.addEventListener('focus', check);
     return () => {
+      clearInterval(timer);
       document.removeEventListener('visibilitychange', check);
       window.removeEventListener('focus', check);
     };
@@ -196,11 +200,11 @@ export default function Today({ onOpenExercise }) {
   const handleClose = useCallback(async (newStatus, notes) => {
     try {
       const updated = await closeSession(session.id, {
-        status: newStatus, actualDate: date, notes,
+        status: newStatus, actualDate: closingDate(date, today), notes,
       });
       setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
     } catch (e) { setError(e.message); }
-  }, [session?.id, date]);
+  }, [session?.id, date, today]);
 
   const handleReopen = useCallback(async () => {
     try {

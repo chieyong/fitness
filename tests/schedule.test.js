@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addDays, dayOfWeek, isTrainingDay, nextTrainingDay,
-  projectSchedule, resolveToday, planNextSessions, sessionsToAutoClose,
+  projectSchedule, resolveToday, planNextSessions, sessionsToAutoClose, closingDate,
   formatTarget, formatDateLong, formatDateShort,
 } from '../src/lib/schedule.js';
 
@@ -305,4 +305,10 @@ test('vergeten sessies worden afgerond op de dag van de laatste activiteit', () 
   ];
   assert.deepEqual(sessionsToAutoClose(sessions, activity, DO), [{ id: 's1', actualDate: WO }]);
   assert.deepEqual(sessionsToAutoClose(sessions, [], DO), []);
+});
+
+test('afronden op "vandaag" telt de echte datum, ook als de app sinds gisteren openstaat', () => {
+  assert.equal(closingDate(DI, DI, DI), DI);
+  assert.equal(closingDate(DI, DI, WO), WO);   // scherm denkt nog dat het dinsdag is
+  assert.equal(closingDate(ZA, DI, WO), ZA);   // bewust een andere dag gekozen
 });

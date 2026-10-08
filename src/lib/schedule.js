@@ -57,6 +57,15 @@ export function todayISO(now = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Op welke dag een sessie wordt afgerond. Staat het scherm op "vandaag", dan
+ * telt de echte datum van nu: een app die sinds gisteren openstaat, denkt anders
+ * nog dat het gisteren is. Een bewust gekozen andere dag blijft staan.
+ */
+export function closingDate(shown, today, now = todayISO()) {
+  return shown === today ? now : shown;
+}
+
 export function addDays(iso, n) {
   return formatISO(parseISO(iso) + n * DAY_MS);
 }
