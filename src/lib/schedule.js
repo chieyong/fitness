@@ -118,17 +118,18 @@ export function openSessions(sessions) {
  *
  * Geeft terug: [{ session, date, original_date, shifted, overdue_days, catch_up }]
  * `catch_up` geldt alleen voor de achterstallige sessie die vandaag wordt
- * ingehaald; wat daarna doorschuift is gewoon de volgende training.
+ * ingehaald, en alleen als er sinds haar oorspronkelijke datum nog niets is
+ * afgerond. Is er tussendoor al een sessie ingehaald, dan is wat daarna
+ * doorschuift gewoon de volgende training.
  */
 export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS } = {}) {
   const open = openSessions(sessions);
   if (open.length === 0) return [];
 
   // Dagen waarop al een sessie is afgerond of overgeslagen: daar past niets meer bij.
-  const taken = new Set(
-    sessions.filter((s) => s.status === 'voltooid' || s.status === 'overgeslagen')
-      .map((s) => s.actual_date ?? s.planned_date),
-  );
+  const closedDays = sessions.filter((s) => s.status === 'voltooid' || s.status === 'overgeslagen')
+    .map((s) => s.actual_date ?? s.planned_date);
+  const taken = new Set(closedDays);
   const free = (iso) => {
     let day = iso;
     while (taken.has(day)) day = nextTrainingDay(day, { trainingDays });
@@ -159,7 +160,8 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
       overdue_days: i === 0 && session.planned_date < today
         ? daysBetween(session.planned_date, today)
         : 0,
-      catch_up: i === 0 && session.planned_date < today && date === today,
+      catch_up: i === 0 && session.planned_date < today && date === today
+        && !closedDays.some((d) => d >= session.planned_date && d < today),
     };
   });
 }

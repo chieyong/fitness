@@ -375,3 +375,18 @@ test('alleen de sessie die vandaag wordt ingehaald is een inhaalsessie, niet wat
   assert.equal(resolveToday(after, '2026-10-10', options).current.catch_up, false);
   assert.equal(resolveToday(after, '2026-10-13', options).current.catch_up, false);
 });
+
+test('na een ingehaalde sessie krijgt de volgende geen inhaalmelding, ook niet op haar eigen dag', () => {
+  // A (di 6 okt) ingehaald op vr 9 okt; B (do 8 okt) staat open. Het is nu za 10 okt.
+  const sessions = [
+    { id: 's1', template_id: 'a', planned_date: '2026-10-06', actual_date: '2026-10-09', status: 'voltooid' },
+    session('s2', 'b', '2026-10-08'),
+    session('s3', 'c', '2026-10-10'),
+  ];
+  const za = resolveToday(sessions, '2026-10-10', { today: '2026-10-10' });
+  assert.equal(za.current.session.id, 's2');
+  assert.equal(za.current.catch_up, false);
+  // Zonder iets afgerond sinds de gemiste dag is het wél een inhaalsessie.
+  const zonder = resolveToday(sessions.slice(1), '2026-10-10', { today: '2026-10-10' });
+  assert.equal(zonder.current.catch_up, true);
+});
