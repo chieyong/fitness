@@ -112,11 +112,26 @@ export function openSessions(sessions) {
  * is vandaag meteen de eerste inhaaldag -- ook als vandaag geen trainingsdag is.
  * De rest volgt op de reguliere trainingsdagen daarna.
  *
+ * Eén sessie per dag: op een dag waarop al een sessie is afgerond of
+ * overgeslagen, komt geen nieuwe meer. Wat daar gepland stond schuift door naar
+ * de eerstvolgende vrije trainingsdag.
+ *
  * Geeft terug: [{ session, date, original_date, shifted, overdue_days }]
  */
 export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS } = {}) {
   const open = openSessions(sessions);
   if (open.length === 0) return [];
+
+  // Dagen waarop al een sessie is afgerond of overgeslagen: daar past niets meer bij.
+  const taken = new Set(
+    sessions.filter((s) => s.status === 'voltooid' || s.status === 'overgeslagen')
+      .map((s) => s.actual_date ?? s.planned_date),
+  );
+  const free = (iso) => {
+    let day = iso;
+    while (taken.has(day)) day = nextTrainingDay(day, { trainingDays });
+    return day;
+  };
 
   // Staat de eerstvolgende sessie op vandaag of eerder, dan is vandaag de
   // eerste beschikbare dag -- ook als vandaag geen reguliere trainingsdag is.
@@ -131,7 +146,7 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
   return open.map((session, i) => {
     // Een sessie die verder in de toekomst staat dan zijn slot houdt zijn eigen
     // datum: vooruit plannen doen we niet.
-    const date = session.planned_date > slot ? session.planned_date : slot;
+    const date = free(session.planned_date > slot ? session.planned_date : slot);
     slot = nextTrainingDay(date, { trainingDays });
 
     return {

@@ -122,14 +122,41 @@ test('een afgeronde sessie is zichtbaar op zijn eigen dag', () => {
   assert.equal(view.isRestDay, false);       // maar het was geen rustdag
 });
 
-test('een afgeronde sessie blokkeert de planning van vandaag niet', () => {
+test('één sessie per dag: na afronden schuift wat vandaag gepland stond door', () => {
   const sessions = [
     { id: 's1', template_id: 'a', planned_date: DI, actual_date: DI, status: 'voltooid' },
     session('s2', 'b', DI),
+    session('s3', 'c', DO),
   ];
   const view = resolveToday(sessions, DI);
-  assert.equal(view.current.session.id, 's2');
+  assert.equal(view.current, null);
   assert.equal(view.done.id, 's1');
+  assert.deepEqual(view.upcoming.map((e) => [e.session.id, e.date]), [['s2', DO], ['s3', ZA]]);
+});
+
+test('ingehaalde sessie blijft vandaag zichtbaar en de rest schuift naar de volgende trainingsdag', () => {
+  // A stond op dinsdag, is donderdag ingehaald; B stond op donderdag.
+  const sessions = [
+    { id: 's1', template_id: 'a', planned_date: DI, actual_date: DO, status: 'voltooid' },
+    session('s2', 'b', DO),
+    session('s3', 'c', ZA),
+  ];
+  const view = resolveToday(sessions, DO);
+  assert.equal(view.current, null);
+  assert.equal(view.done.id, 's1');
+  assert.deepEqual(view.upcoming.map((e) => [e.session.id, e.date]), [['s2', ZA], ['s3', DI2]]);
+  // Ook vóór het afronden stond A vandaag en B daarna, dus de volgorde blijft gelijk.
+  assert.equal(resolveToday([session('s1', 'a', DI), ...sessions.slice(1)], DO).current.session.id, 's1');
+});
+
+test('ook overgeslagen vult de dag: de volgende sessie komt pas op de volgende trainingsdag', () => {
+  const sessions = [
+    { id: 's1', template_id: 'a', planned_date: DI, actual_date: DO, status: 'overgeslagen' },
+    session('s2', 'b', DO),
+  ];
+  const view = resolveToday(sessions, DO);
+  assert.equal(view.done.id, 's1');
+  assert.deepEqual(view.upcoming.map((e) => [e.session.id, e.date]), [['s2', ZA]]);
 });
 
 test('toekomstige sessies worden niet naar voren getrokken', () => {
