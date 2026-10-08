@@ -110,6 +110,17 @@ export function seriesFor(logs, sessions, exerciseId) {
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
+/**
+ * De laatste keren vóór `beforeDate` dat deze oefening is gedaan, nieuwste
+ * eerst -- in welke workout dan ook. Voor even terugkijken in de gym.
+ */
+export function previousPerformances(logs, sessions, exerciseId, beforeDate, excludeSessionId = null, limit = 5) {
+  return seriesFor(logs, sessions, exerciseId)
+    .filter((p) => p.sessionId !== excludeSessionId && p.date < beforeDate)
+    .reverse()
+    .slice(0, limit);
+}
+
 /** Verschil tussen de eerste en de laatste meting; null bij één punt. */
 export function trend(series, key) {
   const values = series.map((p) => p[key]).filter((v) => v != null);

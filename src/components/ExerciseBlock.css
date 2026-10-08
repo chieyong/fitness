@@ -126,6 +126,17 @@
 
 .block__previous { margin-bottom: var(--space-3); font-size: var(--text-small); color: var(--ink-secondary); }
 .block__previous-note { display: block; color: var(--ink-tertiary); font-style: italic; }
+.history { margin: calc(-1 * var(--space-2)) 0 var(--space-3); }
+.history .history__toggle { margin-left: 0; }
+.history__list {
+  margin: var(--space-2) 0 0; padding: 0; list-style: none;
+  display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-4);
+  font-size: var(--text-small); font-variant-numeric: tabular-nums;
+}
+.history__item { display: contents; }
+.history__when { display: flex; flex-direction: column; color: var(--ink-tertiary); white-space: nowrap; }
+.history__workout { font-size: var(--text-micro); }
+.history__sets { color: var(--ink); }
 .block__skipped-label { font-size: var(--text-small); color: var(--ink-tertiary); }
 
 .block__actions { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-3); }

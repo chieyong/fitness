@@ -23,7 +23,7 @@ function buildRows(item, logged) {
 }
 
 export default function ExerciseBlock({
-  item, logged, previous, readOnly, skipped,
+  item, logged, previous, history = [], readOnly, skipped,
   open, onToggleOpen, onSaveSet, onDeleteSet, onToggleSkip, onOpen,
   feedback, previousFeedback, onSaveFeedback, onPlayVideo,
   alternative, swapped, canSwap, onSwap,
@@ -33,6 +33,8 @@ export default function ExerciseBlock({
   const isTimed = item.target_seconds != null;
 
   const [rows, setRows] = useState(() => buildRows(item, logged));
+  // Eerdere keren van deze oefening, ter plekke uitgeklapt.
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [busy, setBusy] = useState(null);
 
   // Hoe het ging: sterren direct opslaan, de toelichting bij het verlaten van het veld.
@@ -144,6 +146,28 @@ export default function ExerciseBlock({
             : t('block.previousDated', { sets: formatSets(previous.sets), date: formatDateShort(previous.date, locale) })}
           {previous.note && <span className="block__previous-note">{previous.note}</span>}
         </p>
+      )}
+
+      {history.length > 0 && (
+        <div className="history">
+          <button type="button" className="block__link history__toggle" aria-expanded={historyOpen}
+            onClick={() => setHistoryOpen((v) => !v)}>
+            {historyOpen ? t('block.historyHide') : t('block.history', { count: history.length })}
+          </button>
+          {historyOpen && (
+            <ul className="history__list">
+              {history.map((p) => (
+                <li key={p.sessionId} className="history__item">
+                  <span className="history__when">
+                    {formatDateShort(p.date, locale)}
+                    {p.workout && <span className="history__workout">{p.workout}</span>}
+                  </span>
+                  <span className="history__sets">{formatSets(p.sets)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {previousFeedback && (previousFeedback.rating || previousFeedback.comment) && (

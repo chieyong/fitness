@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   lastPerformance, formatSets, bestSet, volume, setsFor, sessionDate,
-  seriesFor, trend, exerciseStatus, preferredMetric, chartPoints, feedbackFor, lastFeedback,
+  seriesFor, trend, exerciseStatus, preferredMetric, chartPoints, feedbackFor, lastFeedback, previousPerformances,
 } from '../src/lib/progress.js';
 
 const sessions = [
@@ -167,4 +167,24 @@ test('een ingehaalde sessie telt nooit als haar eigen "vorige keer"', () => {
   ];
   assert.equal(lastFeedback(fb, sessions, 'bank', '2026-09-16').rating, 5);
   assert.deepEqual(lastFeedback(fb, sessions, 'bank', '2026-09-16', 's3'), { date: '2026-09-05', rating: 3, comment: null });
+});
+
+test('eerdere keren: nieuwste eerst, over workouts heen, zonder de huidige sessie', () => {
+  const ses = [
+    { id: 'a1', planned_date: '2026-10-01', status: 'voltooid' },
+    { id: 'c1', planned_date: '2026-10-03', status: 'voltooid' },
+    { id: 'a2', planned_date: '2026-10-06', status: 'voltooid' },
+    { id: 'c2', planned_date: '2026-10-08', status: 'gepland' },
+  ];
+  const rows = [
+    { id: 1, session_id: 'a1', exercise_id: 'lat', set_number: 1, reps: 10, weight_kg: 45 },
+    { id: 2, session_id: 'c1', exercise_id: 'lat', set_number: 1, reps: 10, weight_kg: 47.5 },
+    { id: 3, session_id: 'a2', exercise_id: 'lat', set_number: 1, reps: 10, weight_kg: 50 },
+    { id: 4, session_id: 'c2', exercise_id: 'lat', set_number: 1, reps: 8, weight_kg: 50 },
+    { id: 5, session_id: 'a2', exercise_id: 'row', set_number: 1, reps: 10, weight_kg: 30 },
+  ];
+  const list = previousPerformances(rows, ses, 'lat', '2026-10-08', 'c2');
+  assert.deepEqual(list.map((p) => p.sessionId), ['a2', 'c1', 'a1']);
+  assert.equal(formatSets(list[0].sets), '10×50');
+  assert.equal(previousPerformances(rows, ses, 'lat', '2026-10-08', 'c2', 2).length, 2);
 });

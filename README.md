@@ -225,7 +225,8 @@ met de vorige keer als referentie erboven. Een set wordt opgeslagen zodra het ve
 focus verliest; leegmaken wist hem. Komma en punt zijn allebei een decimaalteken.
 
 "Vorige keer" kijkt naar de oefening, niet naar de workout. Doe je de beenpers in zowel
-A als B, dan zie je gewoon de laatste keer dat je hem deed.
+A als B, dan zie je gewoon de laatste keer dat je hem deed. Via "Eerdere keren" in een
+uitgeklapte oefening zie je ter plekke de laatste vijf keer, met datum en workout.
 
 Een sessie afronden zet de status vast; pas daarna schuift het schema op
 naar de volgende training. Er staat één sessie per dag: rond je vandaag een ingehaalde sessie

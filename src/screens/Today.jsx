@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveToday, todayISO, closingDate, formatDateShort } from '../lib/schedule.js';
-import { lastPerformance, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
+import { lastPerformance, previousPerformances, setsFor, feedbackFor, lastFeedback } from '../lib/progress.js';
 import { todayMuscles } from '../lib/todayMuscles.js';
 import { muscleWeights } from '../lib/muscleWeights.js';
 import { exerciseIdsWithAlternatives, resolveSessionItem } from '../lib/alternatives.js';
@@ -274,6 +274,10 @@ export default function Today({ onOpenExercise }) {
                   logged={logged.filter((l) => !l.skipped)}
                   skipped={logged.length > 0 && logged.every((l) => l.skipped)}
                   previous={lastPerformance(logs, sessions, item.exercise_id, date, session.id)}
+                  history={previousPerformances(logs, sessions, item.exercise_id, date, session.id).map((p) => ({
+                    ...p,
+                    workout: templates.find((tpl) => tpl.id === sessions.find((s) => s.id === p.sessionId)?.template_id)?.label ?? null,
+                  }))}
                   readOnly={readOnly}
                   onSaveSet={handleSaveSet}
                   onDeleteSet={handleDeleteSet}
