@@ -115,8 +115,8 @@ export default function Today({ onOpenExercise }) {
 
   // Rustdag of trainingsdag hangt af van de gekozen trainingsdagen.
   const view = useMemo(
-    () => (sessions.length ? resolveToday(sessions, date, scheduleOptions(settings)) : null),
-    [sessions, date, settings],
+    () => (sessions.length ? resolveToday(sessions, date, { ...scheduleOptions(settings), today }) : null),
+    [sessions, date, settings, today],
   );
 
   // De sessie die het scherm toont: wat er te doen staat, of -- als die dag al

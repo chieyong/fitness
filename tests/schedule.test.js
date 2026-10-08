@@ -339,3 +339,20 @@ test('afronden op "vandaag" telt de echte datum, ook als de app sinds gisteren o
   assert.equal(closingDate(DI, DI, WO), WO);   // scherm denkt nog dat het dinsdag is
   assert.equal(closingDate(ZA, DI, WO), ZA);   // bewust een andere dag gekozen
 });
+
+test('vooruitbladeren toont de planning zoals die vanaf vandaag doorschuift', () => {
+  // Trainingsdagen zo, di, do. A (di 6 okt) is vrijdag 9 okt ingehaald; B (do 8 okt) staat nog open.
+  const options = { trainingDays: [0, 2, 4], today: '2026-10-09' };
+  const sessions = [
+    { id: 's1', template_id: 'a', planned_date: '2026-10-06', actual_date: '2026-10-09', status: 'voltooid' },
+    session('s2', 'b', '2026-10-08'),
+    session('s3', 'c', '2026-10-11'),
+  ];
+  assert.equal(resolveToday(sessions, '2026-10-09', options).done.id, 's1');
+  const za = resolveToday(sessions, '2026-10-10', options);
+  assert.equal(za.current, null);
+  assert.equal(za.isRestDay, true);
+  assert.equal(resolveToday(sessions, '2026-10-11', options).current.session.id, 's2');
+  assert.equal(resolveToday(sessions, '2026-10-13', options).current.session.id, 's3');
+  assert.equal(resolveToday(sessions, '2026-10-12', options).current, null);
+});

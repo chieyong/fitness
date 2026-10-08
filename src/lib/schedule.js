@@ -164,9 +164,15 @@ export function projectSchedule(sessions, today, { trainingDays = TRAINING_DAYS 
 /**
  * Wat staat er vandaag te doen? Geeft de geprojecteerde sessie voor vandaag
  * (indien die er is), de achterstand en de eerstvolgende sessie daarna.
+ *
+ * `today` is de getoonde dag. Geef `options.today` de echte datum van vandaag
+ * mee: een dag in de toekomst toont dan de planning zoals die vanaf vandaag
+ * doorschuift. Zonder dat zou een achterstallige sessie op elke toekomstige dag
+ * als "in te halen" verschijnen.
  */
-export function resolveToday(sessions, today, options = {}) {
-  const schedule = projectSchedule(sessions, today, options);
+export function resolveToday(sessions, today, { today: now, ...options } = {}) {
+  const from = now && today > now ? now : today;
+  const schedule = projectSchedule(sessions, from, options);
   const current = schedule.find((entry) => entry.date === today) ?? null;
 
   // Een sessie die op deze dag al is afgerond of bewust overgeslagen. Zonder dit
