@@ -61,6 +61,7 @@ supabase/schema.sql   tabellen uit de spec
 supabase/seed.sql     3 schema's × 3 voorbeeldoefeningen (placeholder)
 src/lib/schedule.js   alle datum- en doorschuiflogica — puur, zonder React of Supabase
 src/lib/autoClose.js  welke ingevulde sessies zichzelf afronden — ook puur
+src/lib/coachBrief.js de cijfers onder een trainingsadvies — puur, zie npm run brief
 src/lib/queries.js    data-toegang
 src/screens/Today.js  "wat moet ik vandaag doen"
 tests/                tests op schedule.js
@@ -418,8 +419,51 @@ sleutels die de component kent (`chest`, `upper-back`, `front-deltoids`, …); `
 vertaalt die naar wat het scherm toont. Bij een nieuwe oefening moet je die sleutels
 gebruiken, anders kleurt het silhouet niets.
 
+## Trainingsbeeld — de cijfers onder een advies
+
+`src/lib/coachBrief.js` zet je logboek om in de cijfers waar een trainingsadvies op
+gebaseerd hoort te zijn: één plat object, puur gerekend, zonder React, Supabase of AI.
+Dit is bewust de hele rekenkant. Een taalmodel krijgt straks alléén dit resultaat als JSON
+en mag er woorden omheen zetten; rekenen doet het niet. Zo staat elk getal dat in een
+advies belandt in een getest bestand, en kan een model geen kilo's verzinnen die je nooit
+getild hebt.
+
+Bekijken zonder dat er een model aan te pas komt:
+
+```
+npm run brief                 je eigen gegevens uit Supabase
+npm run brief -- --demo       de demodata, werkt zonder .env
+npm run brief -- --json       precies wat er naar het model zou gaan (~2000 tokens)
+npm run brief -- --weeks=12
+```
+
+Wat erin zit, en waarom:
+
+- **Alleen afgeronde weken.** De lopende week is half en zou elk gemiddelde omlaag
+  trekken. Dezelfde regel als het lijntje in Voortgang.
+- **Gewogen sets per spiergroep per week**, naar rol (primair ×1, secundair ×0,5,
+  tertiair ×0,25). Alleen zo zijn spiergroepen onderling te vergelijken. Het venster
+  wordt in twee helften gesplitst, zodat je ziet of iets oploopt of inzakt.
+- **Gepland naast gedaan.** Krijgt je bovenrug weinig werk omdat je trainingen mist, of
+  omdat je schema er weinig voor heeft? Dat zijn twee verschillende adviezen. `plannedPerWeek`
+  schat wat het schema per week van plan is: de targets per workout, gedeeld over de
+  workouts, maal je trainingsdagen. Een spier die in géén enkele workout voorkomt staat
+  onder `missing` en niet onder `neglected` — dat is een keuze, geen verzuim.
+- **Per oefening** de beginstand, de eindstand en het verschil, in de maat die de oefening
+  draagt: kilo's, anders seconden, anders herhalingen. Zonder die derde maat zou een plank
+  of een crunch nooit vooruitgang laten zien.
+- **Plateau** is geen inschatting maar een telling: het aantal weken sinds je laatste beste
+  prestatie, en pas een signaal vanaf drie keer doen.
+- **Je sterren en toelichtingen** reizen mee, nieuwste eerst. Die 1 tot 5 is in de praktijk
+  een RPE-schaal, en dat is precies wat cijfers alleen niet vertellen.
+
+Overgeslagen oefeningen tellen niet als werk. Is er niets in het venster, dan komt er een
+leeg briefje terug (`empty: true`), geen fout.
+
 ## Nog te doen
 
+- Wekelijkse coachnotitie: de cijfers staan er (`npm run brief`), nog te doen zijn de
+  Edge Function die het model aanroept en het scherm dat de notitie toont
 - Fase 5: AI-feedback op voortgangsfoto's
 - Target voor "Hanging leg raises of buikspier crunch" staat op 3x15; die kwam niet uit
   de bron en is een plaatshouder.
